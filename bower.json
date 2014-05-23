@@ -1,5 +1,5 @@
 {
-  "name": "tcb-cedit",
+  "name": "bower-tcb-cedit",
   "version": "0.0.0",
   "main": "js/cedit.js",
   "authors": [
@@ -8,7 +8,7 @@
   "ignore": ["bower_components/*"],
   "dependencies": {
     "font-awesome": "~4.1.0",
-    "jquery": "~2.1.1",
+    "jquery": ">2.0.0",
     "lodash": "~2.4.1",
     "rangy": "~1.2.3"
   }
