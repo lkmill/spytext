@@ -154,7 +154,11 @@ var mainFnc = function($, _, rangy) {
 		defaultConfig: {
 			noToolbar: false,
 			preventFormattedPaste: true,
-			preventTextOutsideParagraph: true	
+			preventTextOutsideParagraph: true,
+			blacklist: {
+				"h1": {replaceWith: "p"},
+				"h2": {}
+			}	
 		},
 		addHooks: function(h){
 			_.extend(_hooks, h);
@@ -183,6 +187,7 @@ var mainFnc = function($, _, rangy) {
 
 			if(conf.preventFormattedPaste) preventFormattedPaste(elements);
 			if(conf.preventTextOutsideParagraph) preventTextOutsideParagraph(elements);
+			blacklist(elements, conf.blacklist);
 		},
 		createToolbar: function(conf){
 			var t = new CeditToolbar(conf);
@@ -499,6 +504,27 @@ var mainFnc = function($, _, rangy) {
 		range.setEndAfter(element);
 		selection.removeAllRanges();
 		selection.addRange(range);
+	}
+
+	function blacklist(selectorOrObject, blacklist){
+		$(selectorOrObject).on("DOMNodeInserted", function(ev){
+			var tagName = ev.target.nodeName.toLowerCase();
+			if(blacklist[tagName]){
+				var r = blacklist[tagName].replaceWith;  
+				var contents = $(ev.target).html();
+				if(typeof r === "string"){
+					r = $("<"+r+">"+"</"+r+">");
+				}else if(typeof r === "undefined"){
+					r = $(ev.target).contents().unwrap();
+					console.log("blacklist tag", tagName, "removed");
+					return;
+				}
+				
+				r.html( contents );
+				$(ev.target).replaceWith( r );
+				console.log("blacklist tag", tagName, "replaced with", r);
+			}
+		});
 	}
 
 	window.Cedit = Cedit;
