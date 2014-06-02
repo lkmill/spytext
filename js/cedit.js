@@ -463,13 +463,13 @@ var mainFnc = function($, _, rangy) {
 
 	// calculate the hash of an element. Used to determine if an element has changed
 	function updateHash(element){
-		$(element).attr("data-startHash", simpleHash($(element).html()));
+		$(element).attr("data-start-hash", simpleHash($(element).html()));
 		element.orig_html = $(element).html();
 	}
 
 	// determine if an element has changed
 	function hasChanged(element){
-		if($(element).attr("data-startHash") != simpleHash($(element).html())){
+		if($(element).attr("data-start-hash") != simpleHash($(element).html())){
 			$(element).addClass("changed");
 			return true;
 		}else{
