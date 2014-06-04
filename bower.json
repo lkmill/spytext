@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "main": "js/spytext.js",
   "authors": [
     "Niklas Strandberg <niklas.strandberg@thecodebureau.com>"
