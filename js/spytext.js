@@ -6,9 +6,10 @@ var mainFunction = function ($, _) {
     var browser = getBrowser();
     if (!checkBrowser()) {
         alert('you are using an unsuppported browser');
+        return;
     }
 
-    var _siteUrl = 'http://localhost:3000/';
+    //var _siteUrl = 'http://localhost:3000/';
     var _baseClass = 'spytext-';
     var _barClass = _baseClass + 'button-bar';
     var _generatedClass = _baseClass + 'generated';
@@ -20,17 +21,17 @@ var mainFunction = function ($, _) {
     var _templates = {
         button: _.template(
             '<li>' +
-                '<a <% if(attribute){ %>data-attribute="<% attribute %>"<% } %>id="' + _baseClass + 'btn-<%= name %>" title="<%= title %>" href="#" class="' + _baseClass + 'button" tabIndex="-1">' +
-                    '<% if(icon){ %> <i class="fa fa-<%= icon %>"></i> <% } %>' +
-                    '<% if(text){ %> <%= text %> <% } %>' +
+                '<a <% if(attribute){ %>data-attribute="<% attribute %>"<% } %>id="' + _baseClass + 'btn-<%= name %>" title="<%= title %>" href="#" class="' + _baseClass + 'button <%= name %><% if(global){ %> global<% } %>" tabIndex="-1">' +
+                    //'<% if(icon){ %> <i class="fa fa-<%= icon %>"></i> <% } %>' +
+                    '<span><%= title %></span>' +
                 '</a>' +
             '</li>'
         ),
         dropdownLi: _.template(
             '<li class="' + _hasDropdownClass + '">' +
-                '<span title="<%= title %>" class="' + _baseClass + 'button" tabIndex="-1">' +
-                    '<% if(icon){ %> <i class="fa fa-<%= icon %>"></i> <% } %>' +
-                    '<% if(text){ %> <%= text %> <% } %>' +
+                '<span title="<%= title %>" class="' + _baseClass + 'button dropdown <%= name %>" tabIndex="-1">' +
+                    //'<% if(icon){ %> <i class="fa fa-<%= icon %>"></i> <% } %>' +
+                    '<span><%= title %></span>' +
                 '</span>' +
             '</li>'
         ),
@@ -41,11 +42,18 @@ var mainFunction = function ($, _) {
     };
     var _commands = {
         align: function (attribute, textArea) {
+            if (isInList(textArea.element)) {
+                alert('You cannot align lists!');
+                return;
+            }
             var command = 'justify' + attribute.charAt(0).toUpperCase() + attribute.slice(1).toLowerCase();
             document.execCommand(command);
         },
         formatBlock: function (attribute, textArea) {
-            console.log('inside formatBlock');
+            if (isInList(textArea.element)) {
+                alert('You cannot set type of lists!');
+                return;
+            }
             document.execCommand('formatBlock', null, attribute);
         },
         generic: function (command, attribute, textArea) {
@@ -62,6 +70,18 @@ var mainFunction = function ($, _) {
                 var newUl = $('<ul></ul>');
                 newUl.append(li);
                 prevLi.append(newUl);
+            }
+        },
+        list: function (attribute, textArea) {
+            var tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+            if (intersectsTags(tags, textArea.element)) {
+                alert('You cannot make lists out of headings!');
+                return;
+            }
+            if (attribute === 'ol') {
+                document.execCommand('insertOrderedList');
+            } else if (attribute === 'ul') {
+                document.execCommand('insertUnorderedList');
             }
         },
         remove: function (attribute, textArea) {
@@ -105,7 +125,7 @@ var mainFunction = function ($, _) {
             alert(getCurrentElement().html());
         },
         showImageDialog: function (attribute, textArea) {
-            console.log('showImageDialog');
+            //console.log('showImageDialog');
         },
         showLinkDialog: function (attribute, textArea) {
             var sel = window.getSelection();
@@ -136,10 +156,9 @@ var mainFunction = function ($, _) {
         },
         undo: function (attribute, textArea) {
             document.execCommand('undo');
-            if (browser.name.toLowerCase() === 'chrome') {
+            if (browser.name === 'chrome') {
                 $('p.' + _generatedClass).each(function () {
                     if (window.getSelection().focusNode !== this && $(this).text() === '') {
-                        console.log('removing');
                         $(this).remove();
                     }
                 });
@@ -156,19 +175,20 @@ var mainFunction = function ($, _) {
         //undo: {id: 'undo', title: 'Undo', icon: 'undo', command: 'undo', global: true },
         undo: { title: 'Undo', icon: 'undo', command: 'undo', global: true },
         redo: { title: 'Redo', icon: 'repeat', command: 'redo', global: true },
-        removeFormat: { title: 'Remove formatting', icon: 'eraser', command: 'removeFormat'},
         type: {  title: 'Font type', text: 'Type', command: 'formatBlock', dropdown: [
-            { text: 'Paragraph', attribute: '<p>' },
-            { text: 'Heading 1', attribute: '<H1>' },
-            { text: 'Heading 2', attribute: '<H2>' },
-            { text: 'Heading 3', attribute: '<H3>' },
-            { text: 'Heading 4', attribute: '<H4>' },
-            { text: 'Heading 5', attribute: '<H5>' },
-            { text: 'Heading 6', attribute: '<H6>' }
+            { title: 'Paragraph', attribute: '<p>' },
+            { title: 'Heading 1', attribute: '<H1>' },
+            { title: 'Heading 2', attribute: '<H2>' },
+            { title: 'Heading 3', attribute: '<H3>' },
+            { title: 'Heading 4', attribute: '<H4>' },
+            { title: 'Heading 5', attribute: '<H5>' },
+            { title: 'Heading 6', attribute: '<H6>' }
         ]},
-        strikethrough: { title: 'Strikethrough', icon: 'strikethrough', command: 'strikeThrough'},
-        underline: { title: 'Underline', icon: 'underline', command: 'underline'},
         bold: { title: 'Bold', icon: 'bold', command: 'bold'},
+        italic: { title: 'Bold', icon: 'bold', command: 'italic'},
+        underline: { title: 'Underline', icon: 'underline', command: 'underline'},
+        strikethrough: { title: 'Strikethrough', icon: 'strikethrough', command: 'strikeThrough'},
+        'remove-format': { title: 'Remove formatting', icon: 'eraser', command: 'removeFormat'},
         link: { title: 'Link', icon: 'link', command: 'showLinkDialog'},
         align: { title: 'Align', icon: 'align-left', command: 'align', dropdown: [
             { icon: 'align-left', attribute: 'left'},
@@ -180,8 +200,8 @@ var mainFunction = function ($, _) {
         'align-center': { title: 'Align Center', icon: 'align-center', command: 'align', attribute: 'center' },
         'align-right': { title: 'Align Right', icon: 'align-right', command: 'align', attribute: 'right' },
         'align-justify': { title: 'Justify', icon: 'align-justify', command: 'align', attribute: 'full' },
-        'list-ul': { title: 'Unordered list', icon: 'list-ul', command: 'insertUnorderedList'},
-        'list-ol': { title: 'Ordered list', icon: 'list-ol', command: 'insertOrderedList'},
+        'list-ul': { title: 'Unordered list', icon: 'list-ul', command: 'list', attribute: 'ul'},
+        'list-ol': { title: 'Ordered list', icon: 'list-ol', command: 'list', attribute: 'ol'},
         'indent-right': { title: 'Indent', icon: 'indent', command: 'indent'},
         'indent-left': { title: 'Unindent', icon: 'outdent', command: 'outdent'},
         image: { title: 'Image', icon: 'picture', command: 'showImageDialog'},
@@ -191,7 +211,7 @@ var mainFunction = function ($, _) {
         save: { title: 'Save', icon: 'save', command: 'save', global: true }
     };
 
-    var _buttonDefaults = { title: false, text: false, icon: false, command: false, attribute: false, attributes: false, global: false };
+    var _buttonDefaults = { title: false, icon: false, command: false, attribute: false, attributes: false, global: false };
 
     var SpyText = {
         singles: [],
@@ -283,7 +303,6 @@ var mainFunction = function ($, _) {
             $(element).html($(element).html().trim());
         }
         this.originalHTML = $(element).html();
-        var fixing = false;
 
         if (element.nodeName.toLowerCase() !== 'div' || $(element).data('type') !== 'textarea') {
             turnOffNewLine(element);
@@ -292,7 +311,6 @@ var mainFunction = function ($, _) {
         element.textArea = this;
         $(element).addClass(_elementClass);
         $(element).focus(function () {
-            console.log('focused');
             that.toolbar.enable(that.config.commands);
         });
         $(element).on('blur', function () {
@@ -308,43 +326,52 @@ var mainFunction = function ($, _) {
         $(element).attr('contentEditable', 'true');
         $(element).on('DOMNodeInserted', function (e) {
             var sel, rng, content;
-            if (fixing) return;
-            fixing = true;
             if (e.target === element) {
                 return;
             }
             var $parent = $(e.target).parent();
-            var $newElement = $('<p class="' + _generatedClass + '"></p>');
+            var $newElement = $('<p class="' + _generatedClass + '"><br /></p>');
             if (e.target.nodeName.toLowerCase() === 'div') {
                 content = e.target.textContent !== '' ? e.target.textContent : '<br />';
-                $newElement.html('<br />');
-                $(e.target).after($newElement).remove();
                 sel = window.getSelection();
+                sel.removeAllRanges();
+                $(e.target).after($newElement[0]);
                 rng = document.createRange();
-                rng.selectNode($newElement[0]);
+                rng.selectNodeContents($newElement[0]);
                 sel.addRange(rng);
                 document.execCommand('insertHtml', false, content);
+                $(e.target).remove();
+                // TODO make sure this selection works. right now chrome often removes caret
+                setTimeout(function () {
+                    $(element).focus();
+                    sel.removeAllRanges();
+                    rng = document.createRange();
+                    rng.setStart($newElement[0], 0);
+                    rng.setEnd($newElement[0], 0);
+                    sel.addRange(rng);
+                }, 1);
             } else if (e.target.nodeName.toLowerCase() === 'span') {
                 if ($parent[0] === element) {
                     alert('oh my, span is child of the textArea!');
-                    $newElement.append($(e.target).children());
-                    $(e.target).remove();
-                    $(this).append($newElement);
-                    setCaretAtEndOfElement($newElement[0]);
-                } else {
-                    setCaretAtEndOfElement($parent[0]);
-                    sel = window.getSelection();
-                    rng = sel.getRangeAt(0);
-                    content = e.target.textContent;
-                    $(e.target).remove();
-                    document.execCommand('insertText', false, content);
+                    return;
                 }
+                setCaretAtEndOfElement($parent[0]);
+                content = e.target.textContent;
+                $(e.target).remove();
+                document.execCommand('insertText', false, content);
+                sel = window.getSelection();
+                rng = sel.getRangeAt(0);
+                var node = rng.commonAncestorContainer;
+                sel.removeAllRanges();
+                rng = document.createRange();
+                rng.setStart(node, node.textContent.length - content.length);
+                rng.setEnd(node, node.textContent.length - content.length);
+                sel.addRange(rng);
             } else if ([ 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'].indexOf(e.target.nodeName) > -1 && $parent[0] !== element) {
                 // TODO check if parent is empty, delete if so.
                 $parent.after(e.target);
                 setCaretAtEndOfElement(e.target);
             }
-            fixing = false;
         });
         if (this.config.preventFormattedPaste) preventFormattedPaste(element);
         if (this.config.preventTextOutsideParagraph && $(element).data('type') === 'textarea') preventTextOutsideParagraph(element);
@@ -360,7 +387,18 @@ var mainFunction = function ($, _) {
                 commands: [
                     'undo', 'redo',
                     'type',
-                    'strikethrough', 'underline', 'bold', 'removeFormat',
+                    'bold', 'italic', 'underline', 'strikethrough', 'remove-format',
+                    'link',
+                    'align',
+                    'align-left', 'align-center', 'align-right', 'align-justify',
+                    'list-ul', 'list-ol',
+                    'reset'
+                ],
+            },
+            'full-without-type': {
+                commands: [
+                    'undo', 'redo',
+                    'bold', 'italic', 'underline', 'strikethrough', 'remove-format',
                     'link',
                     'align',
                     'align-left', 'align-center', 'align-right', 'align-justify',
@@ -371,7 +409,7 @@ var mainFunction = function ($, _) {
             format: {
                 commands: [
                     'undo', 'redo',
-                    'strikethrough', 'underline', 'bold', 'removeFormat',
+                    'bold', 'italic', 'underline', 'strikethrough', 'remove-format',
                     'link',
                     'reset'
                 ],
@@ -487,7 +525,6 @@ var mainFunction = function ($, _) {
             }
             _.each(buttonNames, function (buttonName) {
                 var buttonType = _buttonTypes[buttonName];
-                console.log(buttonType.name);
 
                 if (!buttonType) return;
 
@@ -515,7 +552,6 @@ var mainFunction = function ($, _) {
                 }
             });
             $(this.element).append($ul);
-            console.log(this.buttons);
         },
         defaultConfig: {
             preset: 'global',
@@ -525,7 +561,7 @@ var mainFunction = function ($, _) {
                 buttonGroups: [
                     { name: 'undo', buttons: ['undo', 'redo']},
                     { name: 'type', buttons: ['type']},
-                    { name: 'format', buttons: ['bold', 'underline', 'strikethrough', 'removeFormat']},//,'color'],
+                    { name: 'format', buttons: ['bold', 'italic',  'underline', 'strikethrough', 'remove-format']},//,'color'],
                     ['link'],
                     //['image'],
                     { name: 'align', buttons: ['align-left', 'align-center', 'align-right', 'align-justify']},
@@ -541,7 +577,7 @@ var mainFunction = function ($, _) {
                 buttons: [
                     { name: 'undo', buttons: ['undo', 'redo']},
                     { name: 'type', buttons: ['type']},
-                    { name: 'format', buttons: ['bold', 'underline', 'strikethrough', 'removeFormat']},//,'color'],
+                    { name: 'format', buttons: ['bold', 'italic',  'underline', 'strikethrough', 'remove-format']},//,'color'],
                     ['link'],
                     //['image'],
                     { name: 'align', buttons: ['align-left', 'align-center', 'align-right', 'align-justify']},
@@ -555,13 +591,13 @@ var mainFunction = function ($, _) {
             },
             full: {
                 buttons: [
-                    ['undo', 'redo'],
+                    { name: 'undo', buttons: ['undo', 'redo']},
                     ['type'],
-                    ['strikethrough', 'underline', 'bold', 'removeFormat'],//,'color'],
+                    { name: 'format', buttons: ['bold', 'underline', 'strikethrough', 'remove-format']},//,'color'],
                     ['link'],
                     //['image'],
                     ['align'],
-                    ['list-ul', 'list-ol'],
+                    { name: 'list', buttons: ['list-ul', 'list-ol']},
                     //['indent-right','indent-left'],
                     //['html'],
                     ['reset']
@@ -618,17 +654,14 @@ var mainFunction = function ($, _) {
         // private methods
         function _onClick(e) { // executed in clicked link context
             e.preventDefault();
-            console.log('clicked');
             // check if the selection is in an element owned by the toolbar
             if (_disabled) {
-                console.log('is disabled');
                 return;
             }
             var textArea;
             if (!that.global) {
                 textArea = getCurrentTextArea();
                 if (textArea && textArea.toolbar !== that.toolbar) {
-                    console.log('wrong toolbar');
                     return;
                 }
             }
@@ -654,10 +687,16 @@ var mainFunction = function ($, _) {
         return window.getSelection().focusNode.parentElement;
     }
 
+    var cancelledPaste = false;
     function preventFormattedPaste(element) {
         
         $(element).on('keydown', function (e) {
-            if (e.keyCode === 86) {
+            if (e.ctrlKey && e.keyCode === 86) {
+                if (isInList(element)) {
+                    cancelledPaste = true;
+                    alert('You cannot paste in lists!');
+                    return;
+                }
                 var savedRange = window.getSelection().getRangeAt(0);
                 var pasteArea = $('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
                 $('body').append(pasteArea);
@@ -674,7 +713,8 @@ var mainFunction = function ($, _) {
         });
         $(element).on('paste', function (e) {
             e.preventDefault();
-            alert('Unformatted paste is not allowed! Use CTRL+V to paste!');
+            if (!cancelledPaste) alert('Unformatted paste is not allowed! Use CTRL+V to paste!');
+            cancelledPaste = false;
         });
     }
 
@@ -708,17 +748,69 @@ var mainFunction = function ($, _) {
         setCaretAtEndOfElement($(el).find('p').last()[0]);
     }
 
-    function getContainedNodes(element) {
-        var sel = window.getSelection();
-        $(element).children().each(function () {
-            if (sel.containsNode(this)) {
-                console.log('contained node:');
-                console.log(this);
+    function isInList(element) {
+        var listTags = ['ul', 'ol'];
+        return intersectsTags(listTags, element);
+    }
+    function intersectsTags(tags, element) {
+        var nodes = getContainedNodes(element, true);
+        for (var i = 0; i < nodes.length; i++) {
+            if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
+                return true;
             }
-        });
-
+        }
+        return false;
     }
 
+    function getContainedNodes(element, partlyContained) {
+        partlyContained = partlyContained || false;
+        var sel = window.getSelection();
+        var nodes;
+        if (sel.containsNode) {
+            nodes = [];
+            $(element).find('*').each(function () {
+                if (sel.containsNode(this, partlyContained)) {
+                    nodes.push(this);
+                }
+            });
+        } else {
+            var anchorNode = getElementChild(sel.anchorNode, element);
+            var focusNode = getElementChild(sel.focusNode, element);
+            console.log(anchorNode);
+            console.log(focusNode);
+            if (anchorNode === focusNode) {
+                nodes =  $(anchorNode).add($(anchorNode).find('*')).get();
+            } else {
+                var $children = $(element).children();
+                var one = $children.index(anchorNode);
+                var two = $children.index(focusNode);
+                nodes = $children.slice(Math.min(one, two), Math.max(one, two)).get();
+            }
+        }
+        console.log(nodes);
+        return nodes;
+    }
+
+    // traverses up the DOM. returns 
+    function getElementChild(node, element) {
+        if (node === null || node === element || node.nodeName.toLowerCase() === 'body') {
+            return null;
+        } else if ($(element).children().index(node) > -1) {
+            return node;
+        } else {
+            return getElementChild(node.parentNode, element);
+        }
+    }
+
+
+    function selectNodes(nodes) {
+        var sel = window.getSelection();
+        var range = document.createRange();
+        range.setStartBefore(_.first(nodes));
+        range.setEndAfter(_.last(nodes));
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
     function selectNodeContents(el) {
         var range = document.createRange();
         range.selectNodeContents(el);
@@ -728,9 +820,6 @@ var mainFunction = function ($, _) {
     }
 
     function setCaretAtEndOfElement(element) {
-        for (var i = 0; i < element.childNodes.length; i++) {
-            console.log(element.childNodes[i]);
-        }
         var range = document.createRange();
         if (element.childNodes.length > 0) {
             if (_.last(element.childNodes).nodeName.toLowerCase() === 'br') {
@@ -750,7 +839,14 @@ var mainFunction = function ($, _) {
     }
     function getBrowser() {
         var matches = window.navigator.userAgent.match(/(chrome|firefox)\/(\d*)/i);
-        return { name: matches[1], version: parseInt(matches[2]) };
+        if (matches.length > 0) {
+            return { name: matches[1].toLowerCase(), version: parseInt(matches[2]) };
+        }
+        matches = window.navigator.userAgent.match(/rv:(\d*)/i);
+        if (matches.length > 0) {
+            return { name: 'ie', version: parseInt(matches[1]) };
+        }
+
     }
     function checkBrowser() {
         switch (browser.name.toLowerCase()) {
@@ -758,6 +854,8 @@ var mainFunction = function ($, _) {
                 return browser.version > 34;
             case 'firefox':
                 return browser.version > 28;
+            case 'ie':
+                return browser.version === 11;
             default:
                 return false;
         }
