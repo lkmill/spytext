@@ -1,11 +1,11 @@
-# Bower Cedit
+# Bower Spytext
 
 > Front-end contenteditable
 
 ## Install
 
 ```sh
-$ bower install --save bower-tcb-cedit
+$ bower install --save spytext
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ $ bower install --save bower-tcb-cedit
 <script src="bower_components/lodash/dist/lodash.js"></script>
 <script src="bower_components/rangy/rangy-core.js"></script>
 <script src="bower_components/rangy/rangy-selectionsaverestore.js"></script>
-<script src="bower_components/bower-tcb-cedit/js/cedit.js"></script>
+<script src="bower_components/spytext/js/spytext.js"></script>
 <link href="bower_components/font-awesome/css/font-awesome.css" rel="stylesheet">
 <link href="stylesheets/screen.css" rel="stylesheet">
 
@@ -34,10 +34,9 @@ $ bower install --save bower-tcb-cedit
 
 <script>
     $(function() {
-        var t = Cedit.createToolbar({preset: "top-fixed-default"});
-        Cedit.addElements($('div[contentEditable="true"]'), {noToolbar:true});
+        SpyText.addGroup($('div[contentEditable="true"]'));
 
-        Cedit.addHooks({
+        SpyText.addHooks({
             save: function(elements, callback){
                 var data = _.map(elements, function(el) { return { 
                     id: $(el).attr("data-id"),
