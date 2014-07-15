@@ -9,7 +9,6 @@ module.factory('Spytext', function($window) {
     return {
         require: 'ngModel',
         link: function(scope, element, attrs, ngModelCtrl) {
-            element.attr('contenteditable', 'true');
             element.bind('keyup', function() {
                 if(!ngModelCtrl.$dirty && ngModelCtrl.$viewValue !== element.html()) {
                     scope.$apply(function() {
@@ -24,7 +23,6 @@ module.factory('Spytext', function($window) {
                     });
                 }
             });
-
             ngModelCtrl.$render = function() {
                 element.html(ngModelCtrl.$viewValue);
             };

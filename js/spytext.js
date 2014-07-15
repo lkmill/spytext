@@ -167,12 +167,6 @@ var mainFunction = function ($, _) {
 			}
 		}
 	};
-
-	var _hooks = {
-		save: function (elements, callback) { callback({errNr: 0}); },
-		remove: function (elements, callback) { callback({errNr: 0}); }
-	};
-
 	var _buttonTypes = {
 		//undo: {id: 'undo', title: 'Undo', icon: 'undo', command: 'undo', global: true },
 		undo: { title: 'Undo', icon: 'undo', command: 'undo', global: true },
@@ -216,25 +210,10 @@ var mainFunction = function ($, _) {
 	var _buttonDefaults = { title: false, icon: false, command: false, attribute: false, attributes: false, global: false };
 
 	var Spytext = {
-		singles: [],
-		globals: [],
 		groups: [],
-		globalToolbar: undefined,
-		addHooks: function (h) {
-			_.extend(_hooks, h);
-		},
-		addSingle: function (element) {
-			// TODO implement
-			console.log('not implemented');
-		},
-		// adds text areas to the global toolbar
-		addGlobals: function (elements, config) {
-			// TODO implement
-			console.log('not implemented');
-		},
 		addGroup: function ($element) {
 			var that = this;
-			var toolbar = new SpytextToolbar({ preset: 'group', parent: $element });
+			var toolbar = new SpytextToolbar({ preset: 'full', parent: $element });
 			toolbar.disable();
 			var elements = $element[0].querySelectorAll('[data-name]');
 			var textAreas = [];
@@ -246,24 +225,7 @@ var mainFunction = function ($, _) {
 			this.groups.push(group);
 			return group;
 		},
-		showSuccess: function (text) {
-			var dialog = $('<div class="' + _baseClass + 'success">' + text + '</div>');
-			$(document.querySelector('body')).append(dialog);
-		},
-		showError: function (text) {
-			var dialog = $('<div class="' + _baseClass + 'error">' + text + '</div>');
-			$(document.querySelector('body')).append(dialog);
-		},
 		// TODO check if the destroy methods can be improved
-		destroyGlobals: function () {
-			_.each(this.globals, function (textArea) {
-				textArea.destroy();
-			});
-			this.globals.length = 0;
-			this.globalToolbar.destroy();
-			this.globalToolbar = undefined;
-
-		},
 		destroyGroup: function (group) {
 			var index = this.groups.indexOf(group);
 			if (index > -1) {
@@ -276,16 +238,6 @@ var mainFunction = function ($, _) {
 				delete group.toolbar;
 				this.groups.splice(index, 1);
 			}
-		},
-		destroySingle: function (single) {
-			var index = this.singles.indexOf(single);
-			if (index > -1) {
-				single.textArea.destroy();
-				delete single.textArea;
-				single.toolbar.destroy();
-				delete single.toolbar;
-				this.singles.splice(index, 1);
-			}
 		}
 	};
 
@@ -293,9 +245,6 @@ var mainFunction = function ($, _) {
 		var that = this;
 		this.toolbar = toolbar;
 		this.element = element;
-		this.addHooks = function (h) {
-			_.extend(_hooks, h);
-		};
 		this.config = this.presets[$(element).attr('data-preset')];
 		_.defaults(this.config, this.defaultConfig);
 
@@ -311,12 +260,13 @@ var mainFunction = function ($, _) {
 		}
 		// to make it easy to get access to the textArea
 		element.textArea = this;
+
 		$(element).addClass(_elementClass);
+		$(element).attr('contentEditable', 'true');
 		$(element).on('focus', function () {
 			that.toolbar.enable(that.config.commands);
 		});
 		$(element).on('blur', function () {
-			that.hasChanged();
 			that.toolbar.disable();
 		});
 		$(element).on('keydown', function (e) {
@@ -325,7 +275,6 @@ var mainFunction = function ($, _) {
 				_commands.undo(element.textArea);
 			}
 		});
-		$(element).attr('contentEditable', 'true');
 		$(element).on('DOMNodeInserted', function (e) {
 			var sel, rng, content;
 			if (e.target === element) {
@@ -426,19 +375,11 @@ var mainFunction = function ($, _) {
 				commands: []
 			}
 		},
-		hasChanged: function () {
-			if (this.originalHTML !== $(this.element).html()) {
-				return true;
-			} else {
-				return false;
-			}
-		},
 		destroy: function () {
 			$(this.element).unbind();
 			$(this.element).attr('contentEditable', 'false');
 			$(this.element).removeClass(_baseClass + 'element');
 			delete this.element;
-			delete this.addHooks;
 			delete this.config;
 			delete this.originalHTML;
 		}
@@ -450,17 +391,13 @@ var mainFunction = function ($, _) {
 		this.config = config || {};
 		this.buttons = [];
 
-		var presetConf = this.presets[config.preset ? config.preset : 'global'];
+		var presetConf = this.presets[config.preset ? config.preset : 'full'];
 
-		_.defaults(this.config, presetConf, this.defaultConfig);
+		_.defaults(this.config, presetConf);
 
-		if (this.config.position) this.element = $(_templates.buttonBar({position: this.config.position}));
+		this.element = $(_templates.buttonBar({position: this.config.position}));
 
-		if (this.config.parent) {
-            $(this.config.parent).prepend(this.element);
-		} else {
-			$(document.querySelector('body')).prepend(this.element);
-		}
+        $(this.config.parent).prepend(this.element);
 
 		if (this.config.buttons) {
 			_.each(this.config.buttons, function (value, key) {
@@ -468,36 +405,11 @@ var mainFunction = function ($, _) {
 			});
 		}
 		
-		if (this.config.show) this.show();
-		else this.hide();
-
 		$(this.element).on('mousedown', function (ev) {
 			ev.preventDefault();
 		});
 	};
 	SpytextToolbar.prototype = {
-		show: function () {
-			var that = this;
-			$(this.element).css('display', 'block');
-
-			// add margin to body so that top-fixed toolbars won't cover content
-			if (this.config.position === 'top-fixed' && $(document.querySelector('body')).css('margin-top') !== $(this.element).outerHeight() + 'px') {
-				$('body').css('margin-top', function (index, curValue) {
-					return parseInt(curValue, 10) + $(that.element).outerHeight() + 'px';
-				});
-			}
-		},
-		hide: function () {
-			var that = this;
-			$(this.element).css('display', 'none');
-
-			// remove margin from body
-			if (this.config.position === 'top-fixed' && $(document.querySelector('body')).css('margin-top') === $(this.element).outerHeight() + 'px') {
-				$(document.querySelector('body')).css('margin-top', function (index, curValue) {
-					return parseInt(curValue, 10) - $(that.element).outerHeight() + 'px';
-				});
-			}
-		},
 		enable: function (commands) {
 			$(this.element).removeClass('disabled');
 			_.each(this.buttons, function (button) {
@@ -555,42 +467,7 @@ var mainFunction = function ($, _) {
 			});
 			$(this.element).append($ul);
 		},
-		defaultConfig: {
-			preset: 'global',
-		},
 		presets: {
-			global: {
-				buttonGroups: [
-					{ name: 'undo', buttons: ['undo', 'redo']},
-					{ name: 'type', buttons: ['type']},
-					{ name: 'format', buttons: ['bold', 'italic',  'underline', 'strikethrough', 'remove-format']},//,'color'],
-					['link'],
-					//['image'],
-					{ name: 'align', buttons: ['align-left', 'align-center', 'align-right', 'align-justify']},
-					{ name: 'list', buttons: ['list-ul', 'list-ol']},
-					//['indent-right','indent-left'],
-					//['html'],
-					['reset']
-				],
-				show: true,
-				position: 'top-fixed'
-			},
-			group: {
-				buttons: [
-					{ name: 'undo', buttons: ['undo', 'redo']},
-					{ name: 'type', buttons: ['type']},
-					{ name: 'format', buttons: ['bold', 'italic',  'underline', 'strikethrough', 'remove-format']},//,'color'],
-					['link'],
-					//['image'],
-					{ name: 'align', buttons: ['align-left', 'align-center', 'align-right', 'align-justify']},
-					{ name: 'list', buttons: ['list-ul', 'list-ol']},
-					//{ name: 'indent', ['indent-right','indent-left'] },
-					//['html'],
-					['reset']
-				],
-				show: true,
-				position: 'prepended'
-			},
 			full: {
 				buttons: [
 					{ name: 'undo', buttons: ['undo', 'redo']},
@@ -598,24 +475,18 @@ var mainFunction = function ($, _) {
 					{ name: 'format', buttons: ['bold', 'underline', 'strikethrough', 'remove-format']},//,'color'],
 					['link'],
 					//['image'],
-					['align'],
+					{ name: 'align', buttons: ['align-left', 'align-center', 'align-right', 'align-justify']},
 					{ name: 'list', buttons: ['list-ul', 'list-ol']},
 					//['indent-right','indent-left'],
 					//['html'],
 					['reset']
-				],
-				show : false,
-				position: 'above-textarea'
+				]
 			},
 			bare: {
-				buttons: [['undo', 'redo']],
-				show: false,
-				position: 'above-textarea'
+				buttons: [['undo', 'redo']]
 			},
 			simpleWithRemove: {
-				buttons: [['undo', 'redo'], ['link'], ['html'], ['remove'], ['save']],
-				show: false,
-				position: 'above-textarea'
+				buttons: [['undo', 'redo'], ['link'], ['html'], ['remove'], ['save']]
 			}
 		},
 		destroy: function () {
@@ -768,6 +639,7 @@ var mainFunction = function ($, _) {
 	}
 	function intersectsTags(tags, element) {
 		var nodes = getContainedNodes(element, true);
+        console.log(nodes);
 		for (var i = 0; i < nodes.length; i++) {
 			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
 				return true;
@@ -799,7 +671,6 @@ var mainFunction = function ($, _) {
 				nodes = $children.slice(Math.min(one, two), Math.max(one, two)).get();
 			}
 		}
-		console.log(nodes);
 		return nodes;
 	}
 
