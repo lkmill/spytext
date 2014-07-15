@@ -163,6 +163,7 @@ var mainFunction = function ($, _) {
 						$(this).remove();
 					}
 				});
+                $(document.querySelector('body'));
 			}
 		}
 	};
@@ -781,9 +782,9 @@ var mainFunction = function ($, _) {
 		var nodes;
 		if (sel.containsNode) {
 			nodes = [];
-			$(element).find('*').each(function () {
-				if (sel.containsNode(this, partlyContained)) {
-					nodes.push(this);
+			_.each(element.querySelectorAll('*'), function (el) {
+				if (sel.containsNode(el, partlyContained)) {
+					nodes.push(el);
 				}
 			});
 		} else {
