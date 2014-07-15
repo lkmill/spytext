@@ -158,8 +158,8 @@ var mainFunction = function ($, _) {
 		undo: function (attribute, textArea) {
 			document.execCommand('undo');
 			if (browser.name === 'chrome') {
-				$(document.querySelectorAll('p.' + _generatedClass)).each(function () {
-					if (window.getSelection().focusNode !== this && $(this).text() === '') {
+				_.each(document.querySelectorAll('p.' + _generatedClass), function (el) {
+					if (window.getSelection().focusNode !== el && $(el).text() === '') {
 						$(this).remove();
 					}
 				});
@@ -231,11 +231,11 @@ var mainFunction = function ($, _) {
 			// TODO implement
 			console.log('not implemented');
 		},
-		addGroup: function (element) {
+		addGroup: function ($element) {
 			var that = this;
-			var toolbar = new SpytextToolbar({ preset: 'group', parent: element });
+			var toolbar = new SpytextToolbar({ preset: 'group', parent: $element });
 			toolbar.disable();
-			var elements = $(element).find('[data-name]').get();
+			var elements = $element[0].querySelectorAll('[data-name]');
 			var textAreas = [];
 			_.each(elements, function (el) {
 				var textArea = new SpytextArea(el, toolbar);
@@ -295,7 +295,7 @@ var mainFunction = function ($, _) {
 		this.addHooks = function (h) {
 			_.extend(_hooks, h);
 		};
-		this.config = this.presets[$(element).data('preset')];
+		this.config = this.presets[$(element).attr('data-preset')];
 		_.defaults(this.config, this.defaultConfig);
 
 		if (element.nodeName.toLowerCase() === 'div' && $(element).html().trim() === '') {
@@ -305,13 +305,13 @@ var mainFunction = function ($, _) {
 		}
 		this.originalHTML = $(element).html();
 
-		if (element.nodeName.toLowerCase() !== 'div' || $(element).data('type') !== 'textarea') {
+		if (element.nodeName.toLowerCase() !== 'div' || $(element).attr('data-type') !== 'textarea') {
 			turnOffNewLine(element);
 		}
 		// to make it easy to get access to the textArea
 		element.textArea = this;
 		$(element).addClass(_elementClass);
-		$(element).focus(function () {
+		$(element).on('focus', function () {
 			that.toolbar.enable(that.config.commands);
 		});
 		$(element).on('blur', function () {
@@ -375,7 +375,7 @@ var mainFunction = function ($, _) {
 			}
 		});
 		if (this.config.preventFormattedPaste) preventFormattedPaste(element);
-		if (this.config.preventTextOutsideParagraph && $(element).data('type') === 'textarea') preventTextOutsideParagraph(element);
+		if (this.config.preventTextOutsideParagraph && $(element).attr('data-type') === 'textarea') preventTextOutsideParagraph(element);
 	};
 	SpytextArea.prototype = {
 		defaultConfig: {
@@ -456,14 +456,14 @@ var mainFunction = function ($, _) {
 		if (this.config.position) this.element = $(_templates.buttonBar({position: this.config.position}));
 
 		if (this.config.parent) {
-			$(this.element).prependTo(this.config.parent);
+            $(this.config.parent).prepend(this.element);
 		} else {
 			$(document.querySelector('body')).prepend(this.element);
 		}
 
 		if (this.config.buttons) {
-			$.each(this.config.buttons, function (i, group) {
-				that.addButtonGroup(group);
+			_.each(this.config.buttons, function (value, key) {
+				that.addButtonGroup(value);
 			});
 		}
 		
@@ -477,7 +477,7 @@ var mainFunction = function ($, _) {
 	SpytextToolbar.prototype = {
 		show: function () {
 			var that = this;
-			$(this.element).show();
+			$(this.element).css('display', 'block');
 
 			// add margin to body so that top-fixed toolbars won't cover content
 			if (this.config.position === 'top-fixed' && $(document.querySelector('body')).css('margin-top') !== $(this.element).outerHeight() + 'px') {
@@ -488,7 +488,7 @@ var mainFunction = function ($, _) {
 		},
 		hide: function () {
 			var that = this;
-			$(this.element).hide();
+			$(this.element).css('display', 'none');
 
 			// remove margin from body
 			if (this.config.position === 'top-fixed' && $(document.querySelector('body')).css('margin-top') === $(this.element).outerHeight() + 'px') {
@@ -635,7 +635,7 @@ var mainFunction = function ($, _) {
 		_.defaults(this, buttonType, _buttonDefaults);
 
 		var $el = $(_templates.button(this));
-		$el.children('.' + _baseClass + 'button').click(_onClick);
+		$el.children('.' + _baseClass + 'button').on('click', _onClick);
 
 		this.element = $el[0];
 		// TODO check if one can make better garbage collection
@@ -681,9 +681,21 @@ var mainFunction = function ($, _) {
 	}
 
 	function getCurrentTextArea() {
-		var element = $(document.getSelection().anchorNode).closest('[data-name]')[0];
-		return element ? element.textArea : undefined;
+        var element = getCurrentTextAreaRecursive(document.getSelection().anchorNode);
+        console.log(element);
+        return element.textArea;
 	}
+    function getCurrentTextAreaRecursive(element) {
+        console.log(element);
+        if(element.nodeType === 1) {
+            if(element.hasAttribute('data-name')) {
+                return element;
+            } else if(element.tagName.toLowerCase() === 'body') {
+                return undefined;
+            }
+        }
+        return getCurrentTextAreaRecursive(element.parentNode);
+    }
 	function getSurroundingNode() {
 		return window.getSelection().focusNode.parentElement;
 	}
@@ -733,7 +745,7 @@ var mainFunction = function ($, _) {
 	}
 
 	function turnOffNewLine(element) {
-		$(element).keypress(function (e) {
+		$(element).on('keypress', function (e) {
 			if (e.keyCode === 10 || e.keyCode === 13) e.preventDefault();
 		});
 	}
@@ -869,5 +881,11 @@ var mainFunction = function ($, _) {
 if (typeof define !== 'undefined') {
 	define(['jquery', 'lodash'], mainFunction);
 } else {
-	mainFunction($, _);
+    var jQuery;
+    if(typeof $ !== 'undefined') {
+        jQuery = $;
+    } else if (typeof angular.element !== 'undefined') {
+        jQuery = angular.element;
+    }
+	mainFunction(jQuery, _);
 }
