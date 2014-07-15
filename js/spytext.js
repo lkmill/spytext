@@ -215,7 +215,7 @@ var mainFunction = function ($, _) {
 			var that = this;
 			var toolbar = new SpytextToolbar({ preset: 'full', parent: $element });
 			toolbar.disable();
-			var elements = $element[0].querySelectorAll('[data-name]');
+			var elements = $element[0].querySelectorAll('[spytext-field]');
 			var textAreas = [];
 			_.each(elements, function (el) {
 				var textArea = new SpytextArea(el, toolbar);
@@ -536,7 +536,7 @@ var mainFunction = function ($, _) {
 
 	// ############## HELPER FUNCTIONS ##############
 	function getCurrentElement() {
-		return $(document.getSelection().anchorNode).closest('[data-name]')[0];
+		return $(document.getSelection().anchorNode).closest('[spytext-field]')[0];
 	}
 
 	function getCurrentTextArea() {
@@ -546,7 +546,7 @@ var mainFunction = function ($, _) {
 	}
     function getCurrentTextAreaRecursive(element) {
         if(element.nodeType === 1) {
-            if(element.hasAttribute('data-name')) {
+            if(element.hasAttribute('spytext-field')) {
                 return element;
             } else if(element.tagName.toLowerCase() === 'body') {
                 return undefined;
