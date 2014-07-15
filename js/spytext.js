@@ -499,46 +499,22 @@ var mainFunction = function ($, _) {
 
 	var SpytextToolbarButton = function (buttonType, toolbar) {
 		var that = this;
-		var _disabled = false;
 
 		this.toolbar = toolbar;
 
 		// apply all settings
 		_.defaults(this, buttonType, _buttonDefaults);
 
-		var $el = $(_templates.button(this));
-		$el.children('.' + _baseClass + 'button').on('click', _onClick);
+		this.element = $(_templates.button(this))[0];
+		$(this.element).children('.' + _baseClass + 'button').on('click', _click);
 
-		this.element = $el[0];
-		// TODO check if one can make better garbage collection
-		$el = null;
-
-		this.enable = function () {
-			_disabled = false;
-			$(this.element).children('.' + _baseClass + 'button').removeClass('disabled');
-		};
-		this.disable =  function () {
-			if (!this.global) {
-				_disabled = true;
-				$(this.element).children('.' + _baseClass + 'button').addClass('disabled');
-			}
-		};
-
-		// private methods
-		function _onClick(e) { // executed in clicked link context
+		function _click(e) {
 			e.preventDefault();
-			// check if the selection is in an element owned by the toolbar
-			if (_disabled) {
+			if (that.disabled) {
 				return;
 			}
-			var textArea;
-			if (!that.global) {
-				textArea = getCurrentTextArea();
-				if (textArea && textArea.toolbar !== that.toolbar) {
-					return;
-				}
-			}
-			//var f;
+			var textArea = getCurrentTextArea();
+
 			if (_commands.hasOwnProperty(that.command)) {
 				_commands[that.command](that.attribute, textArea);
 			} else {
@@ -546,6 +522,17 @@ var mainFunction = function ($, _) {
 			}
 		}
 	};
+    SpytextToolbarButton.prototype = {
+		disabled: true,
+		enable: function () {
+            this.disabled = false;
+			$(this.element).children('.' + _baseClass + 'button').removeClass('disabled');
+		},
+		disable:  function () {
+            this.disabled = true;
+            $(this.element).children('.' + _baseClass + 'button').addClass('disabled');
+		}
+    };
 
 	// ############## HELPER FUNCTIONS ##############
 	function getCurrentElement() {
@@ -558,7 +545,6 @@ var mainFunction = function ($, _) {
         return element.textArea;
 	}
     function getCurrentTextAreaRecursive(element) {
-        console.log(element);
         if(element.nodeType === 1) {
             if(element.hasAttribute('data-name')) {
                 return element;
