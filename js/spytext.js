@@ -1,5 +1,5 @@
 /*
- * SpyText, a contenteditable library for javascript
+ * Spytext, a contenteditable library for javascript
  */
 
 var mainFunction = function ($, _) {
@@ -91,9 +91,9 @@ var mainFunction = function ($, _) {
 		},
 		removeAfter: function (attribute, result) {
 			if (result.errNr) {
-				SpyText.showSuccess(result.msg || 'Successfully removed');
+				Spytext.showSuccess(result.msg || 'Successfully removed');
 			} else {
-				SpyText.showError(result.msg || 'Unable to remove');
+				Spytext.showError(result.msg || 'Unable to remove');
 			}
 		},
 		removeFormat: function (attribute, textArea) {
@@ -114,11 +114,11 @@ var mainFunction = function ($, _) {
 			// TODO make sure textArea gets passed in
 			var textArea;
 			if (result.errNr) {
-				SpyText.showSuccess(result.msg || 'Successfully saved');
+				Spytext.showSuccess(result.msg || 'Successfully saved');
 			} else {
-				SpyText.showError(result.msg || 'Unable to save');
+				Spytext.showError(result.msg || 'Unable to save');
 			}
-			_.each(SpyText.elements, function (el) {
+			_.each(Spytext.elements, function (el) {
 				textArea.hasChanged();
 			});
 		},
@@ -158,7 +158,7 @@ var mainFunction = function ($, _) {
 		undo: function (attribute, textArea) {
 			document.execCommand('undo');
 			if (browser.name === 'chrome') {
-				$('p.' + _generatedClass).each(function () {
+				$(document.querySelectorAll('p.' + _generatedClass)).each(function () {
 					if (window.getSelection().focusNode !== this && $(this).text() === '') {
 						$(this).remove();
 					}
@@ -214,7 +214,7 @@ var mainFunction = function ($, _) {
 
 	var _buttonDefaults = { title: false, icon: false, command: false, attribute: false, attributes: false, global: false };
 
-	var SpyText = {
+	var Spytext = {
 		singles: [],
 		globals: [],
 		groups: [],
@@ -233,12 +233,12 @@ var mainFunction = function ($, _) {
 		},
 		addGroup: function (element) {
 			var that = this;
-			var toolbar = new SpyTextToolbar({ preset: 'group', parent: element });
+			var toolbar = new SpytextToolbar({ preset: 'group', parent: element });
 			toolbar.disable();
 			var elements = $(element).find('[data-name]').get();
 			var textAreas = [];
 			_.each(elements, function (el) {
-				var textArea = new SpyTextArea(el, toolbar);
+				var textArea = new SpytextArea(el, toolbar);
 				textAreas.push(textArea);
 			});
 			var group = { toolbar: toolbar, textAreas: textAreas };
@@ -247,11 +247,11 @@ var mainFunction = function ($, _) {
 		},
 		showSuccess: function (text) {
 			var dialog = $('<div class="' + _baseClass + 'success">' + text + '</div>');
-			$('body').append(dialog);
+			$(document.querySelector('body')).append(dialog);
 		},
 		showError: function (text) {
 			var dialog = $('<div class="' + _baseClass + 'error">' + text + '</div>');
-			$('body').append(dialog);
+			$(document.querySelector('body')).append(dialog);
 		},
 		// TODO check if the destroy methods can be improved
 		destroyGlobals: function () {
@@ -288,7 +288,7 @@ var mainFunction = function ($, _) {
 		}
 	};
 
-	var SpyTextArea = function (element, toolbar) {
+	var SpytextArea = function (element, toolbar) {
 		var that = this;
 		this.toolbar = toolbar;
 		this.element = element;
@@ -377,7 +377,7 @@ var mainFunction = function ($, _) {
 		if (this.config.preventFormattedPaste) preventFormattedPaste(element);
 		if (this.config.preventTextOutsideParagraph && $(element).data('type') === 'textarea') preventTextOutsideParagraph(element);
 	};
-	SpyTextArea.prototype = {
+	SpytextArea.prototype = {
 		defaultConfig: {
 			preset: 'format',
 			preventFormattedPaste: true,
@@ -443,7 +443,7 @@ var mainFunction = function ($, _) {
 		}
 	};
 
-	var SpyTextToolbar = function (config) {
+	var SpytextToolbar = function (config) {
 		var that = this;
 
 		this.config = config || {};
@@ -458,7 +458,7 @@ var mainFunction = function ($, _) {
 		if (this.config.parent) {
 			$(this.element).prependTo(this.config.parent);
 		} else {
-			$('body').prepend(this.element);
+			$(document.querySelector('body')).prepend(this.element);
 		}
 
 		if (this.config.buttons) {
@@ -474,13 +474,13 @@ var mainFunction = function ($, _) {
 			ev.preventDefault();
 		});
 	};
-	SpyTextToolbar.prototype = {
+	SpytextToolbar.prototype = {
 		show: function () {
 			var that = this;
 			$(this.element).show();
 
 			// add margin to body so that top-fixed toolbars won't cover content
-			if (this.config.position === 'top-fixed' && $('body').css('margin-top') !== $(this.element).outerHeight() + 'px') {
+			if (this.config.position === 'top-fixed' && $(document.querySelector('body')).css('margin-top') !== $(this.element).outerHeight() + 'px') {
 				$('body').css('margin-top', function (index, curValue) {
 					return parseInt(curValue, 10) + $(that.element).outerHeight() + 'px';
 				});
@@ -491,8 +491,8 @@ var mainFunction = function ($, _) {
 			$(this.element).hide();
 
 			// remove margin from body
-			if (this.config.position === 'top-fixed' && $('body').css('margin-top') === $(this.element).outerHeight() + 'px') {
-				$('body').css('margin-top', function (index, curValue) {
+			if (this.config.position === 'top-fixed' && $(document.querySelector('body')).css('margin-top') === $(this.element).outerHeight() + 'px') {
+				$(document.querySelector('body')).css('margin-top', function (index, curValue) {
 					return parseInt(curValue, 10) - $(that.element).outerHeight() + 'px';
 				});
 			}
@@ -540,14 +540,14 @@ var mainFunction = function ($, _) {
 						nestedButtonType.name = buttonType.name;
 
 						_.defaults(nestedButtonType, _buttonDefaults);
-						var dropdownButton = new SpyTextToolbarButton(nestedButtonType, that);
+						var dropdownButton = new SpytextToolbarButton(nestedButtonType, that);
 						$nestedUl.append(dropdownButton.element);
 						that.buttons.push(dropdownButton);
 					});
 					$li.append($nestedUl);
 					$ul.append($li);
 				} else {
-					var button = new SpyTextToolbarButton(buttonType, that);
+					var button = new SpytextToolbarButton(buttonType, that);
 					that.buttons.push(button);
 					$ul.append(button.element);
 				}
@@ -625,7 +625,7 @@ var mainFunction = function ($, _) {
 		}
 	};
 
-	var SpyTextToolbarButton = function (buttonType, toolbar) {
+	var SpytextToolbarButton = function (buttonType, toolbar) {
 		var that = this;
 		var _disabled = false;
 
@@ -700,7 +700,7 @@ var mainFunction = function ($, _) {
 				}
 				var savedRange = window.getSelection().getRangeAt(0);
 				var pasteArea = $('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
-				$('body').append(pasteArea);
+				$(document.querySelector('body')).append(pasteArea);
 				pasteArea.focus();
 				setTimeout(function () {
 					$(element).focus();
@@ -777,8 +777,6 @@ var mainFunction = function ($, _) {
 		} else {
 			var anchorNode = getElementChild(sel.anchorNode, element);
 			var focusNode = getElementChild(sel.focusNode, element);
-			console.log(anchorNode);
-			console.log(focusNode);
 			if (anchorNode === focusNode) {
 				nodes =  $(anchorNode).add($(anchorNode).find('*')).get();
 			} else {
@@ -863,11 +861,11 @@ var mainFunction = function ($, _) {
 	}
 		
 
-	window.SpyText = SpyText;
+	window.Spytext = Spytext;
 };
 
 
-// Initialize SpyText so it can be used both with requirejs and as a standalone
+// Initialize Spytext so it can be used both with requirejs and as a standalone
 if (typeof define !== 'undefined') {
 	define(['jquery', 'lodash'], mainFunction);
 } else {
