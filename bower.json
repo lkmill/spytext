@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "main": "js/spytext.js",
   "authors": [
     "Niklas Strandberg <niklas.strandberg@thecodebureau.com>",
@@ -10,7 +10,6 @@
     "bower_components/*"
   ],
   "dependencies": {
-    "jquery": "~2.1.1",
     "lodash": "~2.4.1"
   }
 }

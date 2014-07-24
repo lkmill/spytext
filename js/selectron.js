@@ -1,32 +1,49 @@
 var selectron = {
 	getContainingElement: function(selector) {
-        selector = selector || '*';
-        var element = document.getSelection().anchorNode;
-		return this.getContainingElementRecursive(selector, element);
+		selector = selector || '*';
+		var element = document.getSelection().anchorNode;
+		return recurse(element);
+
+		function recurse(element) {
+			if(!element || element.nodeName.toLowerCase() === 'body') {
+				return undefined;
+			} else if(element.nodeType === 1 && element.matches(selector)) {
+				return element;
+			}
+			return recurse(element.parentNode);
+		}
 	},
-    getContainingElementRecursive: function(selector, element) {
-        if(!element || element.nodeName.toLowerCase() === 'body') {
-            return undefined;
-        } else if(element.nodeType === 1 && element.matches(selector)) {
-            return element;
-        }
-        return this.getContainingElementRecursive(selector, element.parentNode);
-    },
 	getSurroundingNode: function() {
 		return window.getSelection().focusNode.parentElement;
 	},
-
-	intersectsTags: function(tags, topElement) {
-        topElement = topElement || document.querySelector('body');
-		var nodes = this.getContainedNodes(topElement, true);
-		for (var i = 0; i < nodes.length; i++) {
-			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
-				return true;
+	getContainedChildElements: function(element, partlyContained) {
+		partlyContained = partlyContained || false;
+		var sel = window.getSelection();
+		var nodes = [];
+		if (sel.containsNode) {
+			_.each(element.children, function (el) {
+				if (sel.containsNode(el, partlyContained)) {
+					nodes.push(el);
+				}
+			});
+		} else {
+			var anchorNode = this.getElementChild(sel.anchorNode, element);
+			var focusNode = this.getElementChild(sel.focusNode, element);
+			if (anchorNode === focusNode) {
+				nodes.push(anchorNode);
+				//nodes =  $(anchorNode).add($(anchorNode).find('*')).get();
+			} else {
+				var children = element.children;
+				//var $children = $(element).children();
+				var anchorIndex = _.indexOf(children, anchorNode);
+				var focusIndex = _.indexOf(children, focusNode);
+				for(var i = Math.min(anchorIndex, focusIndex); i <= Math.max(anchorIndex, focusIndex); i++) {
+					nodes.push(children.item(i));
+				}
 			}
 		}
-		return false;
+		return nodes;
 	},
-
 	getContainedNodes: function(element, partlyContained) {
 		partlyContained = partlyContained || false;
 		var sel = window.getSelection();
@@ -39,7 +56,7 @@ var selectron = {
 				}
 			});
 		} else {
-            console.log(this);
+			console.log(this);
 			var anchorNode = this.getElementChild(sel.anchorNode, element);
 			var focusNode = this.getElementChild(sel.focusNode, element);
 			if (anchorNode === focusNode) {
@@ -53,12 +70,38 @@ var selectron = {
 		}
 		return nodes;
 	},
-
-	// traverses up the DOM. returns 
+	intersectsTags: function(tags, topElement) {
+		topElement = topElement || document.querySelector('body');
+		var nodes = this.getContainedNodes(topElement, true);
+		for (var i = 0; i < nodes.length; i++) {
+			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
+				return true;
+			}
+		}
+		return false;
+	},
+	getAnchorAncestorElement: function(selector) {
+		var anchor = window.getSelection().anchorNode;
+		return recurse(anchor);
+		function recurse(node) {
+			if(node === null) {
+				return null;
+			} else if (node.nodeType === 1) {
+				if(selector) {
+					if(node.matches(selector)) {
+						return node;
+					}
+				} else {
+					return node;
+				}
+			}
+			return recurse(node.parentNode);
+		}
+	},
 	getElementChild: function(node, element) {
 		if (node === null || node === element || node.nodeName.toLowerCase() === 'body') {
 			return null;
-		} else if ($(element).children().index(node) > -1) {
+		} else if (_.contains(element.children, node)) {
 			return node;
 		} else {
 			return this.getElementChild(node.parentNode, element);
@@ -80,21 +123,31 @@ var selectron = {
 		sel.addRange(range);
 	},
 	setCaretAtEndOfElement: function(element) {
-		var range = document.createRange();
-		if (element.childNodes.length > 0) {
-			if (_.last(element.childNodes).nodeName.toLowerCase() === 'br') {
-				range.setStartBefore(_.last(element.childNodes));
-				range.setEndBefore(_.last(element.childNodes));
-			} else {
-				range.setStartAfter(_.last(element.childNodes));
-				range.setEndAfter(_.last(element.childNodes));
-			}
-		} else {
-			range.setStartAfter(element);
-			range.setEndAfter(element);
-		}
-		var selection = window.getSelection();
-		selection.removeAllRanges();
-		selection.addRange(range);
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.selectAllChildren(element);
+		sel.collapseToEnd();
+		//var range = document.createRange();
+		//if (element.childNodes.length > 0) {
+		//	if (_.last(element.childNodes).nodeName.toLowerCase() === 'br') {
+		//		range.setStartBefore(_.last(element.childNodes));
+		//		range.setEndBefore(_.last(element.childNodes));
+		//	} else {
+		//		range.setStartAfter(_.last(element.childNodes));
+		//		range.setEndAfter(_.last(element.childNodes));
+		//	}
+		//} else {
+		//	range.setStartAfter(element);
+		//	range.setEndAfter(element);
+		//}
+		//var selection = window.getSelection();
+		//selection.removeAllRanges();
+		//selection.addRange(range);
 	},
+	setCaretAtStartOfElement: function(element) {
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.selectAllChildren(element);
+		sel.collapseToStart();
+	}
 };
