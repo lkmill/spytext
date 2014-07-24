@@ -477,9 +477,8 @@ angular.module('Spytext', [])
 				} else if (e.target.nodeName.toLowerCase() === 'span') {
 					$(e.target).remove();
 					
-					// this timeout is needed to trick Chrome into allowed nested execCommand when pasting
+					// this (fake) timeout is needed to trick Chrome into allowed nested execCommand when pasting
 					setTimeout(function() {
-						sel = window.getSelection();
 						savedRng = sel.getRangeAt(0);//this is saved if it is caused in a paste
 						selectron.setCaretAtEndOfElement(parentNode);
 						document.execCommand('insertText', false, content);
