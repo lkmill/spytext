@@ -12,7 +12,7 @@ var mainFunction = function ($, _) {
 
 	//var _siteUrl = 'http://localhost:3000/';
 	var _baseClass = 'spytext-';
-	var _barClass = _baseClass + 'button-bar';
+	var _barClass = _baseClass + 'button-bbbar';
 	var _generatedClass = _baseClass + 'generated';
 	var _groupClass = _baseClass + 'button-group';
 	var _wrapperClass = _baseClass + 'wrapper';
@@ -22,10 +22,10 @@ var mainFunction = function ($, _) {
 	var _templates = {
 		button: _.template(
 			'<li>' +
-				'<a <% if(attribute){ %>data-attribute="<% attribute %>"<% } %>id="' + _baseClass + 'btn-<%= name %>" title="<%= title %>" href="#" class="' + _baseClass + 'button <%= name %><% if(global){ %> global<% } %>" tabIndex="-1">' +
+				'<button <% if(attribute){ %>data-attribute="<% attribute %>"<% } %>id="' + _baseClass + 'btn-<%= name %>" title="<%= title %>" href="#" class="' + _baseClass + 'button <%= name %><% if(global){ %> global<% } %>" tabIndex="-1">' +
 					//'<% if(icon){ %> <i class="fa fa-<%= icon %>"></i> <% } %>' +
 					'<span><%= title %></span>' +
-				'</a>' +
+				'</button>' +
 			'</li>'
 		),
 		dropdownLi: _.template(
@@ -261,6 +261,7 @@ var mainFunction = function ($, _) {
 		// to make it easy to get access to the textArea
 		element.textArea = this;
 
+        console.log('wtf');
 		$(element).addClass(_elementClass);
 		$(element).attr('contentEditable', 'true');
 		$(element).on('focus', function () {
