@@ -13,9 +13,6 @@ var selectron = {
 			return recurse(element.parentNode);
 		}
 	},
-	getSurroundingNode: function() {
-		return window.getSelection().focusNode.parentElement;
-	},
 	getContainedChildElements: function(element, partlyContained) {
 		partlyContained = partlyContained || false;
 		var sel = window.getSelection();
@@ -31,10 +28,8 @@ var selectron = {
 			var focusNode = this.getElementChild(sel.focusNode, element);
 			if (anchorNode === focusNode) {
 				nodes.push(anchorNode);
-				//nodes =  $(anchorNode).add($(anchorNode).find('*')).get();
 			} else {
 				var children = element.children;
-				//var $children = $(element).children();
 				var anchorIndex = _.indexOf(children, anchorNode);
 				var focusIndex = _.indexOf(children, focusNode);
 				for(var i = Math.min(anchorIndex, focusIndex); i <= Math.max(anchorIndex, focusIndex); i++) {
@@ -50,18 +45,18 @@ var selectron = {
 		var nodes;
 		if (sel.containsNode) {
 			nodes = [];
-			_.each(element.querySelectorAll('*'), function (el) {
-				if (sel.containsNode(el, partlyContained)) {
-					nodes.push(el);
+			_.each(element.querySelectorAll('*'), function (descendant) {
+				if (sel.containsNode(descendant, partlyContained)) {
+					nodes.push(descendant);
 				}
 			});
 		} else {
-			console.log(this);
 			var anchorNode = this.getElementChild(sel.anchorNode, element);
 			var focusNode = this.getElementChild(sel.focusNode, element);
 			if (anchorNode === focusNode) {
 				nodes =  $(anchorNode).add($(anchorNode).find('*')).get();
 			} else {
+				// TODO currently this only returns children
 				var $children = $(element).children();
 				var one = $children.index(anchorNode);
 				var two = $children.index(focusNode);
@@ -98,15 +93,6 @@ var selectron = {
 			return recurse(node.parentNode);
 		}
 	},
-	getElementChild: function(node, element) {
-		if (node === null || node === element || node.nodeName.toLowerCase() === 'body') {
-			return null;
-		} else if (_.contains(element.children, node)) {
-			return node;
-		} else {
-			return this.getElementChild(node.parentNode, element);
-		}
-	},
 	selectNodes: function(nodes) {
 		var sel = window.getSelection();
 		var range = document.createRange();
@@ -115,39 +101,27 @@ var selectron = {
 		sel.removeAllRanges();
 		sel.addRange(range);
 	},
-	selectNodeContents: function(el) {
-		var range = document.createRange();
-		range.selectNodeContents(el);
-		var sel = window.getSelection();
-		sel.removeAllRanges();
-		sel.addRange(range);
-	},
 	setCaretAtEndOfElement: function(element) {
 		var sel = window.getSelection();
 		sel.removeAllRanges();
 		sel.selectAllChildren(element);
 		sel.collapseToEnd();
-		//var range = document.createRange();
-		//if (element.childNodes.length > 0) {
-		//	if (_.last(element.childNodes).nodeName.toLowerCase() === 'br') {
-		//		range.setStartBefore(_.last(element.childNodes));
-		//		range.setEndBefore(_.last(element.childNodes));
-		//	} else {
-		//		range.setStartAfter(_.last(element.childNodes));
-		//		range.setEndAfter(_.last(element.childNodes));
-		//	}
-		//} else {
-		//	range.setStartAfter(element);
-		//	range.setEndAfter(element);
-		//}
-		//var selection = window.getSelection();
-		//selection.removeAllRanges();
-		//selection.addRange(range);
 	},
 	setCaretAtStartOfElement: function(element) {
 		var sel = window.getSelection();
 		sel.removeAllRanges();
 		sel.selectAllChildren(element);
 		sel.collapseToStart();
+	},
+
+	// selection oriented per say
+	getElementChild: function(node, element) {
+		if (node === null || node === element || node.nodeName.toLowerCase() === 'body') {
+			return null;
+		} else if (_.contains(element.children, node)) {
+			return node;
+		} else {
+			return this.getElementChild(node.parentNode, element);
+		}
 	}
 };
