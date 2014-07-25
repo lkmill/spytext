@@ -13,20 +13,26 @@ var selectron = {
 			return recurse(element.parentNode);
 		}
 	},
-	getContainedChildElements: function(element, partlyContained) {
+	getContainedChildElements: function(element, partlyContained, selector) {
 		partlyContained = partlyContained || false;
 		var sel = window.getSelection();
 		var nodes = [];
 		if (sel.containsNode) {
-			_.each(element.children, function (el) {
-				if (sel.containsNode(el, partlyContained)) {
-					nodes.push(el);
+			_.each(element.children, function (child) {
+				if (sel.containsNode(child, partlyContained)) {
+					if(selector && !child.matches(selector)) {
+						return;
+					}
+					nodes.push(child);
 				}
 			});
 		} else {
 			var anchorNode = this.getElementChild(sel.anchorNode, element);
 			var focusNode = this.getElementChild(sel.focusNode, element);
-			if (anchorNode === focusNode) {
+			if (anchorNode === null) {
+				// this seems only to happen in internet explorer when selecting all (Ctrl + A)
+				nodes = element.children;
+			} else if (anchorNode === focusNode) {
 				nodes.push(anchorNode);
 			} else {
 				var children = element.children;
@@ -67,7 +73,7 @@ var selectron = {
 	},
 	intersectsTags: function(tags, topElement) {
 		topElement = topElement || document.querySelector('body');
-		var nodes = this.getContainedNodes(topElement, true);
+		var nodes = this.getContainedChildElements(topElement, true);
 		for (var i = 0; i < nodes.length; i++) {
 			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
 				return true;
@@ -101,15 +107,23 @@ var selectron = {
 		sel.removeAllRanges();
 		sel.addRange(range);
 	},
-	setCaretAtEndOfElement: function(element) {
+	selectNodeContents: function(element) {
 		var sel = window.getSelection();
 		sel.removeAllRanges();
 		sel.selectAllChildren(element);
+	},
+	setCaretAtEndOfElement: function(element) {
+		console.log(element);
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		var rng = document.createRange();
+		rng.selectNodeContents(element);
+		sel.addRange(rng);
+		//sel.selectAllChildren(element);
 		sel.collapseToEnd();
 	},
 	setCaretAtStartOfElement: function(element) {
 		var sel = window.getSelection();
-		sel.removeAllRanges();
 		sel.selectAllChildren(element);
 		sel.collapseToStart();
 	},

@@ -52,6 +52,7 @@ var fieldPresets = {
 		'link',
 		'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
 		'listOrdered', 'listUnordered',
+		'indentRight', 'indentLeft',
 		'reset'
 			],
 	},
@@ -116,40 +117,63 @@ angular.module('Spytext', [])
 		alert('you are using an unsuppported browser');
 		return;
 	}
+	var clearEmptyElements = function(element) {
+		_.each(element.querySelectorAll('p.spytext-generated'), function (el) {
+			if (window.getSelection().focusNode !== el && $(el).text() === '') {
+				$(el).remove();
+			}
+		});
+	};
 	var insertHtml = function(html, selectAll, element) {
 		if(!document.execCommand('insertHTML', false, html)) {
-			console.log('failed inserting html');
 			var node;
 			if(!html.match(/^</)) {
-				console.log('not html');
 				node = document.createTextNode(html);
 			} else {
 				node = $(html)[0];
 			}
-
-			var sel = window.getSelection();
-			var range = sel.getRangeAt(0);
+			var range = window.getSelection().getRangeAt(0);
 			document.execCommand('delete', false);
 			range.insertNode(node);
 			var currentNode = selectron.getAnchorAncestorElement('[spytext-field] > *');
-			//currentNode.parentNode.appendChild(node);
-			//if(!currentNode.nextSibling) {
-			//	currentNode.parentNode.appendChild(node);
-			//} else {
-			//	currentNode.parentNode.insertBefore(node, currentNode);
-			//}
-			//element.focus();
 			if(selectAll) {
-				window.getSelection().selectAllChildren(node);
-				window.getSelection().collapseToEnd();
+				// IE sets caret in weird positions... fix with this
+				selectron.setCaretAtEndOfElement(node.children.length > 0 ? _.last(node.children) : node);
 			} else {
-				window.getSelection().selectAllChildren(node);
-				window.getSelection().collapseToEnd();
+				selectron.setCaretAtEndOfElement(node.children.length > 0 ? _.last(node.children) : node);
 			}
-		} else {
-			console.log('insert html successful');
 		}
-
+	};
+	var preventFormattedPaste = function(element) {
+		$(element).on('keydown', function (e) {
+			if (e.ctrlKey && e.keyCode === 86) {
+				var listTags = ['ul', 'ol', 'li'];
+				if (selectron.intersectsTags(listTags, element)) {
+					alert('You cannot paste in lists!');
+					return;
+				}
+				var sel = window.getSelection();
+				var savedRange = sel.getRangeAt(0);
+				var $pasteArea = $('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
+				$(document.querySelector('body')).append($pasteArea);
+				$pasteArea[0].focus();
+				setTimeout(function () {
+					element.focus();
+					sel.removeAllRanges();
+					sel.addRange(savedRange);
+					insertHtml($pasteArea[0].value.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/\n+/g, '</p><p>'));
+					$pasteArea.remove();
+				}, 1);
+			}
+		});
+		$(element).on('paste', function (e) {
+			e.preventDefault();
+		});
+	};
+	var turnOffNewLine = function(element) {
+		$(element).on('keypress', function (e) {
+			if (e.keyCode === 10 || e.keyCode === 13) e.preventDefault();
+		});
 	};
 	var commands = {
 		align: function (attribute, element) {
@@ -166,24 +190,46 @@ angular.module('Spytext', [])
 			if (selectron.intersectsTags(listTags, element)) {
 				alert('You cannot set type of lists!');
 				return;
+			} else if(selectron.getContainedChildElements(element, true).length > 1) {
+				// TODO check which browsers incorrectly format
+				alert('You can only format one block at a time!');
+			} else {
+				document.execCommand('formatBlock', false, attribute);
 			}
-			document.execCommand('formatBlock', false, attribute);
 		},
 		generic: function (command, attribute, element) {
 			document.execCommand(command, false, attribute);
 		},
 		indent: function (attribute, element) {
-			//document.execCommand("indent");
-			var el = getSurroundingNode();
-			var li = $(el).closest('li');
-			var prevLi = $(li).prev('li');
-
-			if (prevLi.size() === 1 && li.length > 0) {
-				$(li).remove();
-				var newUl = $('<ul></ul>');
-				newUl.append(li);
-				prevLi.append(newUl);
+			// TODO see if we can get this to work
+			var tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+			var listTags = ['ul', 'ol', 'li'];
+			if (selectron.intersectsTags(tags, element) || !selectron.intersectsTags(listTags, element)) {
+				alert('You can only indent lists!');
+				return;
 			}
+			var currentLiElement = selectron.getContainingElement('li');
+			var previousLiElement = currentLiElement.previousSibling;
+			if(!previousLiElement) {
+				alert('you cannot indent the first item in a list');
+				return;
+			}
+			var listElement = selectron.getContainingElement('ul, ol');
+			var listType = listElement.tagName.toLowerCase();
+
+			var $list = $('<' + listType + '></' + listType + '>');
+			// TODO if we get it to work, loop through all <LI> instead of just one
+			var $li = $('<li>' + currentLiElement.textContent + '</li>');
+			$list.append($li);
+
+			//insertHtml($list[0].outerHTML, false);
+			previousLiElement.appendChild($list[0]);
+			selectron.setCaretAtEndOfElement($list[0]);
+			currentLiElement.remove();
+		},
+		outdent: function(attribute, element) {
+			//TODO implement
+			//
 		},
 		list: function (attribute, element) {
 			// TODO check if already in a list
@@ -193,34 +239,23 @@ angular.module('Spytext', [])
 			sel.removeAllRanges();
 			var $list = $('<' + attribute + '></' + attribute + '>');
 			_.each(containedChildren, function(child) {
-				var $li = $('<li>' + child.textContent + '</li>');
-				$list.append($li);
-				//var range = document.createRange();
-				//range.selectNode(child);
-				//sel.addRange(range);
+				if(child) {
+					var $li = $('<li>' + child.textContent + '</li>');
+					$list.append($li);
+				}
 			});
 			var range = document.createRange();
 			range.setStartBefore(_.first(containedChildren));
 			range.setEndAfter(_.last(containedChildren));
 			sel.addRange(range);
-
 			insertHtml($list[0].outerHTML, !collapsed);
-			//document.body.appendChild($editArea[0]);
-
-			//window.getSelection().selectAllChildren(containedChildren[0]);
-			//setTimeout(function () {
-			//	element.focus();
-			//	var sel = window.getSelection();
-			//	sel.removeAllRanges();
-			//	sel.addRange(savedRange);
-			//	//document.execCommand('insertHtml', false, $pasteArea[0].value.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/\n+/g, '</p><p>'));
-			//	//$pasteArea.remove();
-			//}, 1);
-			//if (attribute === 'ol') {
-			//	document.execCommand('insertOrderedList');
-			//} else if (attribute === 'ul') {
-			//	document.execCommand('insertUnorderedList');
-			//}
+			var containing = selectron.getContainingElement('h1, h2, h3, h4, h5, h6, p');
+			if(containing) {
+				var list = containing.firstChild;
+				containing.after(list);
+				containing.remove();
+				selectron.setCaretAtEndOfElement(list);
+			}
 		},
 		removeFormat: function (attribute, element) {
 			document.execCommand('removeFormat');
@@ -259,14 +294,8 @@ angular.module('Spytext', [])
 		},
 		undo: function (attribute, element) {
 			document.execCommand('undo');
-			if (browser.name === 'chrome') {
-				_.each(document.querySelectorAll('p.spytext-generated'), function (el) {
-					if (window.getSelection().focusNode !== el && $(el).text() === '') {
-						$(this).remove();
-					}
-				});
-				$(document.querySelector('body'));
-			}
+			clearEmptyElements(element);
+			element.normalize();
 		}
 	};
 	var execute = function(command, attribute, element) {
@@ -276,69 +305,10 @@ angular.module('Spytext', [])
 			commands.generic(command, attribute, element);
 		}
 	};
-	var preventFormattedPaste = function(element) {
-		$(element).on('keydown', function (e) {
-			if (e.ctrlKey && e.keyCode === 86) {
-				var listTags = ['ul', 'ol'];
-				if (selectron.intersectsTags(listTags, element)) {
-					cancelledPaste = true;
-					alert('You cannot paste in lists!');
-					return;
-				}
-				var sel = window.getSelection();
-				var savedRange = sel.getRangeAt(0);
-				var $pasteArea = $('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
-				$(document.querySelector('body')).append($pasteArea);
-				$pasteArea[0].focus();
-				setTimeout(function () {
-					element.focus();
-					sel.removeAllRanges();
-					sel.addRange(savedRange);
-					console.log('starting paste');
-					insertHtml($pasteArea[0].value.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/\n+/g, '</p><p>'));
-					console.log('finished paste');
-					$pasteArea.remove();
-				}, 1);
-			}
-		});
-		$(element).on('paste', function (e) {
-			e.preventDefault();
-			if (!cancelledPaste) alert('Unformatted paste is not allowed! Use CTRL+V to paste!');
-			cancelledPaste = false;
-		});
-	};
-	var preventTextOutsideParagraph = function(selectorOrObject) { var keydownBefore = false;
-		$(selectorOrObject).on('keydown', function () {
-			keydownBefore = true;
-		});
-		$(selectorOrObject).on('DOMNodeInserted', function (e) {
-			if (e.target === this && keydownBefore) {
-				wrapEmptyTextNodes(this);
-			}
-			keydownBefore = false;
-		});
-	};
-	var turnOffNewLine = function(element) {
-		$(element).on('keypress', function (e) {
-			if (e.keyCode === 10 || e.keyCode === 13) e.preventDefault();
-		});
-	};
-	var cleanUp = function(el) {
-		wrapEmptyTextNodes(el);
-	};
-	var wrapEmptyTextNodes = function(el) {
-		var contents = $(el).contents();
-		contents.filter(function () { return this.nodeType === 3; }).wrap('<p></p>');
-		contents.filter('br').remove();
-		setCaretAtEndOfElement($(el).find('p').last()[0]);
-	};
 	return {
-		cleanUp: cleanUp,
 		insertHtml: insertHtml,
 		turnOffNewLine: turnOffNewLine,
-		wrapEmptyTextNodes: wrapEmptyTextNodes,
 		preventFormattedPaste: preventFormattedPaste,
-		preventTextOutsideParagraph: preventFormattedPaste,
 		execute: execute
 	};
 })
@@ -405,6 +375,7 @@ angular.module('Spytext', [])
 				['link'],
 				{ name: 'align', buttons: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']},
 				{ name: 'list', buttons: ['listUnordered', 'listOrdered']},
+				{ name: 'indent', buttons: ['indentRight', 'indentLeft']},
 				['reset']
 			];
 		},
@@ -440,6 +411,7 @@ angular.module('Spytext', [])
 		link: function(scope, $element, attributes, ngModelCtrl) {
 			scope.elements.push($element[0]);
 			var commands = fieldPresets[attributes.stFieldPreset].commands;
+			var fixing = false;
 			$element.attr('contenteditable', 'true');
 			$element.on('focus', function () {
 				scope.activateButtons(commands);
@@ -452,20 +424,33 @@ angular.module('Spytext', [])
 					});
 				}
 			});
-			$element.on('keyup', function() {
+			$element.on('keydown', function(e) {
 				if(!ngModelCtrl.$dirty && ngModelCtrl.$viewValue !== $element.html()) {
 					scope.$apply(function() {
 						ngModelCtrl.$setViewValue($element.html());
 					});
 				}
 			});
+			$element.on('keyup', function (e) {
+				if (e.ctrlKey) {
+					if(e.keyCode === 89) {
+						e.preventDefault();
+						Spytext.execute('redo', null, $element[0]);
+					} else if(e.keyCode === 90) {
+						e.preventDefault();
+						Spytext.execute('undo', null, $element[0]);
+					}
+				}
+			});
 			$element.on('DOMNodeInserted', function (e) {
+
 				var sel = window.getSelection();
 				var content = e.target.textContent !== '' ? e.target.textContent : '<br />';
 				var parentNode = e.target.parentNode;
 
 				if (parentNode === $element[0]) {
 					if(e.target.nodeType === 3 || e.target.nodeName.toLowerCase() === 'div') {
+						fixing = true;
 						var p = $('<p class="spytext-generated"><br /></p>')[0];
 						$(e.target).after(p);
 						sel.selectAllChildren(p);
@@ -491,6 +476,11 @@ angular.module('Spytext', [])
 						}, 1);
 					});
 				}
+				if(!fixing && e.target.nodeType === 1) {
+					e.target.removeAttribute('style');
+					e.target.removeAttribute('class');
+				}
+				fixing = false;
 			});
 			ngModelCtrl.$render = function() {
 				$element.html(ngModelCtrl.$viewValue);
