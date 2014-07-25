@@ -479,7 +479,7 @@ angular.module('Spytext', [])
 					
 					// this (fake) timeout is needed to trick Chrome into allowed nested execCommand when pasting
 					setTimeout(function() {
-						savedRng = sel.getRangeAt(0);//this is saved if it is caused in a paste
+						savedRng = sel.getRangeAt(0);
 						selectron.setCaretAtEndOfElement(parentNode);
 						document.execCommand('insertText', false, content);
 						// ask me not why this has to be in a timeout
@@ -488,8 +488,6 @@ angular.module('Spytext', [])
 							sel.addRange(savedRng);
 						}, 1);
 					});
-
-					//parentNode.normalize();
 				}
 			});
 			ngModelCtrl.$render = function() {
