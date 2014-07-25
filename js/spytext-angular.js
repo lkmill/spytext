@@ -397,11 +397,8 @@ angular.module('Spytext', [])
 		'</ul>' +
 		'</div>',
 		replace: true,
-		link: function(scope, $element,attributes) {
-			$element.on('mousedown', function(e) {
-				e.preventDefault();
-			});
-			scope.buttonGroups = [
+		controller: function($scope) {
+			$scope.buttonGroups = [
 				{ name: 'undo', buttons: ['undo', 'redo']},
 				{ name: 'type', buttons: ['typeParagraph', 'typeHeading1', 'typeHeading2', 'typeHeading3', 'typeHeading4', 'typeHeading5', 'typeHeading6'] },
 				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']},//,'color'],
@@ -410,6 +407,11 @@ angular.module('Spytext', [])
 				{ name: 'list', buttons: ['listUnordered', 'listOrdered']},
 				['reset']
 			];
+		},
+		link: function(scope, $element,attributes) {
+			$element.on('mousedown', function(e) {
+				e.preventDefault();
+			});
 		}
 	};
 })
