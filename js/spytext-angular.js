@@ -1,41 +1,37 @@
 var $ = angular.element;
 var buttonTypes = {
-	undo: { title: 'Undo', icon: 'undo', command: 'undo', global: true },
-	redo: { title: 'Redo', icon: 'repeat', command: 'redo', global: true },
-	type: {  title: 'Font type', text: 'Type', command: 'formatBlock', dropdown: [
-		{ title: 'Paragraph', attribute: '<p>' },
-		{ title: 'Heading 1', attribute: '<H1>' },
-		{ title: 'Heading 2', attribute: '<H2>' },
-		{ title: 'Heading 3', attribute: '<H3>' },
-		{ title: 'Heading 4', attribute: '<H4>' },
-		{ title: 'Heading 5', attribute: '<H5>' },
-		{ title: 'Heading 6', attribute: '<H6>' }
-		]},
-	typeParagraph: { title: 'Paragraph', command: 'formatBlock', attribute: '<p>' },
+	alignCenter: { title: 'Align Center', command: 'align', attribute: 'center' },
+	alignJustify: { title: 'Justify', command: 'align', attribute: 'full' },
+	alignLeft: { title: 'Align Left', command: 'align', attribute: 'left' },
+	alignRight: { title: 'Align Right', command: 'align', attribute: 'right' },
+	bold: { title: 'Bold', command: 'bold'},
+	indentLeft: { title: 'Unindent', command: 'outdent'},
+	indentRight: { title: 'Indent', command: 'indent'},
+	italic: { title: 'Bold', command: 'italic'},
+	link: { title: 'Link', command: 'link'},
+	listOrdered: { title: 'Ordered list', command: 'list', attribute: 'ol'},
+	listUnordered: { title: 'Unordered list', command: 'list', attribute: 'ul'},
+	redo: { title: 'Redo', command: 'redo', global: true },
+	removeFormat: { title: 'Remove formatting', command: 'removeFormat'},
+	strikeThrough: { title: 'Strikethrough', command: 'strikeThrough'},
+	//type: {  title: 'Font type', text: 'Type', command: 'formatBlock', dropdown: [
+	//	{ title: 'Paragraph', attribute: '<p>' },
+	//	{ title: 'Heading 1', attribute: '<H1>' },
+	//	{ title: 'Heading 2', attribute: '<H2>' },
+	//	{ title: 'Heading 3', attribute: '<H3>' },
+	//	{ title: 'Heading 4', attribute: '<H4>' },
+	//	{ title: 'Heading 5', attribute: '<H5>' },
+	//	{ title: 'Heading 6', attribute: '<H6>' }
+	//	]},
 	typeHeading1: { title: 'Heading 1', command: 'formatBlock', attribute: '<H1>' },
 	typeHeading2: { title: 'Heading 2', command: 'formatBlock', attribute: '<H2>' },
 	typeHeading3: { title: 'Heading 3', command: 'formatBlock', attribute: '<H3>' },
 	typeHeading4: { title: 'Heading 4', command: 'formatBlock', attribute: '<H4>' },
 	typeHeading5: { title: 'Heading 5', command: 'formatBlock', attribute: '<H5>' },
 	typeHeading6: { title: 'Heading 6', command: 'formatBlock', attribute: '<H6>' },
-	bold: { title: 'Bold', icon: 'bold', command: 'bold'},
-	italic: { title: 'Bold', icon: 'bold', command: 'italic'},
-	underline: { title: 'Underline', icon: 'underline', command: 'underline'},
-	strikeThrough: { title: 'Strikethrough', icon: 'strikethrough', command: 'strikeThrough'},
-	removeFormat: { title: 'Remove formatting', icon: 'eraser', command: 'removeFormat'},
-	link: { title: 'Link', icon: 'link', command: 'showLinkDialog'},
-	alignLeft: { title: 'Align Left', icon: 'align-left', command: 'align', attribute: 'left' },
-	alignCenter: { title: 'Align Center', icon: 'align-center', command: 'align', attribute: 'center' },
-	alignRight: { title: 'Align Right', icon: 'align-right', command: 'align', attribute: 'right' },
-	alignJustify: { title: 'Justify', icon: 'align-justify', command: 'align', attribute: 'full' },
-	listUnordered: { title: 'Unordered list', icon: 'list-ul', command: 'list', attribute: 'ul'},
-	listOrdered: { title: 'Ordered list', icon: 'list-ol', command: 'list', attribute: 'ol'},
-	indentRight: { title: 'Indent', icon: 'indent', command: 'indent'},
-	indentLeft: { title: 'Unindent', icon: 'outdent', command: 'outdent'},
-	image: { title: 'Image', icon: 'picture', command: 'showImageDialog'},
-	html: { title: 'Show html', icon: 'code', command: 'showHtml'},
-	reset: { title: 'Reset', icon: 'backward', command: 'reset' },
-	save: { title: 'Save', icon: 'save', command: 'save', global: true }
+	typeParagraph: { title: 'Paragraph', command: 'formatBlock', attribute: '<p>' },
+	underline: { title: 'Underline', command: 'underline'},
+	undo: { title: 'Undo', command: 'undo', global: true }
 };
 var fieldDefaults = {
 	preset: 'format',
@@ -124,75 +120,78 @@ angular.module('Spytext', [])
 			}
 		});
 	};
-	var insertHtml = function(html, selectAll, element) {
+	var insertHtml = function(html) {
+		console.log('insertHtml: ' + html);
 		if(!document.execCommand('insertHTML', false, html)) {
-			var node;
-			if(!html.match(/^</)) {
-				node = document.createTextNode(html);
-			} else {
-				node = $(html)[0];
-			}
-			var range = window.getSelection().getRangeAt(0);
+			var rng = selectron.save();
 			document.execCommand('delete', false);
-			range.insertNode(node);
-			var currentNode = selectron.getAnchorAncestorElement('[spytext-field] > *');
-			if(selectAll) {
-				// IE sets caret in weird positions... fix with this
-				selectron.setCaretAtEndOfElement(node.children.length > 0 ? _.last(node.children) : node);
+			var nodes = document.createFromHtml(html);
+			var l = (nodes instanceof NodeList) ? nodes.length : 1;
+			if(l === 1) {
+				rng.insertNode(nodes);
 			} else {
-				selectron.setCaretAtEndOfElement(node.children.length > 0 ? _.last(node.children) : node);
+				for(var i = l - 1; i >= 0; i--) {
+					rng.insertNode(nodes[i]);
+				}
 			}
 		}
 	};
-	var preventFormattedPaste = function(element) {
-		$(element).on('keydown', function (e) {
-			if (e.ctrlKey && e.keyCode === 86) {
-				var listTags = ['ul', 'ol', 'li'];
-				if (selectron.intersectsTags(listTags, element)) {
-					alert('You cannot paste in lists!');
-					return;
+	var insertElement = function(html, element) {
+		if(!(html instanceof Node || html instanceof NodeList)) return insertHtml(html);
+		//if(typeof html === 'string') return insertHtmlString(html);
+		//
+		var l = html.length;
+		if(l === 1) {
+			html.id = 'zz';
+		} else {
+			html.addClass('zz');
+		}
+		if(document.execCommand('insertHTML', false, html.outerHtml())) {
+			if(l === 1) {
+				html = document.getElementById('zz');
+			} else {
+				html = MOD(document.getElementsByClassName('zz'));
+			}
+		} else {
+			var rng = selectron.save();
+			document.execCommand('delete', false);
+			if(l === 1) {
+				rng.insertNode(html);
+			} else {
+				for(var i = l - 1; i >= 0; i--) rng.insertNode(html[i]);
+			}
+		}
+		html.attr({ class: null, id: null });
+		html.each(function() {
+			while(this.parentNode && this.parentNode !== element) {
+				var p = this.parentNode;
+				p.before(this);
+				if(!p.firstChild) {
+					p.remove();
 				}
-				var sel = window.getSelection();
-				var savedRange = sel.getRangeAt(0);
-				var $pasteArea = $('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
-				$(document.querySelector('body')).append($pasteArea);
-				$pasteArea[0].focus();
-				setTimeout(function () {
-					element.focus();
-					sel.removeAllRanges();
-					sel.addRange(savedRange);
-					insertHtml($pasteArea[0].value.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/\n+/g, '</p><p>'));
-					$pasteArea.remove();
-				}, 1);
 			}
 		});
-		$(element).on('paste', function (e) {
-			e.preventDefault();
-		});
-	};
-	var turnOffNewLine = function(element) {
-		$(element).on('keypress', function (e) {
-			if (e.keyCode === 10 || e.keyCode === 13) e.preventDefault();
-		});
+		return html;
 	};
 	var commands = {
 		align: function (attribute, element) {
 			var listTags = ['ul', 'ol'];
 			if (selectron.intersectsTags(listTags, element)) {
 				alert('You cannot align lists!');
-				return;
+			} else {
+				var command = 'justify' + attribute.charAt(0).toUpperCase() + attribute.slice(1).toLowerCase();
+				document.execCommand(command);
 			}
-			var command = 'justify' + attribute.charAt(0).toUpperCase() + attribute.slice(1).toLowerCase();
-			document.execCommand(command);
 		},
 		formatBlock: function (attribute, element) {
-			var listTags = ['ul', 'ol'];
-			if (selectron.intersectsTags(listTags, element)) {
-				alert('You cannot set type of lists!');
-				return;
-			} else if(selectron.getContainedChildElements(element, true).length > 1) {
-				// TODO check which browsers incorrectly format
+			var listTags = ['ul', 'ol', 'li'];
+			var blockTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'];
+
+			var contained = selectron.getContainedChildElements(element, true);
+			if(contained.length > 1) {
 				alert('You can only format one block at a time!');
+			} else if(contained.exists(listTags.join(', '))) {
+				alert('You cannot set type of lists!');
 			} else {
 				document.execCommand('formatBlock', false, attribute);
 			}
@@ -229,43 +228,33 @@ angular.module('Spytext', [])
 		},
 		outdent: function(attribute, element) {
 			//TODO implement
-			//
 		},
 		list: function (attribute, element) {
 			// TODO check if already in a list
-			var sel = window.getSelection();
-			var collapsed = sel.isCollapsed;
 			var containedChildren = selectron.getContainedChildElements(element, true);
-			sel.removeAllRanges();
-			var $list = $('<' + attribute + '></' + attribute + '>');
-			_.each(containedChildren, function(child) {
-				if(child) {
-					var $li = $('<li>' + child.textContent + '</li>');
-					$list.append($li);
-				}
-			});
-			var range = document.createRange();
-			range.setStartBefore(_.first(containedChildren));
-			range.setEndAfter(_.last(containedChildren));
-			sel.addRange(range);
-			insertHtml($list[0].outerHTML, !collapsed);
-			var containing = selectron.getContainingElement('h1, h2, h3, h4, h5, h6, p');
-			if(containing) {
-				var list = containing.firstChild;
-				containing.after(list);
-				containing.remove();
-				selectron.setCaretAtEndOfElement(list);
+				
+			var list, tag;
+			// TODO concat to existing list if list and other blocks are selected
+			if(containedChildren.exists('ul, ol')) {
+				list = [];
+				tag = 'p';
+				containedChildren = containedChildren.childs();
+			} else {
+				list = MOD('<' + attribute + '></' + attribute + '>');
+				tag = 'li';
 			}
+			containedChildren.each(function() {
+				var item = MOD('<' + tag + '>' + this.textContent + '</' + tag + '>');
+				if(list instanceof Array) list.push(item);
+				else list.append(item);
+			});
+			selectron.selectNodes(containedChildren);
+		
+			list = insertElement(MOD(list), element);
+
+			selectron.setCaretAtEndOfElement(list);
 		},
-		removeFormat: function (attribute, element) {
-			document.execCommand('removeFormat');
-		},
-		showHtml: function (attribute, element) {
-			alert(getCurrentElement().html());
-		},
-		showImageDialog: function (attribute, element) {
-		},
-		showLinkDialog: function (attribute, element) {
+		link: function (attribute, element) {
 			var sel = window.getSelection();
 			var node = sel.focusNode.parentNode;
 			if (node.tagName.toLowerCase() !== 'a') {
@@ -307,8 +296,7 @@ angular.module('Spytext', [])
 	};
 	return {
 		insertHtml: insertHtml,
-		turnOffNewLine: turnOffNewLine,
-		preventFormattedPaste: preventFormattedPaste,
+		insertElement: insertElement,
 		execute: execute
 	};
 })
@@ -424,11 +412,90 @@ angular.module('Spytext', [])
 					});
 				}
 			});
+
+			$element.on('DOMNodeRemoved', function (e) {
+				console.log('removed: ' + e.target.nodeType + ' : ' + e.target.nodeName);
+				console.log(e.target);
+			});
+
+			//$element.on('DOMSubtreeModified', function (e) {
+			//	console.log('modified: ' + e.target.nodeType + ' : ' + e.target.nodeName);
+			//	console.log(e.target);
+			//});
+			$element.on('DOMNodeInserted', function (e) {
+				console.log('inserted: ' + e.target.nodeType + ' : ' + e.target.nodeName);
+				console.log(e.target);
+				var sel = window.getSelection();
+				var content = e.target.textContent !== '' ? e.target.textContent : '<br />';
+				var parentNode = e.target.parentNode;
+
+				if (parentNode === $element[0]) {
+					if(e.target.nodeType === 3 || e.target.nodeName.toLowerCase() === 'div') {
+						fixing = true;
+						var p = MOD('<p class="spytext-generated"><br /></p>');
+						e.target.after(p);
+						selectron.selectNodeContents(p);
+						Spytext.insertHtml(content, $element[0]);
+						e.target.remove();
+						// ask me not why this has to be in a timeout
+						setTimeout(function () {
+							selectron.setCaretAtEndOfElement(p);
+						} , 1);
+					}
+				} else if (e.target.nodeName.toLowerCase() === 'span') {
+					e.target.remove();
+					
+					// this (fake) timeout is needed to trick Chrome into allowed nested execCommand when pasting
+					setTimeout(function() {
+						savedRng = selectron.save();
+						selectron.setCaretAtEndOfElement(parentNode);
+						document.execCommand('insertText', false, content);
+						// ask me not why this has to be in a timeout
+						setTimeout(function() {
+							selectron.restore(savedRng);
+						}, 1);
+					});
+				}
+				if(!fixing && e.target.nodeType === 1) {
+					e.target.attr('style', null);
+					if(!e.target.hasClass('zz')) e.target.attr('class', null);
+				}
+				fixing = false;
+			});
 			$element.on('keydown', function(e) {
 				if(!ngModelCtrl.$dirty && ngModelCtrl.$viewValue !== $element.html()) {
 					scope.$apply(function() {
 						ngModelCtrl.$setViewValue($element.html());
 					});
+				}
+				if (e.ctrlKey) {
+					if(e.keyCode === 65) {
+						e.preventDefault();
+						selectron.selectNodeContents($element[0]);
+					} else if(e.keyCode === 86) {
+						console.log('is pasting');
+						var listTags = ['ul', 'ol', 'li'];
+						if (selectron.intersectsTags(listTags, $element[0])) {
+							alert('You cannot paste in lists!');
+							return;
+						}
+						var sel = window.getSelection();
+						var savedRange = selectron.save();
+						var pasteArea = MOD('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
+						document.body.append(pasteArea);
+						pasteArea.focus();
+						console.log('timing out');
+						setTimeout(function () {
+							$element[0].focus();
+							selectron.restore(savedRange);
+							var str = unescape(pasteArea.value.trim());
+							str = str.split('\u2022').join('');
+							str = str.replace(/\n+/g, '</p><p>');
+							pasteArea.remove();
+							console.log('calling');
+							Spytext.insertHtml(str);
+						}, 1);
+					}
 				}
 			});
 			$element.on('keyup', function (e) {
@@ -442,50 +509,13 @@ angular.module('Spytext', [])
 					}
 				}
 			});
-			$element.on('DOMNodeInserted', function (e) {
-
-				var sel = window.getSelection();
-				var content = e.target.textContent !== '' ? e.target.textContent : '<br />';
-				var parentNode = e.target.parentNode;
-
-				if (parentNode === $element[0]) {
-					if(e.target.nodeType === 3 || e.target.nodeName.toLowerCase() === 'div') {
-						fixing = true;
-						var p = $('<p class="spytext-generated"><br /></p>')[0];
-						$(e.target).after(p);
-						sel.selectAllChildren(p);
-						Spytext.insertHtml(content);
-						$(e.target).remove();
-						// ask me not why this has to be in a timeout
-						setTimeout(function () {
-							selectron.setCaretAtEndOfElement(p);
-						} , 1);
-					}
-				} else if (e.target.nodeName.toLowerCase() === 'span') {
-					$(e.target).remove();
-					
-					// this (fake) timeout is needed to trick Chrome into allowed nested execCommand when pasting
-					setTimeout(function() {
-						savedRng = sel.getRangeAt(0);
-						selectron.setCaretAtEndOfElement(parentNode);
-						document.execCommand('insertText', false, content);
-						// ask me not why this has to be in a timeout
-						setTimeout(function() {
-							sel.removeAllRanges();
-							sel.addRange(savedRng);
-						}, 1);
-					});
-				}
-				if(!fixing && e.target.nodeType === 1) {
-					e.target.removeAttribute('style');
-					e.target.removeAttribute('class');
-				}
-				fixing = false;
+			$element.on('paste', function (e) {
+				console.log('paste event');
+				e.preventDefault();
 			});
 			ngModelCtrl.$render = function() {
 				$element.html(ngModelCtrl.$viewValue);
 			};
-			Spytext.preventFormattedPaste($element[0]);
 		}
 	};
 });

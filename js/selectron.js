@@ -2,78 +2,68 @@ var selectron = {
 	getContainingElement: function(selector) {
 		selector = selector || '*';
 		var element = document.getSelection().anchorNode;
-		return recurse(element);
-
-		function recurse(element) {
-			if(!element || element.nodeName.toLowerCase() === 'body') {
-				return undefined;
-			} else if(element.nodeType === 1 && element.matches(selector)) {
-				return element;
-			}
-			return recurse(element.parentNode);
-		}
+		return element.closest(selector);
 	},
 	getContainedChildElements: function(element, partlyContained, selector) {
+		return this.getContainedNodes(element, partlyContained, selector, true, true);
+	},
+	getContainedNodes: function(element, partlyContained, selector, onlyElements, onlyChildren) {
 		partlyContained = partlyContained || false;
+		onlyElements = onlyElements || false;
+		onlyChildren = onlyChildren || false;
 		var sel = window.getSelection();
 		var nodes = [];
 		if (sel.containsNode) {
-			_.each(element.children, function (child) {
-				if (sel.containsNode(child, partlyContained)) {
-					if(selector && !child.matches(selector)) {
-						return;
+			_.each(onlyChildren ? element.childNodes : element.querySelector('*'), function (child) {
+				if ((!onlyElements || child.nodeType === 1) && sel.containsNode(child, partlyContained)) {
+					if(!selector || child.matches(selector)) {
+						nodes.push(child);
 					}
-					nodes.push(child);
 				}
 			});
 		} else {
+			// IE fixes
+			// TODO implement not partlyContained for IE
 			var anchorNode = this.getElementChild(sel.anchorNode, element);
 			var focusNode = this.getElementChild(sel.focusNode, element);
 			if (anchorNode === null) {
-				// this seems only to happen in internet explorer when selecting all (Ctrl + A)
-				nodes = element.children;
+				// anchorNode === null in internet explorer when selecting all (Ctrl + A)
+				if(onlyChildren) {
+					console.log('only children');
+					nodes = onlyElements ? element.childs() : element.content();
+				} else {
+					nodes = element.find();
+				}
 			} else if (anchorNode === focusNode) {
-				nodes.push(anchorNode);
+				if(onlyChildren) {
+					nodes.push(anchorNode);
+				} else {
+					nodes.push(element);
+					// TODO implemented !onlyElements
+					var tmp = onlyElements ? element.find() : element.find();
+					for(var i = 0; i < tmp.length; i++) {
+						nodes.push(tmp[i]);
+					}
+				}
 			} else {
 				var children = element.children;
 				var anchorIndex = _.indexOf(children, anchorNode);
 				var focusIndex = _.indexOf(children, focusNode);
-				for(var i = Math.min(anchorIndex, focusIndex); i <= Math.max(anchorIndex, focusIndex); i++) {
-					nodes.push(children.item(i));
+				for(var j = Math.min(anchorIndex, focusIndex); j <= Math.max(anchorIndex, focusIndex); j++) {
+					nodes.push(children.item(j));
 				}
 			}
 		}
-		return nodes;
-	},
-	getContainedNodes: function(element, partlyContained) {
-		partlyContained = partlyContained || false;
-		var sel = window.getSelection();
-		var nodes;
-		if (sel.containsNode) {
-			nodes = [];
-			_.each(element.querySelectorAll('*'), function (descendant) {
-				if (sel.containsNode(descendant, partlyContained)) {
-					nodes.push(descendant);
-				}
-			});
-		} else {
-			var anchorNode = this.getElementChild(sel.anchorNode, element);
-			var focusNode = this.getElementChild(sel.focusNode, element);
-			if (anchorNode === focusNode) {
-				nodes =  $(anchorNode).add($(anchorNode).find('*')).get();
-			} else {
-				// TODO currently this only returns children
-				var $children = $(element).children();
-				var one = $children.index(anchorNode);
-				var two = $children.index(focusNode);
-				nodes = $children.slice(Math.min(one, two), Math.max(one, two)).get();
-			}
-		}
-		return nodes;
+		return MOD(nodes);
 	},
 	intersectsTags: function(tags, topElement) {
 		topElement = topElement || document.querySelector('body');
 		var nodes = this.getContainedChildElements(topElement, true);
+		console.log(nodes);
+		console.log(nodes.length);
+		console.log(nodes[0]);
+		console.log(nodes[1]);
+		if(!nodes[0]) return tags.indexOf(nodes.nodeName.toLowerCase()) > -1;
 		for (var i = 0; i < nodes.length; i++) {
 			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
 				return true;
@@ -100,32 +90,75 @@ var selectron = {
 		}
 	},
 	selectNodes: function(nodes) {
+		if(nodes instanceof Node) {
+			return this.selectNode(nodes);
+		}
 		var sel = window.getSelection();
-		var range = document.createRange();
-		range.setStartBefore(_.first(nodes));
-		range.setEndAfter(_.last(nodes));
+		var rng = document.createRange();
+		rng.setStartBefore(_.first(nodes));
+		rng.setEndAfter(_.last(nodes));
 		sel.removeAllRanges();
-		sel.addRange(range);
+		sel.addRange(rng);
+	},
+	selectNode: function(element) {
+		var sel = window.getSelection();
+		var rng = document.createRange();
+		rng.selectNode(element);
+		sel.removeAllRanges();
+		sel.addRange(rng);
 	},
 	selectNodeContents: function(element) {
 		var sel = window.getSelection();
+		var rng = document.createRange();
+		if(element.firstChild) {
+			var node = element;
+			while(node.firstChild) {
+				node = node.firstChild;
+			}
+			rng.setStartBefore(node);
+			node = element.lastChild;
+			while(node.lastChild) {
+				node = node.lastChild;
+			}
+			rng.setEndAfter(node);
+		} else {
+			rng.selectNodeContents(element);
+		}
 		sel.removeAllRanges();
-		sel.selectAllChildren(element);
+		sel.addRange(rng);
+		//sel.selectAllChildren(element);
 	},
 	setCaretAtEndOfElement: function(element) {
-		console.log(element);
+		element = element instanceof Node ? element : _.last(element);
 		var sel = window.getSelection();
+		while(element.lastChild) {
+			element = element.lastChild;
+		}
 		sel.removeAllRanges();
 		var rng = document.createRange();
 		rng.selectNodeContents(element);
 		sel.addRange(rng);
-		//sel.selectAllChildren(element);
 		sel.collapseToEnd();
 	},
 	setCaretAtStartOfElement: function(element) {
+		element = element instanceof Node ? element : _.first(element);
 		var sel = window.getSelection();
-		sel.selectAllChildren(element);
+		while(element.firstChild) {
+			element = element.firstChild;
+		}
+		sel.removeAllRanges();
+		var rng = document.createRange();
+		rng.selectNodeContents(element);
+		sel.addRange(rng);
 		sel.collapseToStart();
+	},
+	save: function() {
+		return window.getSelection().getRangeAt(0);
+	},
+	restore: function(range) {
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
 	},
 
 	// selection oriented per say
