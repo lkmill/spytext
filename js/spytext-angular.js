@@ -1,180 +1,58 @@
 var $ = angular.element;
-var buttonTypes = {
-	alignCenter: { title: 'Align Center', command: 'align', attribute: 'center' },
-	alignJustify: { title: 'Justify', command: 'align', attribute: 'full' },
-	alignLeft: { title: 'Align Left', command: 'align', attribute: 'left' },
-	alignRight: { title: 'Align Right', command: 'align', attribute: 'right' },
-	bold: { title: 'Bold', command: 'bold'},
-	indentLeft: { title: 'Outdent', command: 'outdent'},
-	indentRight: { title: 'Indent', command: 'indent'},
-	italic: { title: 'Italic', command: 'italic'},
-	link: { title: 'Link', command: 'link'},
-	listOrdered: { title: 'Ordered list', command: 'list', attribute: 'ol'},
-	listUnordered: { title: 'Unordered list', command: 'list', attribute: 'ul'},
-	redo: { title: 'Redo', command: 'redo', global: true },
-	removeFormat: { title: 'Remove formatting', command: 'removeFormat'},
-	strikeThrough: { title: 'Strikethrough', command: 'strikeThrough'},
-	//type: {  title: 'Font type', text: 'Type', command: 'formatBlock', dropdown: [
-	//	{ title: 'Paragraph', attribute: '<p>' },
-	//	{ title: 'Heading 1', attribute: '<H1>' },
-	//	{ title: 'Heading 2', attribute: '<H2>' },
-	//	{ title: 'Heading 3', attribute: '<H3>' },
-	//	{ title: 'Heading 4', attribute: '<H4>' },
-	//	{ title: 'Heading 5', attribute: '<H5>' },
-	//	{ title: 'Heading 6', attribute: '<H6>' }
-	//	]},
-	typeHeading1: { title: 'Heading 1', command: 'formatBlock', attribute: '<H1>' },
-	typeHeading2: { title: 'Heading 2', command: 'formatBlock', attribute: '<H2>' },
-	typeHeading3: { title: 'Heading 3', command: 'formatBlock', attribute: '<H3>' },
-	typeHeading4: { title: 'Heading 4', command: 'formatBlock', attribute: '<H4>' },
-	typeHeading5: { title: 'Heading 5', command: 'formatBlock', attribute: '<H5>' },
-	typeHeading6: { title: 'Heading 6', command: 'formatBlock', attribute: '<H6>' },
-	typeParagraph: { title: 'Paragraph', command: 'formatBlock', attribute: '<p>' },
-	underline: { title: 'Underline', command: 'underline'},
-	undo: { title: 'Undo', command: 'undo', global: true }
-};
-var fieldDefaults = {
-	preset: 'format',
-	preventFormattedPaste: true,
-	preventTextOutsideParagraph: true
+var buttons = {
+	bold: { title: 'Bold', action: 'format', options: { command: 'bold' }},
+	strikeThrough: { title: 'Strike Through', action: 'format', options: { command: 'strikeThrough' }},
+	underline: { title: 'Underline', action: 'format', options: { command: 'italic' }},
+	italic: { title: 'Italic', action: 'format', options: { command: 'bold' }},
+	removeFormat: { action: 'format', options: { command: 'removeFormat' }},
 };
 var fieldPresets = {
 	full: {
-		commands: [
-			'undo', 'redo',
-		'typeParagraph', 'typeHeading1', 'typeHeading2', 'typeHeading3', 'typeHeading4', 'typeHeading5', 'typeHeading6',
-		//'type',
-		'bold', 'italic', 'underline', 'strikeThrough', 'removeFormat',
-		'link',
-		'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-		'listOrdered', 'listUnordered',
-		'indentRight', 'indentLeft',
-		'reset'
-			],
-	},
-	'full-without-type': {
-		commands: [
-			'undo', 'redo',
-		'bold', 'italic', 'underline', 'strikethrough', 'remove-format',
-		'link',
-		'align',
-		'align-left', 'align-center', 'align-right', 'align-justify',
-		'list-ul', 'list-ol',
-		'reset'
-			],
-	},
-	format: {
-		commands: [
-			'undo', 'redo',
-		'bold', 'italic', 'underline', 'strikethrough', 'remove-format',
-		'link',
-		'reset'
-			],
-	},
-	bare: {
-		commands: ['undo', 'redo']
-	},
-	simpleWithRemove: {
-		commands: ['undo', 'redo', 'link', 'html', 'remove', 'save']
-	},
-	none: {
-		commands: []
+		buttons: [ 'bold', 'italic', 'underline', 'strikeThrough', 'removeFormat' ]
 	}
 };
 
 angular.module('Spytext', [])
 
 .factory('Spytext', function() {
-	function getBrowser() {
-		var matches = window.navigator.userAgent.match(/(chrome|firefox)\/(\d*)/i);
-		if (matches && matches.length > 0) {
-			return { name: matches[1].toLowerCase(), version: parseInt(matches[2]) };
+	function removeContainer(container) {
+		while(container.lastChild) {
+			container.after(container.lastChild);
 		}
-		matches = window.navigator.userAgent.match(/rv:(\d*)/i);
-		if (matches.length > 0) {
-			return { name: 'ie', version: parseInt(matches[1]) };
-		}
-
+		container.remove();
 	}
-	function checkBrowser() {
-		switch (browser.name.toLowerCase()) {
-			case 'chrome':
-				return browser.version >= 34;
-			case 'firefox':
-				return browser.version > 28;
-			case 'ie':
-				return browser.version === 11;
-			default:
-				return false;
-		}
-	}
-	var browser = getBrowser();
-	if (!checkBrowser()) {
-		alert('you are using an unsuppported browser');
-		return;
-	}
-	var clearEmptyElements = function(element) {
-		_.each(element.querySelectorAll('p.spytext-generated'), function (el) {
-			if (window.getSelection().focusNode !== el && $(el).text() === '') {
-				$(el).remove();
-			}
-		});
-	};
-	var insertHtml = function(html) {
-		console.log('insertHtml: ' + html);
-		if(!document.execCommand('insertHTML', false, html)) {
-			var rng = selectron.save();
-			document.execCommand('delete', false);
-			var nodes = document.createFromHtml(html);
-			var l = (nodes instanceof NodeList) ? nodes.length : 1;
-			if(l === 1) {
-				rng.insertNode(nodes);
-			} else {
-				for(var i = l - 1; i >= 0; i--) {
-					rng.insertNode(nodes[i]);
+	function normalize(node, tagName) {
+		tagName = (tagName || 'b').toLowerCase();
+		var org = node;
+		while(node && node.nextSibling) {
+			console.log(node.tagName);
+			if (node.nodeType === 1 && node.nextSibling.nodeType === 1 && node.tagName.toLowerCase() === tagName) {
+				var next = node.nextSibling;
+				if(next.tagName.toLowerCase() === tagName) {
+					while(next.firstChild) {
+						node.append(next.firstChild);
+					}
+					next.remove();
+				} else {
+					var tmp = next;
+					while(tmp.firstChild && tmp.firstChild === tmp.lastChild) {
+						if(tmp.tagName.toLowerCase() === tagName) {
+							node.append(next);
+							while(tmp.firstChild) {
+								tmp.before(tmp.firstChild);
+							}
+							tmp.remove();
+						}
+						tmp = tmp.firstChild;
+					}
 				}
 			}
+			node = node.nextSibling;
 		}
-	};
-	var insertElement = function(html, element) {
-		if(!(html instanceof Node || html instanceof NodeList)) return insertHtml(html);
-		//if(typeof html === 'string') return insertHtmlString(html);
-		//
-		var l = html.length;
-		if(l === 1) {
-			html.id = 'zz';
-		} else {
-			html.addClass('zz');
-		}
-		if(document.execCommand('insertHTML', false, html.outerHtml())) {
-			if(l === 1) {
-				html = document.getElementById('zz');
-			} else {
-				html = MOD(document.getElementsByClassName('zz'));
-			}
-		} else {
-			var rng = selectron.save();
-			document.execCommand('delete', false);
-			if(l === 1) {
-				rng.insertNode(html);
-			} else {
-				for(var i = l - 1; i >= 0; i--) rng.insertNode(html[i]);
-			}
-		}
-		html.attr({ class: null, id: null });
-		html.each(function() {
-			while(this.parentNode && this.parentNode !== element) {
-				var p = this.parentNode;
-				p.before(this);
-				if(!p.firstChild) {
-					p.remove();
-				}
-			}
-		});
-		return html;
-	};
-	var commands = {
-		align: function (attribute, element) {
+		org.normalize();
+	}
+	var actions = {
+		align: function(options, element) {
 			var listTags = ['ul', 'ol'];
 			if (selectron.intersectsTags(listTags, element)) {
 				alert('You cannot align lists!');
@@ -183,23 +61,32 @@ angular.module('Spytext', [])
 				document.execCommand(command);
 			}
 		},
-		formatBlock: function (attribute, element) {
-			var listTags = ['ul', 'ol', 'li'];
-			var blockTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'];
-
-			var contained = selectron.getContainedChildElements(element, true);
-			if(contained.length > 1) {
-				alert('You can only format one block at a time!');
-			} else if(contained.exists(listTags.join(', '))) {
-				alert('You cannot set type of lists!');
+		list: function(options, element0){
+			// TODO check if already in a list
+			var containedChildren = selectron.getChildElements(element, true);
+				
+			var list, tag;
+			// TODO concat to existing list if list and other blocks are selected
+			if(containedChildren.exists('ul, ol')) {
+				list = [];
+				tag = 'p';
+				containedChildren = containedChildren.childs();
 			} else {
-				document.execCommand('formatBlock', false, attribute);
+				list = MOD('<' + attribute + '></' + attribute + '>');
+				tag = 'li';
 			}
+			containedChildren.each(function() {
+				var item = MOD('<' + tag + '>' + this.textContent + '</' + tag + '>');
+				if(list instanceof Array) list.push(item);
+				else list.append(item);
+			});
+			selectron.selectNodes(containedChildren);
+		
+			list = insertElement(MOD(list), element);
+
+			selectron.setCaretAtEndOfElement(list);
 		},
-		generic: function (command, attribute, element) {
-			document.execCommand(command, false, attribute);
-		},
-		indent: function (attribute, element) {
+		indent: function(){
 			// TODO see if we can get this to work
 			var tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 			var listTags = ['ul', 'ol', 'li'];
@@ -226,33 +113,39 @@ angular.module('Spytext', [])
 			selectron.setCaretAtEndOfElement($list[0]);
 			currentLiElement.remove();
 		},
-		outdent: function(attribute, element) {
-			//TODO implement
-		},
-		list: function (attribute, element) {
-			// TODO check if already in a list
-			var containedChildren = selectron.getContainedChildElements(element, true);
-				
-			var list, tag;
-			// TODO concat to existing list if list and other blocks are selected
-			if(containedChildren.exists('ul, ol')) {
-				list = [];
-				tag = 'p';
-				containedChildren = containedChildren.childs();
+		format: function(options, element){
+			//document.execCommand(options.command);
+			var containers = {
+				underline: '<u></u>',
+				bold: '<b></b>'
+			};
+			options.container = options.container || containers[options.command];
+			var wrap = [];
+			if(selectron.isCollapsed()){
+				var closest = selectron.getStart().node.closest('b, [spytext-field] > *'); 
+				if(closest.parentNode !== element){
+					removeContainer(closest);
+				} else {
+					wrap = closest.descendants(3);
+				}
 			} else {
-				list = MOD('<' + attribute + '></' + attribute + '>');
-				tag = 'li';
-			}
-			containedChildren.each(function() {
-				var item = MOD('<' + tag + '>' + this.textContent + '</' + tag + '>');
-				if(list instanceof Array) list.push(item);
-				else list.append(item);
-			});
-			selectron.selectNodes(containedChildren);
-		
-			list = insertElement(MOD(list), element);
+				var modify = [];
+				var contained = selectron.getTextNodes(element).toArray();
 
-			selectron.setCaretAtEndOfElement(list);
+				var start = selectron.getStart();
+				var end = selectron.getEnd();
+				if(end.offset < end.node.textContent.length - 1) {
+					end.node.splitText(end.offset);
+				}
+				if(start.offset > 0) {
+					wrap = contained.slice(1);
+					wrap.push(start.node.splitText(start.offset));
+				} else {
+					wrap = contained;
+				}
+			}
+			MOD(wrap).wrap(options.container);
+			normalize(element);
 		},
 		link: function (attribute, element) {
 			var sel = window.getSelection();
@@ -281,22 +174,46 @@ angular.module('Spytext', [])
 			}
 
 		},
-		undo: function (attribute, element) {
-			document.execCommand('undo');
-			clearEmptyElements(element);
-			element.normalize();
-		}
+		paste: function(options, element) {
+			var listTags = ['ul', 'ol', 'li'];
+			if (selectron.intersectsTags(listTags, $element[0])) {
+				alert('You cannot paste in lists!');
+				return;
+			}
+			var sel = window.getSelection();
+			var savedRange = selectron.save();
+			var pasteArea = MOD('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
+			document.body.append(pasteArea);
+			pasteArea.focus();
+			setTimeout(function () {
+				$element[0].focus();
+				selectron.restore(savedRange);
+				var str = unescape(pasteArea.value.trim());
+				str = str.split('\u2022').join('');
+				str = str.replace(/\n+/g, '</p><p>');
+				pasteArea.remove();
+				Spytext.insertHtml(str);
+			}, 1);
+			if(!document.execCommand('insertHTML', false, html)) {
+				var rng = selectron.save();
+				document.execCommand('delete', false);
+				var nodes = document.createFromHtml(html);
+				var l = (nodes instanceof NodeList) ? nodes.length : 1;
+				if(l === 1) {
+					rng.insertNode(nodes);
+				} else {
+					for(var i = l - 1; i >= 0; i--) {
+						rng.insertNode(nodes[i]);
+					}
+				}
+			}
+		},
+		type: {}
 	};
-	var execute = function(command, attribute, element) {
-		if (commands.hasOwnProperty(command)) {
-			commands[command](attribute, element);
-		} else {
-			commands.generic(command, attribute, element);
-		}
+	var execute = function(action, options, element) {
+		actions[action](options, element);
 	};
 	return {
-		insertHtml: insertHtml,
-		insertElement: insertElement,
 		execute: execute
 	};
 })
@@ -330,11 +247,11 @@ angular.module('Spytext', [])
 					}
 				});
 			};
-			$scope.buttonClick = function(e, buttonProperties) {
+			$scope.buttonClick = function(e, button) {
 				e.preventDefault();
 				var element = selectron.getContainingElement('[spytext-field]');
-				if(buttonProperties.global || (element && $scope.elements.indexOf(element) > -1)) {
-					Spytext.execute(buttonProperties.command, buttonProperties.attribute, element);
+				if(button.global || (element && $scope.elements.indexOf(element) > -1)) {
+					Spytext.execute(button, element);
 					if(element) element.focus();
 				} else {
 					alert('Element does not belong to Spytext!');
@@ -357,14 +274,14 @@ angular.module('Spytext', [])
 		replace: true,
 		controller: function($scope) {
 			$scope.buttonGroups = [
-				{ name: 'undo', buttons: ['undo', 'redo']},
-				{ name: 'type', buttons: ['typeParagraph', 'typeHeading1', 'typeHeading2', 'typeHeading3', 'typeHeading4', 'typeHeading5', 'typeHeading6'] },
-				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']},//,'color'],
-				['link'],
-				{ name: 'align', buttons: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']},
-				{ name: 'list', buttons: ['listUnordered', 'listOrdered']},
-				{ name: 'indent', buttons: ['indentRight', 'indentLeft']},
-				['reset']
+				//{ name: 'undo', buttons: ['undo', 'redo']},
+				//{ name: 'type', buttons: ['typeParagraph', 'typeHeading1', 'typeHeading2', 'typeHeading3', 'typeHeading4', 'typeHeading5', 'typeHeading6'] },
+				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']}
+				//['link'],
+				//{ name: 'align', buttons: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']},
+				//{ name: 'list', buttons: ['listUnordered', 'listOrdered']},
+				//{ name: 'indent', buttons: ['indentRight', 'indentLeft']},
+				//['reset']
 			];
 		},
 		link: function(scope, $element,attributes) {
@@ -377,18 +294,17 @@ angular.module('Spytext', [])
 .directive('spytextButton', function(Spytext) {
 	return {
 		restrict: 'AE',
-	template: '<button ng-click="buttonClick($event, buttonProperties)" title="{{ buttonProperties.title }}" class="spytext-button" ng-class="buttonType | dashes" tabindex="-1"><span>{{ buttonProperties.title }}</span></button>',
+	template: '<button ng-click="buttonClick($event, button)" title="{{ buttonProperties.title }}" class="spytext-button" ng-class="buttonType | dashes" tabindex="-1"><span>{{ buttonProperties.title }}</span></button>',
 	replace: true,
 	link: function(scope, $element, attributes) {
 		scope.buttons.push($element[0]);
 		scope.buttonType = attributes.stButtonType;
-		scope.buttonProperties = buttonTypes[attributes.stButtonType];
+		scope.button = buttons[attributes.stButtonType];
 		$element.attr('name', attributes.stButtonType);
-		$element.attr('global', (scope.buttonProperties.global ? 'true' : 'false'));
-		if(!scope.buttonProperties.global) {
+		$element.attr('global', (scope.button.global ? 'true' : 'false'));
+		if(!scope.button.global) {
 			$element[0].disabled = true;
 		}
-
 	}
 	};
 })
@@ -397,26 +313,85 @@ angular.module('Spytext', [])
 		restrict: 'A',
 		require: 'ngModel',
 		link: function(scope, $element, attributes, ngModelCtrl) {
+			var timeout = null;
+			var isTyping = false;
+			var oldValue = null;
+			var newValue = null;
 			var observer = new MutationObserver(function(mutations) {
 				mutations.forEach(function(mutation) {
+					function finishedTyping() {
+						clearTimeout(timeout);
+						var undo = { target: target, oldValue: oldValue, newValue: newValue }; 
+						addUndo(undo);
+						setUndo();
+						oldValue = null;
+						newValue = null;
+						isTyping = false;
+					}
+					var fix = false;
 					switch(mutation.type) {
 						case 'childList':
-							console.log(mutation.addedNodes);
-							console.log(mutation.removedNodes);
-							//console.log(mutation.previousSibling);
-							//console.log(mutation.nextSibling);
-							//DOMNode
-							if(undoOn) addToUndo(mutation);
+							if(isTyping) finishedTyping();
+							if (mutation.target === $element[0]) {
+								_.each(mutation.addedNodes, function(node) {
+									if(node.nodeType === 3 || node.nodeName.toLowerCase() === 'div') {
+										fix = true;
+										var content = node.textContent !== '' ? node.textContent : '<br />';
+										var p = MOD('<p>' + content + '</p>');
+										toggleUndo();
+										node.replaceWith(p);
+										toggleUndo();
+										selectron.setCaretAtEndOfElement(p);
+										addUndo({ addedNodes: [ p ], removedNodes: [], target: mutation.target, next: p.nextSibling, prev: p.previousSibling });
+									}
+								});
+							} else {
+								_.each(mutation.addedNodes, function(node) {
+									if(node.nodeType ===1 ) {
+										node.removeAttribute('style');
+										if(node.nodeName.toLowerCase() === 'span') {
+											fix = true;
+											if(node.firstChild) {
+												var prev = node.previousSibling;
+												var oldValue = prev.textContent;
+												var rng = selectron.save();
+												toggleUndo();
+												prev.textContent = prev.textContent + node.textContent;
+												node.remove();
+												toggleUndo();
+												addUndo({ target: prev, oldValue: oldValue, newValue: prev.textContent});
+												selectron.setCaretAt(prev, oldValue.length);
+											} else {
+												node.remove();
+											}
+										}
+									}
+								});
+							}
+							if(!fix) addUndo(mutation);
 							break;
 						case 'characterData':
-							console.log('characterData being handled');
+							var undo = { target: mutation.target, oldValue: mutation.oldValue, newValue: mutation.target.textContent }; 
+							addUndo(undo);
+							//if(!isTyping) {
+							//	oldValue = mutation.oldValue;
+							//	isTyping = true;
+							//	target = mutation.target;
+							//} else {
+							//	clearTimeout(timeout);
+							//	newValue = mutation.target.textContent;
+							//}
+							//timeout = setTimeout(function() {
+							//	finishedTyping();
+							//}, 1000);
 							break;
 					}
 				});    
 			});
 			 
 			// configuration of the observer:
-			var config = { subtree: true, childList: true, characterData: true };
+			//var config = { subtree: true, childList: true };
+			var config = { subtree: true, childList: true, characterData: true, characterDataOldValue: true };
 			 
 			// pass in the target node, as well as the observer options
 			 
@@ -425,38 +400,58 @@ angular.module('Spytext', [])
 				else observer.observe($element[0], config);
 				undoOn = !undoOn;
 			}
-			function addToUndo(mutation) {
-				var addedNodes = [];
-				_.each(mutation.addedNodes, function(node) {
-					addedNodes.push({ target: node, next: node.nextSibling, prev: node.previousSibling, parent: node.parentNode });
-				});
-				var removedNodes = [];
-				_.each(mutation.removedNodes, function(node) {
-					var next = mutation.nextSibling;
-					var prev = mutation.previousSibling;
-					removedNodes.push({ target: node, next: next, prev: prev, parent: mutation.target });
-				});
-				var obj = { addedNodes: addedNodes, removedNodes: removedNodes};
-				console.log('added: ' + addedNodes.length + ' removed: ' + removedNodes.length);
-				undoStack.push(obj);
-				undoIndex = undoStack.length -1;
-			}
-			function undoRedo(u, undo) {
-				var addNodes = undo ? u.removedNodes : u.addedNodes;
-				var removeNodes = undo ? u.addedNodes : u.removedNodes;
-				toggleUndo();
-				for(var i in removeNodes) {
-					removeNodes[i].target.remove();
+			function addUndo(mutation) {
+				if(mutation.oldValue) {
+					undoItem.push({ target: mutation.target, oldValue: mutation.oldValue, newValue: mutation.target.textContent });
+				} else {
+					var addedNodes = [];
+					_.each(mutation.addedNodes, function(node) {
+						addedNodes.push({ target: node, next: mutation.nextSibling, prev: mutation.previousSibling, parent: mutation.target });
+					});
+					var removedNodes = [];
+					_.each(mutation.removedNodes, function(node) {
+						var next = mutation.nextSibling;
+						var prev = mutation.previousSibling;
+						removedNodes.push({ target: node, next: next, prev: prev, parent: mutation.target });
+					});
+					var obj = { addedNodes: addedNodes, removedNodes: removedNodes};
+					undoItem.push(obj);
 				}
-				for(var j = addNodes.length - 1; j >= 0; j--) {
-				//for(var j = 0; j < addNodes.length ; j++) {
-					var node = addNodes[j];
-					if (node.next) {
-						node.parent.insertBefore(node.target, node.next);
+			}
+			function setUndo() {
+				console.log('adding to undoStack');
+				if(undoIndex < undoStack.length - 1) {
+					console.log('clearing some undos');
+					undoStack = undoStack.slice(0, undoIndex + 1);
+				}
+				undoStack.push({ selectionBefore: selectionBefore, selectionAfter: selectron.saver(), undos: undoItem });
+				undoItem = [];
+				undoIndex = undoStack.length -1;
+				selectionBefore = selectron.saver();
+			}
+			function undoRedo(u, isUndo) {
+				toggleUndo();
+				var undos = isUndo ? u.undos.slice(0).reverse() : u.undos;
+				for(var s = 0; s < undos.length; s++) {
+					if(undos[s].oldValue) {
+						undos[s].target.textContent = isUndo ? undos[s].oldValue : undos[s].newValue;
 					} else {
-						node.parent.append(node.target);
+						var addNodes = isUndo ? undos[s].removedNodes : undos[s].addedNodes;
+						var removeNodes = isUndo ? undos[s].addedNodes : undos[s].removedNodes;
+						for(var j = 0; j < addNodes.length; j++) {
+							var node = addNodes[j];
+							if (node.next) {
+								node.parent.insertBefore(node.target, node.next);
+							} else {
+								node.parent.append(node.target);
+							}
+						}
+						for(var i in removeNodes) {
+							removeNodes[i].target.remove();
+						}
 					}
 				}
+				selectron.restorer(isUndo ? u.selectionBefore : u.selectionAfter);
 				toggleUndo();
 			}
 			function undo() {
@@ -478,22 +473,56 @@ angular.module('Spytext', [])
 					console.log(undoIndex);
 				}
 			}
+			function updateSelection() {
+				selectionBefore = selectron.saver();
+			}
 			scope.elements.push($element[0]);
-			var commands = fieldPresets[attributes.stFieldPreset].commands;
+			var buttons = fieldPresets[attributes.stFieldPreset].buttons;
 			var fixing = false;
+			var undoItem = [];
 			var undoStack = [];
 			var undoIndex = undoStack.length - 1;
 			var undoOn = false;
+			var selectionBefore;
 			$element.attr('contenteditable', 'true');
 			$element.on('focus', function () {
-				scope.activateButtons(commands);
+				scope.activateButtons(buttons);
+				toggleUndo();
+				if(!mousedown) {
+					updateSelection();
+				}
 			});
 			$element.on('blur', function () {
+				toggleUndo();
 				scope.deactivateButtons();
 				if(ngModelCtrl.$dirty) {
 					scope.$apply(function() {
 						ngModelCtrl.$setViewValue($element.html());
 					});
+				}
+			});
+			var mousedown = false;
+			$element.on('mousedown', function(e) {
+				mousedown = true;
+			});
+			$(document).on('mouseup', function(e) {
+				if(mousedown) {
+					if(undoItem.length > 0) setUndo();
+					updateSelection();
+				}
+				mousedown = false;
+			});
+			$element.on('keyup', function(e) {
+				if(!e.ctrlKey) {
+					switch(e.keyCode) {
+						case 37:
+						case 38:
+						case 39:
+						case 40:
+							if(undoItem.length > 0) setUndo();
+							updateSelection();
+							break;
+					}
 				}
 			});
 			$element.on('keydown', function(e) {
@@ -503,51 +532,44 @@ angular.module('Spytext', [])
 					});
 				}
 				if (e.ctrlKey) {
-					if(e.keyCode === 89) {
-						e.preventDefault();
-						redo();
-						//Spytext.execute('redo', null, $element[0]);
-					} else if(e.keyCode === 90) {
-						e.preventDefault();
-						undo();
-						//Spytext.execute('undo', null, $element[0]);
-					} else if(e.keyCode === 65) {
-						e.preventDefault();
-						selectron.selectNodeContents($element[0]);
-					} else if(e.keyCode === 86) {
-						console.log('is pasting');
-						var listTags = ['ul', 'ol', 'li'];
-						if (selectron.intersectsTags(listTags, $element[0])) {
-							alert('You cannot paste in lists!');
-							return;
-						}
-						var sel = window.getSelection();
-						var savedRange = selectron.save();
-						var pasteArea = MOD('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
-						document.body.append(pasteArea);
-						pasteArea.focus();
-						console.log('timing out');
-						setTimeout(function () {
-							$element[0].focus();
-							selectron.restore(savedRange);
-							var str = unescape(pasteArea.value.trim());
-							str = str.split('\u2022').join('');
-							str = str.replace(/\n+/g, '</p><p>');
-							pasteArea.remove();
-							console.log('calling');
-							Spytext.insertHtml(str);
-						}, 1);
+					switch(e.keyCode) {
+						case 66://b
+						case 85://u
+							e.preventDefault();
+							var arr = [];
+							arr[66] = 'bold';
+							arr[85] = 'underline';
+							if(undoItem.length > 0) setUndo();
+							Spytext.execute('format', { command: arr[e.keyCode] }, $element[0]);
+							setTimeout(function() {
+								setUndo();
+							}, 1000);
+							break;
+						case 89://y
+							e.preventDefault();
+							redo();
+							break;
+						case 90://z
+							e.preventDefault();
+							undo();
+							break;
+						case 65://a
+							e.preventDefault();
+							selectron.selectNodeContents($element[0]);
+							break;
+						case 86://v
+							Spytext.execute('paste', null, $element[0]);
+							break;
 					}
 				}
+
 			});
 			$element.on('paste', function (e) {
-				console.log('paste event');
 				e.preventDefault();
 			});
 			ngModelCtrl.$render = function() {
 				$element.html(ngModelCtrl.$viewValue);
 			};
-			toggleUndo();
 		}
 	};
 });

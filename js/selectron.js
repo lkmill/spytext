@@ -4,18 +4,27 @@ var selectron = {
 		var element = document.getSelection().anchorNode;
 		return element.closest(selector);
 	},
-	getContainedChildElements: function(element, partlyContained, selector) {
-		return this.getContainedNodes(element, partlyContained, selector, true, true);
+	getChildElements: function(element, partlyContained, selector) {
+		return this.getElements(element, partlyContained, selector, true);
 	},
-	getContainedNodes: function(element, partlyContained, selector, onlyElements, onlyChildren) {
+	getElements: function(element, partlyContained, selector, onlyChildren) {
+		return this.getNodes(element,partlyContained, 1, selector, onlyChildren);
+	},
+	getTextNodes: function(element, onlyChildren) {
+		return this.getNodes(element, true, 3, null, onlyChildren);
+	},
+	getNodes: function(element, partlyContained, nodeType, selector, onlyChildren) {
 		partlyContained = partlyContained || false;
-		onlyElements = onlyElements || false;
+		nodeType = nodeType || null;
+		selector = selector || null;
 		onlyChildren = onlyChildren || false;
+
 		var sel = window.getSelection();
 		var nodes = [];
 		if (sel.containsNode) {
-			_.each(onlyChildren ? element.childNodes : element.querySelector('*'), function (child) {
-				if ((!onlyElements || child.nodeType === 1) && sel.containsNode(child, partlyContained)) {
+			_.each(onlyChildren ? element.childNodes : element.descendants(nodeType), function (child) {
+				// NOTE sel.containsNode is always partlyContained === true for textNodes
+				if ((!nodeType || child.nodeType === nodeType) && sel.containsNode(child, partlyContained)) {
 					if(!selector || child.matches(selector)) {
 						nodes.push(child);
 					}
@@ -29,7 +38,6 @@ var selectron = {
 			if (anchorNode === null) {
 				// anchorNode === null in internet explorer when selecting all (Ctrl + A)
 				if(onlyChildren) {
-					console.log('only children');
 					nodes = onlyElements ? element.childs() : element.content();
 				} else {
 					nodes = element.find();
@@ -58,8 +66,8 @@ var selectron = {
 	},
 	intersectsTags: function(tags, topElement) {
 		topElement = topElement || document.querySelector('body');
-		var nodes = this.getContainedChildElements(topElement, true);
-		if(!nodes.isList) return tags.indexOf(nodes.nodeName.toLowerCase()) > -1;
+		var nodes = this.getChildElements(topElement, true);
+		if(!nodes[0]) return tags.indexOf(nodes.nodeName.toLowerCase()) > -1;
 		for (var i = 0; i < nodes.length; i++) {
 			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
 				return true;
@@ -124,6 +132,14 @@ var selectron = {
 		sel.addRange(rng);
 		//sel.selectAllChildren(element);
 	},
+	setCaretAt: function(element, index) {
+		var sel = window.getSelection();
+		var rng = document.createRange();
+		rng.setStart(element, index);
+		rng.setEnd(element, index);
+		sel.removeAllRanges();
+		sel.addRange(rng);
+	},
 	setCaretAtEndOfElement: function(element) {
 		element = element instanceof Node ? element : _.last(element);
 		var sel = window.getSelection();
@@ -148,8 +164,31 @@ var selectron = {
 		sel.addRange(rng);
 		sel.collapseToStart();
 	},
+	isCollapsed: function() {
+		return window.getSelection().isCollapsed;
+	},
+	getStart: function() {
+		var rng = window.getSelection().getRangeAt(0);
+		return { node: rng.startContainer, offset: rng.startOffset };
+	},
+	getEnd: function() {
+		var rng = window.getSelection().getRangeAt(0);
+		return { node: rng.endContainer, offset: rng.endOffset };
+	},
+	saver: function() {
+		var rng = window.getSelection().getRangeAt(0);
+		return { startNode: rng.startContainer, startOffset: rng.startOffset, endNode: rng.endContainer, endOffset: rng.endOffset };
+	},
 	save: function() {
 		return window.getSelection().getRangeAt(0);
+	},
+	restorer: function(obj) {
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		var rng = document.createRange();
+		rng.setStart(obj.startNode, obj.startOffset);
+		rng.setEnd(obj.endNode, obj.endOffset);
+		sel.addRange(rng);
 	},
 	restore: function(range) {
 		var sel = window.getSelection();
