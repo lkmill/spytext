@@ -21,32 +21,82 @@ angular.module('Spytext', [])
 		}
 		container.remove();
 	}
+  function normalizeElement(element, tagName) {
+    element.
+
+  }
 	function normalize(node, tagName) {
 		tagName = (tagName || 'b').toLowerCase();
 		var org = node;
+    var tmp;
 		while(node && node.nextSibling) {
+      next = node.nextSibling;
 			console.log(node.tagName);
-			if (node.nodeType === 1 && node.nextSibling.nodeType === 1 && node.tagName.toLowerCase() === tagName) {
-				var next = node.nextSibling;
-				if(next.tagName.toLowerCase() === tagName) {
-					while(next.firstChild) {
-						node.append(next.firstChild);
-					}
-					next.remove();
-				} else {
-					var tmp = next;
-					while(tmp.firstChild && tmp.firstChild === tmp.lastChild) {
-						if(tmp.tagName.toLowerCase() === tagName) {
-							node.append(next);
-							while(tmp.firstChild) {
-								tmp.before(tmp.firstChild);
-							}
-							tmp.remove();
-						}
-						tmp = tmp.firstChild;
-					}
-				}
-			}
+
+			if (node.nodeType === 1 && next.nodeType === 1){
+        var tagHolderNode;
+        var tagHolderNext;
+
+        if(node.tagName.toLowerCase() === tagName) {
+          tagHolderNode = node;
+        } else {
+          tmp = node;
+          while(tmp.firstChild && tmp.firstChild === tmp.lastChild) {
+            if(tmp.tagName.toLowerCase() === tagName) {
+              tagHolderNode = tmp;
+              break;
+            }
+            tmp = tmp.firstChild;
+          }
+        }
+
+        if(!tagHolderNode) continue;
+
+        if(next.tagName.toLowerCase() === tagName) {
+          tagHolderNext = node;
+        } else {
+          tmp = node;
+
+          while(tmp.firstChild && tmp.firstChild === tmp.lastChild) {
+            if(tmp.tagName.toLowerCase() === tagName) {
+              tagHolderNext = tmp;
+              break;
+            }
+            tmp = tmp.firstChild;
+          }
+        }
+
+        if(!tagHolderNext) continue;
+
+        if(next.tagName.toLowerCase() === tagName) {
+          if(tagHolder === node) {
+            while(next.firstChild) {
+              node.append(next.firstChild);
+            }
+          } else {
+            next.prepend(node);
+            while(tmp.firstChild) {
+              tmp.before(tmp.firstChild);
+            }
+            tmp.remove();
+            break;
+          }
+          next.remove();
+        } else {
+          tmp = next;
+          while(tmp.firstChild && tmp.firstChild === tmp.lastChild) {
+            if(tmp.tagName.toLowerCase() === tagName) {
+              node.append(next);
+              while(tmp.firstChild) {
+                tmp.before(tmp.firstChild);
+              }
+              tmp.remove();
+              break;
+            }
+            tmp = tmp.firstChild;
+          }
+        }
+      }
 			node = node.nextSibling;
 		}
 		org.normalize();
@@ -72,7 +122,7 @@ angular.module('Spytext', [])
 				tag = 'p';
 				containedChildren = containedChildren.childs();
 			} else {
-				list = MOD('<' + attribute + '></' + attribute + '>');
+				list = O('<' + attribute + '></' + attribute + '>');
 				tag = 'li';
 			}
 			containedChildren.each(function() {
@@ -144,7 +194,7 @@ angular.module('Spytext', [])
 					wrap = contained;
 				}
 			}
-			MOD(wrap).wrap(options.container);
+			M(wrap).wrap(options.container);
 			normalize(element);
 		},
 		link: function (attribute, element) {
@@ -182,7 +232,7 @@ angular.module('Spytext', [])
 			}
 			var sel = window.getSelection();
 			var savedRange = selectron.save();
-			var pasteArea = MOD('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
+			var pasteArea = O('<textarea style="position: absolute; top: -1000px; left: -1000px; opacity: 0;" id="paste-area"></textarea>');
 			document.body.append(pasteArea);
 			pasteArea.focus();
 			setTimeout(function () {
@@ -337,7 +387,7 @@ angular.module('Spytext', [])
 									if(node.nodeType === 3 || node.nodeName.toLowerCase() === 'div') {
 										fix = true;
 										var content = node.textContent !== '' ? node.textContent : '<br />';
-										var p = MOD('<p>' + content + '</p>');
+										var p = O('<p>' + content + '</p>');
 										toggleUndo();
 										node.replaceWith(p);
 										toggleUndo();
@@ -371,6 +421,7 @@ angular.module('Spytext', [])
 							if(!fix) addUndo(mutation);
 							break;
 						case 'characterData':
+              console.log('characterData');
 							var undo = { target: mutation.target, oldValue: mutation.oldValue, newValue: mutation.target.textContent }; 
 							addUndo(undo);
 							//if(!isTyping) {
@@ -556,6 +607,10 @@ angular.module('Spytext', [])
 						case 65://a
 							e.preventDefault();
 							selectron.selectNodeContents($element[0]);
+							break;
+						case 84://t
+							e.preventDefault();
+							//console.log(window.getSelection().getRangeAt(0).extractContents());
 							break;
 						case 86://v
 							Spytext.execute('paste', null, $element[0]);
