@@ -59,11 +59,7 @@ var selectron = {
 	intersectsTags: function(tags, topElement) {
 		topElement = topElement || document.querySelector('body');
 		var nodes = this.getContainedChildElements(topElement, true);
-		console.log(nodes);
-		console.log(nodes.length);
-		console.log(nodes[0]);
-		console.log(nodes[1]);
-		if(!nodes[0]) return tags.indexOf(nodes.nodeName.toLowerCase()) > -1;
+		if(!nodes.isList) return tags.indexOf(nodes.nodeName.toLowerCase()) > -1;
 		for (var i = 0; i < nodes.length; i++) {
 			if (tags.indexOf(nodes[i].nodeName.toLowerCase()) > -1) {
 				return true;
