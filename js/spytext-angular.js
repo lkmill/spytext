@@ -397,9 +397,92 @@ angular.module('Spytext', [])
 		restrict: 'A',
 		require: 'ngModel',
 		link: function(scope, $element, attributes, ngModelCtrl) {
+			var observer = new MutationObserver(function(mutations) {
+				mutations.forEach(function(mutation) {
+					switch(mutation.type) {
+						case 'childList':
+							//console.log(mutation.addedNodes);
+							//console.log(mutation.removedNodes);
+							//console.log(mutation.previousSibling);
+							//console.log(mutation.nextSibling);
+							if(undoOn) addToUndo(mutation);
+							break;
+						case 'characterData':
+							console.log('characterData being handled');
+							break;
+					}
+				});    
+			});
+			 
+			// configuration of the observer:
+			var config = { subtree: true, childList: true, characterData: true };
+			 
+			// pass in the target node, as well as the observer options
+			 
+			function toggleUndo() {
+				if(undoOn) observer.disconnect();
+				else observer.observe($element[0], config);
+				undoOn = !undoOn;
+			}
+			function addToUndo(mutation) {
+				var addedNodes = [];
+				_.each(mutation.addedNodes, function(node) {
+					addedNodes.push({ target: node, next: node.nextSibling, prev: node.previousSibling, parent: node.parentNode });
+				});
+				var removedNodes = [];
+				_.each(mutation.removedNodes, function(node) {
+					var next = mutation.nextSibling;
+					var prev = mutation.previousSibling;
+					removedNodes.push({ target: node, next: next, prev: prev, parent: mutation.target });
+				});
+				var obj = { addedNodes: addedNodes, removedNodes: removedNodes};
+				console.log('added: ' + addedNodes.length + ' removed: ' + removedNodes.length);
+				undoStack.push(obj);
+				undoIndex = undoStack.length -1;
+			}
+			function undoRedo(u, undo) {
+				var addNodes = undo ? u.removedNodes : u.addedNodes;
+				var removeNodes = undo ? u.addedNodes : u.removedNodes;
+				toggleUndo();
+				for(var i in removeNodes) {
+					removeNodes[i].target.remove();
+				}
+				for(var j = addNodes.length - 1; j >= 0; j--) {
+				//for(var j = 0; j < addNodes.length ; j++) {
+					var node = addNodes[j];
+					if (node.next) {
+						node.parent.insertBefore(node.target, node.next);
+					} else {
+						node.parent.append(node.target);
+					}
+				}
+				toggleUndo();
+			}
+			function undo() {
+				if(undoOn && undoIndex >= 0) {
+					undoRedo(undoStack[undoIndex], true);
+					undoIndex--;
+				} else {
+					console.log('undo: nothing to do');
+					console.log(undoIndex);
+				}
+
+			}
+			function redo() {
+				if(undoOn && undoIndex < undoStack.length - 1) {
+					undoIndex++;
+					undoRedo(undoStack[undoIndex], false);
+				} else {
+					console.log('redo: nothing to do');
+					console.log(undoIndex);
+				}
+			}
 			scope.elements.push($element[0]);
 			var commands = fieldPresets[attributes.stFieldPreset].commands;
 			var fixing = false;
+			var undoStack = [];
+			var undoIndex = undoStack.length - 1;
+			var undoOn = false;
 			$element.attr('contenteditable', 'true');
 			$element.on('focus', function () {
 				scope.activateButtons(commands);
@@ -412,56 +495,6 @@ angular.module('Spytext', [])
 					});
 				}
 			});
-
-			$element.on('DOMNodeRemoved', function (e) {
-				console.log('removed: ' + e.target.nodeType + ' : ' + e.target.nodeName);
-				console.log(e.target);
-			});
-
-			//$element.on('DOMSubtreeModified', function (e) {
-			//	console.log('modified: ' + e.target.nodeType + ' : ' + e.target.nodeName);
-			//	console.log(e.target);
-			//});
-			$element.on('DOMNodeInserted', function (e) {
-				console.log('inserted: ' + e.target.nodeType + ' : ' + e.target.nodeName);
-				console.log(e.target);
-				var sel = window.getSelection();
-				var content = e.target.textContent !== '' ? e.target.textContent : '<br />';
-				var parentNode = e.target.parentNode;
-
-				if (parentNode === $element[0]) {
-					if(e.target.nodeType === 3 || e.target.nodeName.toLowerCase() === 'div') {
-						fixing = true;
-						var p = MOD('<p class="spytext-generated"><br /></p>');
-						e.target.after(p);
-						selectron.selectNodeContents(p);
-						Spytext.insertHtml(content, $element[0]);
-						e.target.remove();
-						// ask me not why this has to be in a timeout
-						setTimeout(function () {
-							selectron.setCaretAtEndOfElement(p);
-						} , 1);
-					}
-				} else if (e.target.nodeName.toLowerCase() === 'span') {
-					e.target.remove();
-					
-					// this (fake) timeout is needed to trick Chrome into allowed nested execCommand when pasting
-					setTimeout(function() {
-						savedRng = selectron.save();
-						selectron.setCaretAtEndOfElement(parentNode);
-						document.execCommand('insertText', false, content);
-						// ask me not why this has to be in a timeout
-						setTimeout(function() {
-							selectron.restore(savedRng);
-						}, 1);
-					});
-				}
-				if(!fixing && e.target.nodeType === 1) {
-					e.target.attr('style', null);
-					if(!e.target.hasClass('zz')) e.target.attr('class', null);
-				}
-				fixing = false;
-			});
 			$element.on('keydown', function(e) {
 				if(!ngModelCtrl.$dirty && ngModelCtrl.$viewValue !== $element.html()) {
 					scope.$apply(function() {
@@ -469,7 +502,15 @@ angular.module('Spytext', [])
 					});
 				}
 				if (e.ctrlKey) {
-					if(e.keyCode === 65) {
+					if(e.keyCode === 89) {
+						e.preventDefault();
+						redo();
+						//Spytext.execute('redo', null, $element[0]);
+					} else if(e.keyCode === 90) {
+						e.preventDefault();
+						undo();
+						//Spytext.execute('undo', null, $element[0]);
+					} else if(e.keyCode === 65) {
 						e.preventDefault();
 						selectron.selectNodeContents($element[0]);
 					} else if(e.keyCode === 86) {
@@ -498,17 +539,6 @@ angular.module('Spytext', [])
 					}
 				}
 			});
-			$element.on('keyup', function (e) {
-				if (e.ctrlKey) {
-					if(e.keyCode === 89) {
-						e.preventDefault();
-						Spytext.execute('redo', null, $element[0]);
-					} else if(e.keyCode === 90) {
-						e.preventDefault();
-						Spytext.execute('undo', null, $element[0]);
-					}
-				}
-			});
 			$element.on('paste', function (e) {
 				console.log('paste event');
 				e.preventDefault();
@@ -516,6 +546,7 @@ angular.module('Spytext', [])
 			ngModelCtrl.$render = function() {
 				$element.html(ngModelCtrl.$viewValue);
 			};
+			toggleUndo();
 		}
 	};
 });
