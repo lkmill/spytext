@@ -62,7 +62,7 @@ var selectron = {
 				}
 			}
 		}
-		return MOD(nodes);
+		return M(nodes);
 	},
 	intersectsTags: function(tags, topElement) {
 		topElement = topElement || document.querySelector('body');
