@@ -5,9 +5,9 @@ var buttonTypes = {
 	alignLeft: { title: 'Align Left', command: 'align', attribute: 'left' },
 	alignRight: { title: 'Align Right', command: 'align', attribute: 'right' },
 	bold: { title: 'Bold', command: 'bold'},
-	indentLeft: { title: 'Unindent', command: 'outdent'},
+	indentLeft: { title: 'Outdent', command: 'outdent'},
 	indentRight: { title: 'Indent', command: 'indent'},
-	italic: { title: 'Bold', command: 'italic'},
+	italic: { title: 'Italic', command: 'italic'},
 	link: { title: 'Link', command: 'link'},
 	listOrdered: { title: 'Ordered list', command: 'list', attribute: 'ol'},
 	listUnordered: { title: 'Unordered list', command: 'list', attribute: 'ul'},
@@ -401,10 +401,11 @@ angular.module('Spytext', [])
 				mutations.forEach(function(mutation) {
 					switch(mutation.type) {
 						case 'childList':
-							//console.log(mutation.addedNodes);
-							//console.log(mutation.removedNodes);
+							console.log(mutation.addedNodes);
+							console.log(mutation.removedNodes);
 							//console.log(mutation.previousSibling);
 							//console.log(mutation.nextSibling);
+							//DOMNode
 							if(undoOn) addToUndo(mutation);
 							break;
 						case 'characterData':
