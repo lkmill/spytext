@@ -270,12 +270,28 @@ angular.module('Spytext', [])
 									//console.log(window.getSelection().getRangeAt(0).extractContents());
 									break;
 								case 86://v
-									execute('paste', null, this);
+									console.log('pasting');
+									//execute('paste', null, this);
 									break;
 							}
 						}
 					},
 					paste: function (e) {
+						console.log('pasteEvent');
+					//document.execCommand('insertHtml', false, pasteArea.val().replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/\n+/g, '</p><p>'));
+						var str;
+						if(e.clipboardData) {
+							console.log(e.clipboardData.items[0].getAsString(function(ufo) {
+								str = ufo;
+								str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/\n+/g, '</p><p>');
+								console.log(str);
+							}));
+						} else {
+							str = clipboardData.getData('Text');
+							str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+/g, '</p><p>');
+							console.log(str);
+						}
+
 						e.preventDefault();
 					}
 				},
@@ -291,7 +307,7 @@ angular.module('Spytext', [])
 			};
 			$scope.addEvents = function($element) {
 				_.each(events.element, function(func, name) {
-					$element[0].on(name, func);
+					$element.on(name, func);
 				});
 				_.each(events.doc, function(func, name) {
 					document.on(name, func);
