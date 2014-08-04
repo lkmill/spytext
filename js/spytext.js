@@ -37,7 +37,7 @@ Spytext.prototype = {
 			var coordinates = S.get.coordinates(this.currentField.element);
 			S.select(coordinates);
 
-			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
 			containedBlocks.each(function() {
 				if(!this.matches('ul, ol')) this.css('text-align', options.alignment);
 			});
@@ -49,7 +49,7 @@ Spytext.prototype = {
 			var sel = window.getSelection();
 
 			// TODO split list
-			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
 			containedBlocks.each(function() {
 				var that = this;
 				var tmp;
@@ -84,19 +84,57 @@ Spytext.prototype = {
 				ordered: 'OL',
 				unordered: 'UL'
 			};
-			var list = O('<' + tags[options.type] + '></' + tags[options.type] + '>');
+			var tagName = tags[options.type];
+			var list = O('<' + tagName + '></' + tagName + '>');
 			var selection = S.save(this.currentField.element);
 			selection.load();
-			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
 			containedBlocks[0].before(list);
 			containedBlocks.each(function(){
-				var listItem = O('<li></li>');
-				list.append(listItem);
-				while(this.firstChild) {
-					listItem.append(this.firstChild);
+				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
+					if(containedBlocks.length === 1) {
+						if(this.tagName !== tagName) {
+							var containedLi = S.contained.elements(this, true, null, true);
+							if(this.firstChild === containedLi[0]) {
+								this.before(list);
+								containedLi.each(function() {
+									list.append(this);
+								});
+								if(!this.firstChild) this.remove();
+							} else if (this.lastChild === containedLi[containedLi.length - 1]) {
+								this.after(list);
+								while(this.lastChild === containedLi[containedLi.length - 1]) {
+									containedLi.each(function() {
+										list.append(this);
+									});
+								}
+							} else {
+								var bottomList = O('<' + this.tagName + '><' + this.tagName + '/>');
+								this.after(bottomList);
+								while(this.lastChild !== containedLi[containedLi.length - 1]) {
+									bottomList.prepend(this.lastChild);
+								}
+								this.after(list);
+								containedLi.each(function() {
+									list.append(this);
+								});
+							}
+						}
+					} else {
+						while(this.firstChild) {
+							list.append(this.firstChild);
+						}
+						this.remove();
+					}
+				} else {
+					var listItem = O('<li></li>');
+					list.append(listItem);
+					while(this.firstChild) {
+						listItem.append(this.firstChild);
+					}
+					list.append(listItem);
+					this.remove();
 				}
-				list.append(listItem);
-				this.remove();
 			});
 			selection.load();
 		},
@@ -110,7 +148,8 @@ Spytext.prototype = {
 			var wrapper = options.container ? O(options.container) : O('<' + tags[options.command] + '></' + tags[options.command] + '>');
 			var coordinates = S.get.coordinates(this.currentField.element);
 			S.select(coordinates);
-			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			console.log(coordinates);
+			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
 			if(S.isCollapsed()){
 				var closest = rng.startContainer.closest(wrapper.tagName);
 				while(closest) {
@@ -118,7 +157,7 @@ Spytext.prototype = {
 					closest = closest.closest(wrapper.tagName);
 				}
 			} else {
-				var textNodes = S.get.textNodes(this.currentField.element).toArray();
+				var textNodes = S.contained.textNodes(this.currentField.element).toArray();
 				var rng = S.get.rng();
 				if(rng.endOffset < rng.endContainer.textContent.length) {
 					rng.endContainer.splitText(rng.endOffset);
@@ -132,6 +171,8 @@ Spytext.prototype = {
 
 			}
 			containedBlocks.tidy(wrapper.tagName);
+			console.log(coordinates);
+			console.log('reselecting');
 			S.select(coordinates);
 		},
 		link: function (attribute) {
@@ -322,6 +363,8 @@ SpytextField.prototype = {
 						this.snapback.undo();
 						break;
 					case 65://a
+						e.preventDefault();
+						S.select({ start: { node: this.element, offset: 0 }, end: { node: this.element, offset: this.element.textContent.length } });
 						break;
 					case 84://t
 						e.preventDefault();
