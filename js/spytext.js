@@ -1,9 +1,10 @@
 var Spytext = function() {
+	var that = this;
 	this.fields = [];
 	this.currentField = null;
 	this.buttons = [];
 	_.each(this.events.doc, function(func, name) {
-		document.on(name, func);
+		document.bind(name, func, that);
 	});
 	this.mousedown = false;
 };
@@ -23,8 +24,9 @@ Spytext.prototype = {
 	events: {
 		doc: {
 			mouseup: function(e) {
-				if(this.mousedown) {
-					if(undoItem.length > 0) setUndo();
+				if(this.mousedown && this.currentField) {
+					this.currentField.snapback.register();
+					this.currentField.snapback.setSelection();
 				}
 				this.mousedown = false;
 			}
@@ -32,8 +34,71 @@ Spytext.prototype = {
 	},
 	actions: {
 		align: function(options) {
+			var coordinates = S.get.coordinates(this.currentField.element);
+			S.select(coordinates);
+
+			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			containedBlocks.each(function() {
+				if(!this.matches('ul, ol')) this.css('text-align', options.alignment);
+			});
+		},
+		block: function(options) {
+			var wrapper = O('<' + options.tag + '></' + options.tag + '>');
+			var coordinates = S.get.coordinates(this.currentField.element);
+			S.select(coordinates);
+			var sel = window.getSelection();
+
+			// TODO split list
+			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			containedBlocks.each(function() {
+				var that = this;
+				var tmp;
+				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
+					var listItems = this.M('li');
+					listItems.each(function() {
+						S.select(coordinates);
+						if(sel.containsNode(this, true)) {
+							tmp = wrapper.clone();
+							if(this.previousSibling) that.after(tmp);
+							else that.before(tmp);
+							while(this.firstChild) {
+								tmp.append(this.firstChild);
+							}
+							this.remove();
+						}
+					});
+					if(!this.firstChild) this.remove();
+				} else {
+					tmp = wrapper.clone();
+					this.before(tmp);
+					while(this.firstChild) {
+						tmp.append(this.firstChild);
+					}
+					this.remove();
+				}
+			});
+			S.select(coordinates);
 		},
 		list: function(options){
+			var tags = {
+				ordered: 'OL',
+				unordered: 'UL'
+			};
+			var list = O('<' + tags[options.type] + '></' + tags[options.type] + '>');
+			var selection = S.save(this.currentField.element);
+			selection.load();
+			var containedBlocks = S.get.childElements(this.currentField.element, true);
+			containedBlocks[0].before(list);
+			containedBlocks.each(function(){
+				var listItem = O('<li></li>');
+				list.append(listItem);
+				while(this.firstChild) {
+					listItem.append(this.firstChild);
+				}
+				list.append(listItem);
+				this.remove();
+			});
+			selection.load();
 		},
 		indent: function(){
 		},
@@ -42,41 +107,31 @@ Spytext.prototype = {
 				underline: 'U',
 				bold: 'B'
 			};
-			options.container = O(options.container) || O('<' + tags[options.command] + '></' + tags[options.command] + '>');
-			var wrap = [];
-			var coordinates = S.get.coordinates('[spytext-field] > *');
+			var wrapper = options.container ? O(options.container) : O('<' + tags[options.command] + '></' + tags[options.command] + '>');
+			var coordinates = S.get.coordinates(this.currentField.element);
+			S.select(coordinates);
+			var containedBlocks = S.get.childElements(this.currentField.element, true);
 			if(S.isCollapsed()){
-				var closest = coordinates.start.node.closest('b, [spytext-field] > *'); 
-				if(closest.parentNode !== this.currentField.element){
+				var closest = rng.startContainer.closest(wrapper.tagName);
+				while(closest) {
 					closest.unwrap();
-				} else {
-					wrap = closest.descendants(3);
+					closest = closest.closest(wrapper.tagName);
 				}
 			} else {
-				var modify = [];
-				var contained = S.extract().childs();
-				contained.each(function() {
-					options.container.append(this);
-				});
-				var rng = window.getSelection().getRangeAt(0);
-				options.container.tidy();
-				rng.insertNode(options.container);
+				var textNodes = S.get.textNodes(this.currentField.element).toArray();
+				var rng = S.get.rng();
+				if(rng.endOffset < rng.endContainer.textContent.length) {
+					rng.endContainer.splitText(rng.endOffset);
+				}
+				if(rng.startOffset > 0) {
+					textNodes = textNodes.slice(1);
+					textNodes.unshift(rng.startContainer.splitText(rng.startOffset));
+				}
+				textNodes = M(textNodes);
+				textNodes.wrap(wrapper);
 
-				//var start = coordinates.start;
-				//var end = coordinates.end;
-				//if(end.offset < end.node.textContent.length - 1) {
-				//	end.node.splitText(end.offset);
-				//}
-				//if(start.offset > 0) {
-				//	wrap = contained.slice(1);
-				//	wrap.push(start.node.splitText(start.offset));
-				//} else {
-				//	wrap = contained;
-				//}
 			}
-			//wrap = M(wrap).wrap(options.container);
-			//this.currentField.element.tidy(options.container.tagName);
-			//console.log(coordinates);
+			containedBlocks.tidy(wrapper.tagName);
 			S.select(coordinates);
 		},
 		link: function (attribute) {
@@ -104,14 +159,13 @@ Spytext.prototype = {
 			} else {
 				document.execCommand('unlink');
 			}
-
 		},
 		paste: function(options) {
 		},
 		type: {}
 	},
 	addButton: function(element, config) {
-		var field = new SpytextButton(this, config);
+		var field = new SpytextButton(element, config, this);
 		this.buttons.push(field);
 		return field;
 	},
@@ -121,28 +175,48 @@ Spytext.prototype = {
 		return button;
 	},
 	execute: function(action, options) {
+		var snapback = this.currentField.snapback;
+		snapback.register();
+		snapback.disableCaptureTyping();
+		snapback.setSelection();
 		this.actions[action].call(this, options);
+		setTimeout(function() {
+			snapback.register();
+			snapback.enableCaptureTyping();
+		}, 100);
 	}
 };
-var SpytextButton = function(spytext, config) {
+var SpytextButton = function(element, config, spytext) {
 	this.spytext = spytext;
 	this.config = typeof config === 'string' ? this.presets[config] : config;
+	this.element = element;
+	this.element.bind('click', this.events.click, this);
 };
 SpytextButton.prototype = {
-	execute: function() {
-		this.spytext.execute(this.config.action, this.config.options);
-	},
 	events: {
 		click: function() {
-			this.execute();
+			this.spytext.execute(this.config.action, this.config.options);
 		}
 	},
 	presets: {
+		alignLeft: { title: 'Align Left', action: 'align', options: { alignment: 'left' }},
+		alignRight: { title: 'Align Right', action: 'align', options: { alignment: 'right' }},
+		alignCenter: { title: 'Align Center', action: 'align', options: { alignment: 'center' }},
+		alignJustify: { title: 'Align Justify', action: 'align', options: { alignment: 'justify' }},
 		bold: { title: 'Bold', action: 'format', options: { command: 'bold' }},
 		strikeThrough: { title: 'Strike Through', action: 'format', options: { command: 'strikeThrough' }},
 		underline: { title: 'Underline', action: 'format', options: { command: 'italic' }},
 		italic: { title: 'Italic', action: 'format', options: { command: 'bold' }},
 		removeFormat: { action: 'format', options: { command: 'removeFormat' }},
+		typeHeading1: { title: 'Heading 1', action: 'block', options: { tag: 'H1' }},
+		typeHeading2: { title: 'Heading 1', action: 'block', options: { tag: 'H2' }},
+		typeHeading3: { title: 'Heading 1', action: 'block', options: { tag: 'H3' }},
+		typeHeading4: { title: 'Heading 1', action: 'block', options: { tag: 'H4' }},
+		typeHeading5: { title: 'Heading 1', action: 'block', options: { tag: 'H5' }},
+		typeHeading6: { title: 'Heading 1', action: 'block', options: { tag: 'H6' }},
+		typeParagraph: { title: 'Heading 1', action: 'block', options: { tag: 'P' }},
+		orderedList: { title: 'Ordered List', action: 'list', options: { type: 'ordered' }},
+		unorderedList: { title: 'Unordered List', action: 'list', options: { type: 'unordered' }},
 	}
 };
 var SpytextToolbar = function(element, config) {
@@ -157,7 +231,10 @@ SpytextToolbar.prototype = {
 	presets: {
 		standard: {
 			buttonGroups: [
-				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']}
+				{ name: 'block', buttons: ['typeHeading1', 'typeHeading2', 'typeHeading3', 'typeHeading4', 'typeHeading5', 'typeHeading6', 'typeParagraph']},
+				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']},
+				{ name: 'align', buttons: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']},
+				{ name: 'list', buttons: ['unorderedList', 'orderedList']}
 			]
 		}
 	},
@@ -211,10 +288,15 @@ SpytextField.prototype = {
 		keyup: function(e) {
 			if(!e.ctrlKey) {
 				switch(e.keyCode) {
+					case 33:
+					case 34:
+					case 35:
+					case 36:
 					case 37:
 					case 38:
 					case 39:
 					case 40:
+						this.snapback.setSelection();
 						break;
 				}
 			}
@@ -224,16 +306,12 @@ SpytextField.prototype = {
 				switch(e.keyCode) {
 					case 66://b
 					case 85://u
-						var that = this;
 						e.preventDefault();
+						var that = this;
 						var arr = [];
 						arr[66] = 'bold';
 						arr[85] = 'underline';
-						this.snapback.register();
 						this.spytext.execute('format', { command: arr[e.keyCode] }, this.element);
-						setTimeout(function() {
-							that.snapback.register();
-						}, 10);
 						break;
 					case 89://y
 						e.preventDefault();
@@ -244,12 +322,9 @@ SpytextField.prototype = {
 						this.snapback.undo();
 						break;
 					case 65://a
-						e.preventDefault();
-						S.select(this);
 						break;
 					case 84://t
 						e.preventDefault();
-						//console.log(window.getSelection().getRangeAt(0).extractContents());
 						break;
 					case 86://v
 						// DO nothing, let paste event be handles

@@ -40,13 +40,12 @@ angular.module('Spytext', [])
 .directive('spytextButton', function() {
 	return {
 		restrict: 'AE',
-		template: '<button ng-click="button.click($event)" title="{{ title }}" class="spytext-button" ng-class="type | dashes" tabindex="-1"><span>{{ title }}</span></button>',
+		template: '<button title="{{ title }}" class="spytext-button" ng-class="type | dashes" tabindex="-1"><span>{{ title }}</span></button>',
 		replace: true,
 		link: function(scope, $element, attributes) {
 			var button = scope.spytext.addButton($element[0], attributes.stButtonType);
 			scope.type = attributes.stButtonType;
 			scope.title = button.config.title;
-			scope.click = button.click;
 		}
 	};
 })
