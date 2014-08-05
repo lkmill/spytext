@@ -34,29 +34,29 @@ Spytext.prototype = {
 	},
 	actions: {
 		align: function(options) {
-			var coordinates = S.get.coordinates(this.currentField.element);
-			S.select(coordinates);
+			var points = S.points.both(this.currentField.element);
+			S.set(points);
 
-			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
+			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
 			containedBlocks.each(function() {
 				if(!this.matches('ul, ol')) this.css('text-align', options.alignment);
 			});
 		},
 		block: function(options) {
 			var wrapper = O('<' + options.tag + '></' + options.tag + '>');
-			var coordinates = S.get.coordinates(this.currentField.element);
-			S.select(coordinates);
-			var sel = window.getSelection();
+			var points = S.points.both(this.currentField.element);
+			S.set(points);
+			var sel = S.s();
 
 			// TODO split list
-			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
+			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
 			containedBlocks.each(function() {
 				var that = this;
 				var tmp;
 				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
 					var listItems = this.M('li');
 					listItems.each(function() {
-						S.select(coordinates);
+						S.set(points);
 						if(sel.containsNode(this, true)) {
 							tmp = wrapper.clone();
 							if(this.previousSibling) that.after(tmp);
@@ -77,7 +77,7 @@ Spytext.prototype = {
 					this.remove();
 				}
 			});
-			S.select(coordinates);
+			S.set(points);
 		},
 		list: function(options){
 			var tags = {
@@ -88,13 +88,13 @@ Spytext.prototype = {
 			var list = O('<' + tagName + '></' + tagName + '>');
 			var selection = S.save(this.currentField.element);
 			selection.load();
-			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
+			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
 			containedBlocks[0].before(list);
 			containedBlocks.each(function(){
 				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
 					if(containedBlocks.length === 1) {
 						if(this.tagName !== tagName) {
-							var containedLi = S.contained.elements(this, true, null, true);
+							var containedLi = S.nodes.elements(this, true, null, true);
 							if(this.firstChild === containedLi[0]) {
 								this.before(list);
 								containedLi.each(function() {
@@ -146,10 +146,10 @@ Spytext.prototype = {
 				bold: 'B'
 			};
 			var wrapper = options.container ? O(options.container) : O('<' + tags[options.command] + '></' + tags[options.command] + '>');
-			var coordinates = S.get.coordinates(this.currentField.element);
-			S.select(coordinates);
-			console.log(coordinates);
-			var containedBlocks = S.contained.elements(this.currentField.element, true, null, true);
+			var points = S.points.both(this.currentField.element);
+			console.log(points);
+			S.set(points);
+			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
 			if(S.isCollapsed()){
 				var closest = rng.startContainer.closest(wrapper.tagName);
 				while(closest) {
@@ -157,8 +157,8 @@ Spytext.prototype = {
 					closest = closest.closest(wrapper.tagName);
 				}
 			} else {
-				var textNodes = S.contained.textNodes(this.currentField.element).toArray();
-				var rng = S.get.rng();
+				var textNodes = S.nodes.textNodes(this.currentField.element).toArray();
+				var rng = S.range();
 				if(rng.endOffset < rng.endContainer.textContent.length) {
 					rng.endContainer.splitText(rng.endOffset);
 				}
@@ -171,9 +171,9 @@ Spytext.prototype = {
 
 			}
 			containedBlocks.tidy(wrapper.tagName);
-			console.log(coordinates);
+			console.log(points);
 			console.log('reselecting');
-			S.select(coordinates);
+			S.set(points);
 		},
 		link: function (attribute) {
 			var sel = window.getSelection();
@@ -364,7 +364,7 @@ SpytextField.prototype = {
 						break;
 					case 65://a
 						e.preventDefault();
-						S.select({ start: { node: this.element, offset: 0 }, end: { node: this.element, offset: this.element.textContent.length } });
+						S.set({ start: { ref: this.element, offset: 0 }, end: { ref: this.element, offset: this.element.textContent.length } });
 						break;
 					case 84://t
 						e.preventDefault();
