@@ -147,7 +147,6 @@ Spytext.prototype = {
 			};
 			var wrapper = options.container ? O(options.container) : O('<' + tags[options.command] + '></' + tags[options.command] + '>');
 			var points = S.points.both(this.currentField.element);
-			console.log(points);
 			S.set(points);
 			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
 			if(S.isCollapsed()){
@@ -171,8 +170,6 @@ Spytext.prototype = {
 
 			}
 			containedBlocks.tidy(wrapper.tagName);
-			console.log(points);
-			console.log('reselecting');
 			S.set(points);
 		},
 		link: function (attribute) {
