@@ -26,7 +26,7 @@ Spytext.prototype = {
 			mouseup: function(e) {
 				if(this.mousedown && this.currentField) {
 					this.currentField.snapback.register();
-					this.currentField.snapback.setSelection();
+					this.currentField.snapback.setSelectron();
 				}
 				this.mousedown = false;
 			}
@@ -215,7 +215,7 @@ Spytext.prototype = {
 	execute: function(action, options) {
 		var snapback = this.currentField.snapback;
 		snapback.register();
-		snapback.setSelection();
+		snapback.setSelectron();
 		this.actions[action].call(this, options);
 		setTimeout(function() {
 			snapback.register();
@@ -307,22 +307,15 @@ SpytextField.prototype = {
 	},
 	events: {
 		focus: function () {
-			//$scope.activateButtons(buttons);
-			this.snapback.toggle();
+			this.snapback.enable();
 			this.activate();
-			//if(!mousedown) {
-			//	updateSelection();
-			//}
 		},
 		blur: function () {
-			if(!this.mousedown) {
-				this.snapback.register();
-			}
-			this.snapback.toggle();
+			this.snapback.register();
+			this.snapback.disable();
 			this.deactivate();
 		},
 		mousedown: function(e) {
-			this.snapback.register();
 			this.spytext.mousedown = true;
 		},
 		keyup: function(e) {
@@ -376,13 +369,9 @@ SpytextField.prototype = {
 						break;
 					default:
 						var that = this;
-						if(!this.timeout) {
-							console.log('setting selection');
-							that.snapback.setSelection();
-						}
 						clearTimeout(this.timeout);
 						this.timeout = setTimeout(function() {
-							console.log('timeout');
+							that.timeout = null;
 							that.snapback.register();
 						}, 1000);
 						break;
