@@ -215,12 +215,10 @@ Spytext.prototype = {
 	execute: function(action, options) {
 		var snapback = this.currentField.snapback;
 		snapback.register();
-		snapback.disableCaptureTyping();
 		snapback.setSelection();
 		this.actions[action].call(this, options);
 		setTimeout(function() {
 			snapback.register();
-			snapback.enableCaptureTyping();
 		}, 100);
 	}
 };
@@ -290,6 +288,7 @@ var SpytextField = function(spytext, element, config, snapback) {
 	this.element.attr('contentEditable', 'true');
 	this.config = typeof config === 'string' ? this.presets[config] : config;
 	this.snapback = snapback;
+	this.timeout = null;
 	_.each(this.events, function(func, name) {
 		element.bind(name, func, that);
 	});
@@ -316,36 +315,27 @@ SpytextField.prototype = {
 			//}
 		},
 		blur: function () {
+			if(!this.mousedown) {
+				this.snapback.register();
+			}
 			this.snapback.toggle();
 			this.deactivate();
 		},
 		mousedown: function(e) {
+			this.snapback.register();
 			this.spytext.mousedown = true;
-			//mousedown = true;
 		},
 		keyup: function(e) {
-			if(!e.ctrlKey) {
-				switch(e.keyCode) {
-					case 33:
-					case 34:
-					case 35:
-					case 36:
-					case 37:
-					case 38:
-					case 39:
-					case 40:
-						this.snapback.setSelection();
-						break;
-				}
-			}
 		},
 		keydown: function(e) {
 			if (e.ctrlKey) {
+				clearTimeout(this.timeout);
+				this.timeout = null;
+				this.snapback.register();
 				switch(e.keyCode) {
 					case 66://b
 					case 85://u
 						e.preventDefault();
-						var that = this;
 						var arr = [];
 						arr[66] = 'bold';
 						arr[85] = 'underline';
@@ -368,6 +358,33 @@ SpytextField.prototype = {
 						break;
 					case 86://v
 						// DO nothing, let paste event be handles
+						break;
+				}
+			} else {
+				switch(e.keyCode) {
+					case 33:
+					case 34:
+					case 35:
+					case 36:
+					case 37:
+					case 38:
+					case 39:
+					case 40:
+						clearTimeout(this.timeout);
+						this.timeout = null;
+						this.snapback.register();
+						break;
+					default:
+						var that = this;
+						if(!this.timeout) {
+							console.log('setting selection');
+							that.snapback.setSelection();
+						}
+						clearTimeout(this.timeout);
+						this.timeout = setTimeout(function() {
+							console.log('timeout');
+							that.snapback.register();
+						}, 1000);
 						break;
 				}
 			}
