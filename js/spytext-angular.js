@@ -62,6 +62,14 @@ angular.module('Spytext', [])
 					});
 				}
 			});
+			$element.on('blur', function() {
+				if(ngModelCtrl.$dirty) {
+					scope.$apply(function() {
+						ngModelCtrl.$setViewValue(element.html());
+					});
+				}
+			});
+
 			ngModelCtrl.$render = function() {
 				$element.html(ngModelCtrl.$viewValue);
 			};
