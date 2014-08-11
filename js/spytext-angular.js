@@ -57,13 +57,16 @@ angular.module('Spytext', [])
 			scope.spytext.addField($element[0], 'full', new Snapback($element[0], 'spytext'));
 			$element.on('keydown', function(e) {
 				if(!ngModelCtrl.$dirty && ngModelCtrl.$viewValue !== $element.html()) {
+					console.log('first update');
 					scope.$apply(function() {
 						ngModelCtrl.$setViewValue($element.html());
 					});
 				}
 			});
 			$element.on('blur', function() {
+				console.log('blurring');
 				if(ngModelCtrl.$dirty) {
+					console.log('updating');
 					scope.$apply(function() {
 						ngModelCtrl.$setViewValue(element.html());
 					});
