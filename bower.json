@@ -1,7 +1,10 @@
 {
   "name": "spytext",
   "version": "0.2.0",
-  "main": "./js/spytext.js",
+  "main": [
+    "./js/spytext.js",
+    "./js/spytext-angular.js"
+  ],
   "authors": [
     "Niklas Strandberg <niklas.strandberg@thecodebureau.com>",
     "Linus Miller <linus.miller@thecodebureau.com>"
