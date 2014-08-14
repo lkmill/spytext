@@ -198,7 +198,10 @@ Spytext.prototype = {
 				document.execCommand('unlink');
 			}
 		},
-		paste: function(options) {
+		paste: function(dataTransfer) {
+			var str = dataTransfer.getData('Text');
+			str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').replace(/[\n\r]+/g, '\n');
+			document.execCommand('insertText', null, str);
 		},
 		type: {}
 	},
@@ -380,18 +383,7 @@ SpytextField.prototype = {
 		},
 		paste: function (e) {
 			e.preventDefault();
-			var str;
-			if(e.clipboardData) {
-				e.clipboardData.items[0].getAsString(function(str) {
-					done(str);
-				});
-			} else {
-				done(clipboardData.getData('Text'));
-			}
-			function done() {
-				str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+/g, '</p><p>');
-				this.spytext.execute('paste', { text: str });
-			}
+			this.spytext.execute('paste', e.clipboardData ? e.clipboardData : clipboardData);
 		}
 	}
 };
