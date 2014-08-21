@@ -1,32 +1,51 @@
-var Spytext = function() {
+var Spytext = function(element, config) {
 	var that = this;
 	this.fields = [];
-	this.currentField = null;
+	//this.currentField = null;
+	// holds the active, if any, field
+	this.field = null;
+	this.element = null;
+	this.snapback = null;
+	this.selectron = null;
 	this.buttons = [];
+	this.toolbar = null;
 	_.each(this.events.doc, function(func, name) {
 		document.bind(name, func, that);
 	});
 	this.mousedown = false;
+	if(element) {
+		var toolbar = element.O('[spytext-toolbar], .spytext-toolbar');
+		if(toolbar) this.toolbar = new SpytextToolbar(toolbar, { preset: 'standard' });
+		element.M('[spytext-field], .spytext-field').each(function() {
+			that.addField(this, { preset: 'full' });
+		});
+		element.M('[st-button-type]').each(function() {
+			that.addButton(this, { preset: this.attr('st-button-type') });
+
+		});
+	}
 };
 Spytext.prototype = {
 	setCurrentField: function(field) {
 		if(this.fields.indexOf(field) > -1) {
-			this.currentField = field;
+			this.field = field;
+			this.element = field.element;
+			this.snapback = field.snapback;
+			this.selectron = field.selectron;
 			// TODO activate buttons
 		} else {
 			this.unsetCurrentField();
 		}
 	},
 	unsetCurrentField: function() {
-		this.currentField = null;
+		this.field = this.element = this.snapback = this.selectron = null;
 		// TODO deactivate buttons
 	},
 	events: {
 		doc: {
 			mouseup: function(e) {
-				if(this.mousedown && this.currentField) {
-					this.currentField.snapback.register();
-					this.currentField.snapback.setSelectron();
+				if(this.mousedown && this.field) {
+					this.snapback.register();
 				}
 				this.mousedown = false;
 			}
@@ -34,98 +53,133 @@ Spytext.prototype = {
 	},
 	actions: {
 		align: function(options) {
-			var points = S.points.both(this.currentField.element);
-			S.set(points);
 
-			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
-			containedBlocks.each(function() {
+			var containedChildren = this.selectron.contained(1,1);
+			containedChildren.each(function() {
 				if(!this.matches('ul, ol')) this.css('text-align', options.alignment);
 			});
 		},
 		block: function(options) {
+			function block(node) {
+				var tmp = wrapper.clone();
+				node.before(tmp);
+				while(node.firstChild) {
+					tmp.append(node.firstChild);
+				}
+				node.vanish();
+				blocks.push(tmp);
+			}
+			var that = this;
+			var positron = this.selectron.get(null, true);
 			var wrapper = O('<' + options.tag + '></' + options.tag + '>');
-			var points = S.points.both(this.currentField.element);
-			S.set(points);
-			var sel = S.s();
+			console.log(this.selectron.get());
 
-			// TODO split list
-			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
-			containedBlocks.each(function() {
-				var that = this;
-				var tmp;
+			var blocks = [];
+			this.selectron.contained(1, 1).each(function(){
 				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
-					var listItems = this.M('li');
-					listItems.each(function() {
-						S.set(points);
-						if(sel.containsNode(this, true)) {
-							tmp = wrapper.clone();
-							if(this.previousSibling) that.after(tmp);
-							else that.before(tmp);
-							while(this.firstChild) {
-								tmp.append(this.firstChild);
-							}
-							this.remove();
-						}
+					var li = this.offspring('li');
+					var containedLi = that.selectron.contained(li);
+					var startIndex = li.indexOf(containedLi[0]);
+					containedLi.each(function() {
+						block(this);
 					});
-					if(!this.firstChild) this.remove();
-				} else {
-					tmp = wrapper.clone();
-					this.before(tmp);
-					while(this.firstChild) {
-						tmp.append(this.firstChild);
+
+					if(!this.firstChild) this.vanish();
+					else if(startIndex > 0) {
+						var bottomList = O('<' + this.tagName + '><' + this.tagName + '/>');
+						while(startIndex < this.childNodes.length) {
+							this.after(bottomList);
+							bottomList.prepend(this.lastChild);
+						}
+						this.after(blocks);
 					}
-					this.remove();
+				} else {
+					block(this);
 				}
 			});
-			S.set(points);
+			positron.restore();
+			//console.log('block');
+			//var positron = this.selectron.get(null, true);
+			//var wrapper = O('<' + options.tag + '></' + options.tag + '>');
+			//var sel = window.getSelection();
+
+			//// TODO split list
+			//var containedChildren = this.selectron.contained(1, 1);
+			//containedChildren.each(function() {
+			//	var that = this;
+			//	var tmp;
+			//	if(this.nodeName === 'UL' || this.nodeName === 'OL') {
+			//		var listItems = this.M('li');
+			//		listItems.each(function() {
+			//			positron.restore();
+			//			if(sel.containsNode(this, true)) {
+			//				tmp = wrapper.clone();
+			//				if(this.previousSibling) that.after(tmp);
+			//				else that.before(tmp);
+			//				while(this.firstChild) {
+			//					tmp.append(this.firstChild);
+			//				}
+			//				this.vanish();
+			//			}
+			//		});
+			//		if(!this.firstChild) this.vanish();
+			//	} else {
+			//		tmp = wrapper.clone();
+			//		this.before(tmp);
+			//		while(this.firstChild) {
+			//			tmp.append(this.firstChild);
+			//		}
+			//		this.vanish();
+			//	}
+			//});
+			//positron.restore();
 		},
 		list: function(options){
+			var that = this;
 			var tags = {
 				ordered: 'OL',
 				unordered: 'UL'
 			};
 			var tagName = tags[options.type];
 			var list = O('<' + tagName + '></' + tagName + '>');
-			var selection = S.save(this.currentField.element);
-			selection.load();
-			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
-			containedBlocks[0].before(list);
-			containedBlocks.each(function(){
+			var positron = this.selectron.get(null, true);
+			var containedChildren = this.selectron.contained(1, 1);
+			containedChildren[0].before(list);
+			containedChildren.each(function(){
 				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
-					if(containedBlocks.length === 1) {
-						if(this.tagName !== tagName) {
-							var containedLi = S.nodes.elements(this, true, null, true);
-							if(this.firstChild === containedLi[0]) {
-								this.before(list);
-								containedLi.each(function() {
-									list.append(this);
-								});
-								if(!this.firstChild) this.remove();
-							} else if (this.lastChild === containedLi[containedLi.length - 1]) {
-								this.after(list);
-								while(this.lastChild === containedLi[containedLi.length - 1]) {
-									containedLi.each(function() {
-										list.append(this);
-									});
-								}
-							} else {
-								var bottomList = O('<' + this.tagName + '><' + this.tagName + '/>');
-								this.after(bottomList);
-								while(this.lastChild !== containedLi[containedLi.length - 1]) {
-									bottomList.prepend(this.lastChild);
-								}
-								this.after(list);
-								containedLi.each(function() {
-									list.append(this);
-								});
-							}
+					if(containedChildren.length === 1 && this.tagName === tagName) return;
+
+					var li = this.offspring('li');
+					//var lengthLi = li.length;
+					var containedLi = that.selectron.contained(li);
+					var startIndex = li.indexOf(containedLi[0]);
+					//var indexOfFirstContained = li.indexOf(containedLi[0]);
+					//var lengthContained = containedLi.length;
+					containedLi.each(function() {
+							list.append(this);
+					});
+
+					if(!this.firstChild) this.vanish();
+					else if(startIndex > 0) {
+						var bottomList = O('<' + this.tagName + '><' + this.tagName + '/>');
+						while(startIndex < this.childNodes.length) {
+							this.after(bottomList);
+							bottomList.prepend(this.lastChild);
 						}
-					} else {
-						while(this.firstChild) {
-							list.append(this.firstChild);
-						}
-						this.remove();
+						this.after(list);
 					}
+					//if(this.firstChild === containedLi[0]) {
+					//	this.before(list);
+					//	if(!this.firstChild) this.vanish();
+					//} else if (this.lastChild === containedLi[containedLi.length - 1]) {
+					//	this.after(list);
+					//	while(this.lastChild === containedLi[containedLi.length - 1]) {
+					//		containedLi.each(function() {
+					//			list.append(this);
+					//		});
+					//	}
+					//} else {
+					//}
 				} else {
 					var listItem = O('<li></li>');
 					list.append(listItem);
@@ -133,10 +187,10 @@ Spytext.prototype = {
 						listItem.append(this.firstChild);
 					}
 					list.append(listItem);
-					this.remove();
+					this.vanish();
 				}
 			});
-			selection.load();
+			positron.restore();
 		},
 		indent: function(){
 		},
@@ -146,33 +200,29 @@ Spytext.prototype = {
 				bold: 'B'
 			};
 			var wrapper = options.container ? O(options.container) : O('<' + tags[options.command] + '></' + tags[options.command] + '>');
-			var points = S.points.both(this.currentField.element);
-			S.set(points);
-			var containedBlocks = S.nodes.elements(this.currentField.element, true, null, true);
-			if(S.isCollapsed()){
-				var closest = rng.startContainer.closest(wrapper.tagName);
-				while(closest) {
-					closest.unwrap();
-					closest = closest.closest(wrapper.tagName);
-				}
-			} else {
-				var textNodes = S.nodes.textNodes(this.currentField.element).toArray();
-				var rng = S.range();
-				if(rng.endOffset < rng.endContainer.textContent.length) {
-					rng.endContainer.splitText(rng.endOffset);
-				}
-				if(rng.startOffset > 0) {
-					textNodes = textNodes.slice(1);
-					textNodes.unshift(rng.startContainer.splitText(rng.startOffset));
-				}
-				textNodes = M(textNodes);
-				textNodes.wrap(wrapper);
+			var positron = this.selectron.get(null, true);
+			// NodeList converted to Array to that we can splice it if needed
+			var containedTextNodes = this.selectron.contained(3).toArray();
+			var rng = this.selectron.range();
+			if(rng.endOffset < rng.endContainer.textContent.length) {
+				node = rng.endContainer;
 
+				while(node.firstChild && node.nodeType !== 3) node = node.firstChild;
+
+				if(node) node.splitText(rng.endOffset);
 			}
-			containedBlocks.tidy(wrapper.tagName);
-			S.set(points);
+			if(rng.startOffset > 0) {
+				node = rng.startContainer;
+
+				while(node && node.nodeType !== 3) node = node.firstChild;
+
+				if(node) containedTextNodes.splice(0, 1, node.splitText(rng.startOffset));
+			}
+			M(containedTextNodes).wrap(wrapper);
+			this.selectron.contained(1, 1).tidy(wrapper.tagName);
+			positron.restore();
 		},
-		link: function (attribute) {
+		link: function(attribute) {
 			var sel = window.getSelection();
 			var node = sel.focusNode.parentNode;
 			if (node.tagName.toLowerCase() !== 'a') {
@@ -203,37 +253,45 @@ Spytext.prototype = {
 			str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').replace(/[\n\r]+/g, '\n');
 			document.execCommand('insertText', null, str);
 		},
-		type: {}
+		removeFormat: function() {
+			console.log('hello');
+			document.execCommand('removeFormat');
+		}
 	},
 	addButton: function(element, config) {
-		var field = new SpytextButton(element, config, this);
-		this.buttons.push(field);
-		return field;
-	},
-	addField: function(element, config, snapback) {
-		var button = new SpytextField(this, element, config, snapback);
-		this.fields.push(button);
+		var button = new SpytextButton(element, config, this);
+		this.buttons.push(button);
 		return button;
 	},
+	addField: function(element, config) {
+		var field = new SpytextField(this, element, config);
+		this.fields.push(field);
+		return field;
+	},
 	execute: function(action, options) {
-		var snapback = this.currentField.snapback;
-		snapback.register();
-		snapback.setSelectron();
-		this.actions[action].call(this, options);
-		setTimeout(function() {
-			snapback.register();
-		}, 100);
+		var that = this;
+		this.selectron.normalize();
+		this.snapback.register();
+		console.log(action);
+		if(this.actions[action]) {
+			this.actions[action].call(this, options);
+			setTimeout(function() {
+				that.snapback.register();
+			}, 100);
+		}
 	}
 };
 var SpytextButton = function(element, config, spytext) {
 	this.spytext = spytext;
-	this.config = typeof config === 'string' ? this.presets[config] : config;
+	this.config = typeof config.preset === 'string' ? _.merge(this.presets[config.preset], config) : config;
 	this.element = element;
 	this.element.bind('click', this.events.click, this);
 };
 SpytextButton.prototype = {
 	events: {
-		click: function() {
+		click: function(e) {
+			e.preventDefault();
+
 			this.spytext.execute(this.config.action, this.config.options);
 		}
 	},
@@ -246,7 +304,7 @@ SpytextButton.prototype = {
 		strikeThrough: { title: 'Strike Through', action: 'format', options: { command: 'strikeThrough' }},
 		underline: { title: 'Underline', action: 'format', options: { command: 'italic' }},
 		italic: { title: 'Italic', action: 'format', options: { command: 'bold' }},
-		removeFormat: { action: 'format', options: { command: 'removeFormat' }},
+		removeFormat: { action: 'removeFormat' },
 		typeHeading1: { title: 'Heading 1', action: 'block', options: { tag: 'H1' }},
 		typeHeading2: { title: 'Heading 1', action: 'block', options: { tag: 'H2' }},
 		typeHeading3: { title: 'Heading 1', action: 'block', options: { tag: 'H3' }},
@@ -260,7 +318,7 @@ SpytextButton.prototype = {
 };
 var SpytextToolbar = function(element, config) {
 	var that = this;
-	this.config = typeof config === 'string' ? this.presets[config] : config;
+	this.config = typeof config.preset === 'string' ? _.merge(this.presets[config.preset], config) : config;
 	this.element = element;
 	_.each(this.events, function(func, name) {
 		that.element.bind(name, func, that);
@@ -271,9 +329,14 @@ SpytextToolbar.prototype = {
 		standard: {
 			buttonGroups: [
 				{ name: 'block', buttons: ['typeHeading1', 'typeHeading2', 'typeHeading3', 'typeHeading4', 'typeHeading5', 'typeHeading6', 'typeParagraph']},
-				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']},
+				{ name: 'format', buttons: ['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat']},
 				{ name: 'align', buttons: ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']},
 				{ name: 'list', buttons: ['unorderedList', 'orderedList']}
+			]
+		},
+		format: {
+			buttonGroups: [
+				{ name: 'format', buttons: ['bold', 'underline', 'strikeThrough', 'removeFormat']},
 			]
 		}
 	},
@@ -284,14 +347,32 @@ SpytextToolbar.prototype = {
 		}
 	}
 };
-var SpytextField = function(spytext, element, config, snapback) {
+var SpytextField = function(spytext, element, config) {
+
 	var that = this;
 	this.spytext = spytext;
 	this.element = element;
 	this.element.attr('contentEditable', 'true');
-	this.config = typeof config === 'string' ? this.presets[config] : config;
-	this.snapback = snapback;
+	this.config = typeof config.preset === 'string' ? _.merge(this.presets[config], config) : config;
+	this.selectron = new Selectron(element);
 	this.timeout = null;
+
+	var children = element.childNodes.toArray();
+	for(var i in children) {
+		if(children[i].nodeType !== 3) continue;
+		if(children[i].textContent.match(/^\s+$/)) {
+			children[i].vanish();
+		} else {
+			children[i].textContent = children[i].textContent.trim();
+			children[i].wrap(O('<p></p>'));
+		}
+	}
+
+	if(!element.firstChild) element.append(O('<p><br /></p>'));
+
+	// needs to be loaded after DOM manipulation
+	this.snapback = new Snapback(element, { preset: 'spytext', selectron: this.selectron});
+
 	_.each(this.events, function(func, name) {
 		element.bind(name, func, that);
 	});
@@ -305,6 +386,9 @@ SpytextField.prototype = {
 	},
 	presets: {
 		full: {
+			buttons: [ 'bold', 'italic', 'underline', 'strikeThrough', 'removeFormat' ]
+		},
+		format: {
 			buttons: [ 'bold', 'italic', 'underline', 'strikeThrough', 'removeFormat' ]
 		}
 	},
@@ -347,7 +431,7 @@ SpytextField.prototype = {
 						break;
 					case 65://a
 						e.preventDefault();
-						S.set({ start: { ref: this.element, offset: 0 }, end: { ref: this.element, offset: this.element.textContent.length } });
+						this.selectron.select(this.element);
 						break;
 					case 84://t
 						e.preventDefault();
