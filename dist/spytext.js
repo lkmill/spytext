@@ -60,9 +60,10 @@ Spytext.prototype = {
 			});
 		},
 		block: function(options) {
-			function block(node) {
+			function block(node, insertBefore) {
+				insertBefore = insertBefore || node;
 				var tmp = wrapper.clone();
-				node.before(tmp);
+				insertBefore.before(tmp);
 				while(node.firstChild) {
 					tmp.append(node.firstChild);
 				}
@@ -71,17 +72,18 @@ Spytext.prototype = {
 			}
 			var that = this;
 			var positron = this.selectron.get(null, true);
+			console.log(positron);
 			var wrapper = O('<' + options.tag + '></' + options.tag + '>');
-			console.log(this.selectron.get());
 
 			var blocks = [];
 			this.selectron.contained(1, 1).each(function(){
+				var child = this;
 				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
 					var li = this.offspring('li');
 					var containedLi = that.selectron.contained(li);
 					var startIndex = li.indexOf(containedLi[0]);
 					containedLi.each(function() {
-						block(this);
+						block(this, child);
 					});
 
 					if(!this.firstChild) this.vanish();
@@ -91,48 +93,13 @@ Spytext.prototype = {
 							this.after(bottomList);
 							bottomList.prepend(this.lastChild);
 						}
-						this.after(blocks);
+						this.after(M(blocks));
 					}
 				} else {
 					block(this);
 				}
 			});
 			positron.restore();
-			//console.log('block');
-			//var positron = this.selectron.get(null, true);
-			//var wrapper = O('<' + options.tag + '></' + options.tag + '>');
-			//var sel = window.getSelection();
-
-			//// TODO split list
-			//var containedChildren = this.selectron.contained(1, 1);
-			//containedChildren.each(function() {
-			//	var that = this;
-			//	var tmp;
-			//	if(this.nodeName === 'UL' || this.nodeName === 'OL') {
-			//		var listItems = this.M('li');
-			//		listItems.each(function() {
-			//			positron.restore();
-			//			if(sel.containsNode(this, true)) {
-			//				tmp = wrapper.clone();
-			//				if(this.previousSibling) that.after(tmp);
-			//				else that.before(tmp);
-			//				while(this.firstChild) {
-			//					tmp.append(this.firstChild);
-			//				}
-			//				this.vanish();
-			//			}
-			//		});
-			//		if(!this.firstChild) this.vanish();
-			//	} else {
-			//		tmp = wrapper.clone();
-			//		this.before(tmp);
-			//		while(this.firstChild) {
-			//			tmp.append(this.firstChild);
-			//		}
-			//		this.vanish();
-			//	}
-			//});
-			//positron.restore();
 		},
 		list: function(options){
 			var that = this;
@@ -148,13 +115,9 @@ Spytext.prototype = {
 			containedChildren.each(function(){
 				if(this.nodeName === 'UL' || this.nodeName === 'OL') {
 					if(containedChildren.length === 1 && this.tagName === tagName) return;
-
 					var li = this.offspring('li');
-					//var lengthLi = li.length;
 					var containedLi = that.selectron.contained(li);
 					var startIndex = li.indexOf(containedLi[0]);
-					//var indexOfFirstContained = li.indexOf(containedLi[0]);
-					//var lengthContained = containedLi.length;
 					containedLi.each(function() {
 							list.append(this);
 					});
@@ -168,18 +131,6 @@ Spytext.prototype = {
 						}
 						this.after(list);
 					}
-					//if(this.firstChild === containedLi[0]) {
-					//	this.before(list);
-					//	if(!this.firstChild) this.vanish();
-					//} else if (this.lastChild === containedLi[containedLi.length - 1]) {
-					//	this.after(list);
-					//	while(this.lastChild === containedLi[containedLi.length - 1]) {
-					//		containedLi.each(function() {
-					//			list.append(this);
-					//		});
-					//	}
-					//} else {
-					//}
 				} else {
 					var listItem = O('<li></li>');
 					list.append(listItem);
@@ -272,7 +223,6 @@ Spytext.prototype = {
 		var that = this;
 		this.selectron.normalize();
 		this.snapback.register();
-		console.log(action);
 		if(this.actions[action]) {
 			this.actions[action].call(this, options);
 			setTimeout(function() {
