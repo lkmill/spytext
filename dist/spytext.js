@@ -157,103 +157,27 @@ var Spytext = (function() {
 		});
 		//this.mousedown = false;
 		if(element) {
-			var toolbar = element.O('[spytext-toolbar], .spytext-toolbar');
-			if(toolbar) this.toolbar = new SpytextToolbar(toolbar, { preset: 'standard' });
+			this.toolbar = new SpytextToolbar({ preset: 'standard' }, this);
+			element.prepend(this.toolbar.element);
 			element.M('[spytext-field], .spytext-field').each(function() {
 				that.addField(this, { preset: 'full' });
 			});
-			element.M('[st-button-type]').each(function() {
-				that.addButton(this, { preset: this.attr('st-button-type') });
-
-			});
-			element.M('[st-dropdown-type]').each(function() {
-				that.addDropdown(this, { preset: this.attr('st-dropdown-type') });
-			});
+			//element.M('[st-button-type]').each(function() {
+			//	that.addButton(this, { preset: this.attr('st-button-type') });
+			//});
+			//element.M('[st-dropdown-type]').each(function() {
+			//	that.addDropdown(this, { preset: this.attr('st-dropdown-type') });
+			//});
 		}
 	};
 	Spytext.prototype = {
-		enableToolbar: function() {
-			for(var i in this.buttons) {
-				var button = this.buttons[i];
-				//button.element.setAttribute('disabled');
-				button.enable();
-			}
-			for(var j in this.dropdowns) {
-				this.dropdowns[j].enable();
-				//button.element.setAttribute('disabled');
-			}
-		},
-		disableToolbar: function() {
-			for(var i in this.buttons) {
-				this.buttons[i].disable();
-				this.buttons[i].unsetActive();
-			}
-			for(var j in this.dropdowns) {
-				this.dropdowns[j].disable();
-			}
-		},
-		setActiveStyles: function() {
-			function setBlock(tag) {
-				switch(tag) {
-					case 'P':
-					case 'H1':
-					case 'H2':
-					case 'H3':
-					case 'H4':
-					case 'H5':
-					case 'H6':
-						that.dropdowns.type.setActive({ tag: tag });
-						break;
-					case 'UL':
-						that.buttons.unorderedList.setActive();
-						that.dropdowns.type.setNoActive();
-						break;
-					case 'OL':
-						that.buttons.orderedList.setActive();
-						that.dropdowns.type.setNoActive();
-						break;
-				}
-			}
-			var that = this;
-			var tags = [];
-			var blocks = [];
-			var rng;
-			while(!rng) {
-				rng = this.selectron.range();
-			}
-			if(rng.collapsed) {
-				tags = rng.startContainer.ancestors(null, this.element).toArray();
-				if(tags.length > 0) blocks.push(tags.pop());
-			} else {
-				var el = rng.commonAncestorContainer;
-				tags = el.ancestors(null, this.element).toArray();
-			}
-			tags = M(tags);
-
-			for(var i in this.buttons) {
-				var button = this.buttons[i];
-				if(button.config.options && tags.includes(button.config.options.tag)) {
-					button.setActive();
-				} else button.unsetActive();
-			}
-			var blockTag;
-			for(var j = 0; j < blocks.length; j++) {
-				if(blockTag && blockTag !== blocks[j].tagName) {
-					blockTag = null;
-					break;
-				} else {
-					blockTag = blocks[j].tagName || null;
-				}
-			}
-			if(blockTag) setBlock(blockTag);
-		},
 		setCurrentField: function(field) {
 			if(this.fields.indexOf(field) > -1) {
 				this.field = field;
 				this.element = field.element;
 				this.snapback = field.snapback;
 				this.selectron = field.selectron;
-				this.enableToolbar();
+				this.toolbar.enable();
 				// TODO activate buttons
 			} else {
 				this.unsetCurrentField();
@@ -261,7 +185,7 @@ var Spytext = (function() {
 		},
 		unsetCurrentField: function() {
 			this.field = this.element = this.snapback = this.selectron = null;
-			this.disableToolbar();
+			this.toolbar.disable();
 			// TODO deactivate buttons
 		},
 		events: {
@@ -271,8 +195,8 @@ var Spytext = (function() {
 					if(this.field) {
 						this.snapback.register();
 						setTimeout(function() {
-							that.setActiveStyles();
-						}, 10);
+							that.toolbar.setActiveStyles();
+						}, 100);
 					}
 					//this.mousedown = false;
 				}
@@ -649,16 +573,6 @@ var Spytext = (function() {
 				document.execCommand('removeFormat');
 			}
 		},
-		addButton: function(element, config) {
-			var button = new SpytextButton(element, config, this);
-			this.buttons[config.preset] = button;
-			return button;
-		},
-		addDropdown: function(element, config) {
-			var dropdown = new SpytextDropdown(element, config, this);
-			this.dropdowns[config.preset] = dropdown;
-			return dropdown;
-		},
 		addField: function(element, config) {
 			var field = new SpytextField(this, element, config);
 			this.fields.push(field);
@@ -670,20 +584,20 @@ var Spytext = (function() {
 			this.snapback.register();
 			if(this.actions[action]) {
 				this.actions[action].call(this, options);
-				this.setActiveStyles();
+				this.toolbar.setActiveStyles();
 				setTimeout(function() {
 					that.snapback.register();
 				}, 100);
 			}
 		}
 	};
-	var SpytextButton = function(element, config, spytext) {
+	var SpytextButton = function(config, spytext) {
 		var that = this;
 		this.spytext = spytext;
 		this.config = typeof config.preset === 'string' ? _.merge(this.presets[config.preset], config) : config;
-		this.element = element;
+		this.element = O('<BUTTON class="spytext-button" st-button-type="' + config.preset + '" tabindex="' + -1 + '">');
 		_.each(this.events, function(func, name) {
-			element.bind(name, func, that);
+			that.element.bind(name, func, that);
 		});
 		this.disable();
 	};
@@ -699,6 +613,7 @@ var Spytext = (function() {
 		},
 		disable: function() {
 			this.element.disabled = true;
+			this.unsetActive();
 		},
 		events: {
 			click: function(e) {
@@ -729,12 +644,12 @@ var Spytext = (function() {
 			outdent: { title: 'Outdent', action: 'indent', options: { outdent: true }}
 		}
 	};
-	var SpytextDropdown = function(element, config, spytext) {
+	var SpytextDropdown = function(config, spytext) {
 		var that = this;
 		this.spytext = spytext;
 		this.config = typeof config.preset === 'string' ? _.merge(this.presets[config.preset], config) : config;
 		this.items = [];
-		this.element = element;
+		this.element = O('<ul class="spytext-dropdown">');
 		_.each(this.config.items, function(item) {
 			var el = O('<li><span>' + item.title + '</span></li>');
 			that.element.append(el);
@@ -745,7 +660,7 @@ var Spytext = (function() {
 		});
 
 		_.each(this.events.dropdown, function(func, name) {
-			element.bind(name, func, that);
+			that.element.bind(name, func, that);
 		});
 		this.index = 0;
 		this.length = this.element.offspring().length;
@@ -821,15 +736,124 @@ var Spytext = (function() {
 			}
 		}
 	};
-	var SpytextToolbar = function(element, config) {
+	var SpytextToolbar = function(config, spytext) {
 		var that = this;
+		this.dropdowns = [];
+		this.buttons = [];
+		this.spytext = spytext;
 		this.config = typeof config.preset === 'string' ? _.merge(this.presets[config.preset], config) : config;
-		this.element = element;
+		this.element = O('<DIV class="spytext-toolbar">');
+
+		_.each(this.config.dropdowns, this.addDropdown.bind(this));
+		_.each(this.config.buttonGroups, this.addButtonGroup.bind(this));
+
 		_.each(this.events, function(func, name) {
 			that.element.bind(name, func, that);
 		});
 	};
 	SpytextToolbar.prototype = {
+		addButtonGroup: function(group) {
+			var that = this;
+			var ul = O('<UL>').addClass('spytext-button-group ' + group.name);
+			_.each(group.buttons, function(buttonType) {
+				var li = O('<LI>');
+				var button = that.addButton({ preset: buttonType }, that.spytext);
+				ul.append(li);
+				li.append(button.element);
+			});
+			this.element.append(ul);
+		},
+		addButton: function(config, shouldAppend) {
+			var button = new SpytextButton(config, this.spytext);
+			this.buttons[config.preset] = button;
+			return button;
+		},
+		addDropdown: function(config) {
+			config = typeof config === 'string' ? { preset: config } : config;
+			var dropdown = new SpytextDropdown(config, this.spytext);
+			this.dropdowns[config.preset] = dropdown;
+			this.element.append(dropdown.element);
+			return dropdown;
+		},
+		enable: function() {
+			for(var i in this.buttons) {
+				var button = this.buttons[i];
+				//button.element.setAttribute('disabled');
+				button.enable();
+			}
+			for(var j in this.dropdowns) {
+				this.dropdowns[j].enable();
+				//button.element.setAttribute('disabled');
+			}
+		},
+		disable: function() {
+			for(var i in this.buttons) {
+				this.buttons[i].disable();
+			}
+			for(var j in this.dropdowns) {
+				this.dropdowns[j].disable();
+			}
+		},
+		setActiveStyles: function() {
+			function setBlock(tag) {
+				switch(tag) {
+					case 'P':
+					case 'H1':
+					case 'H2':
+					case 'H3':
+					case 'H4':
+					case 'H5':
+					case 'H6':
+						if(that.dropdowns.type) {
+							that.dropdowns.type.setActive({ tag: tag });
+						}
+						break;
+					case 'UL':
+						that.buttons.unorderedList.setActive();
+						that.dropdowns.type.setNoActive();
+						break;
+					case 'OL':
+						that.buttons.orderedList.setActive();
+						that.dropdowns.type.setNoActive();
+						break;
+				}
+			}
+			var that = this;
+			var tags = [];
+			var blocks = [];
+			var rng;
+			var s = 0;
+			while(!rng) {
+				rng = this.spytext.selectron.range();
+				if(s++ > 10000) return;
+			}
+			if(!rng) return;
+			if(rng.collapsed) {
+				tags = rng.startContainer.ancestors(null, this.spytext.element).toArray();
+				if(tags.length > 0) blocks.push(tags.pop());
+			} else {
+				var el = rng.commonAncestorContainer;
+				tags = el.ancestors(null, this.spytext.element).toArray();
+			}
+			tags = M(tags);
+
+			for(var i in this.buttons) {
+				var button = this.buttons[i];
+				if(button.config.options && tags.includes(button.config.options.tag)) {
+					button.setActive();
+				} else button.unsetActive();
+			}
+			var blockTag;
+			for(var j = 0; j < blocks.length; j++) {
+				if(blockTag && blockTag !== blocks[j].tagName) {
+					blockTag = null;
+					break;
+				} else {
+					blockTag = blocks[j].tagName || null;
+				}
+			}
+			if(blockTag) setBlock(blockTag);
+		},
 		presets: {
 			standard: {
 				dropdowns: [ 'type' ],
@@ -864,20 +888,6 @@ var Spytext = (function() {
 		this.timeout = null;
 
 		this.clearTextNodes();
-		//var children = element.childNodes.toArray();
-		//for(var i in children) {
-		//	if(children[i].nodeType !== 3) continue;
-		//	if(children[i].textContent.match(/^\s+$/)) {
-		//		children[i].vanish();
-		//	} else {
-		//		console.log('should be wrapping ' + children[i]);
-		//		children[i].textContent = children[i].textContent.trim();
-		//		children[i].wrap(O('<p></p>'));
-		//	}
-		//}
-
-		if(!element.firstChild) element.append(O('<p><br /></p>'));
-		element.setBR();
 
 		// needs to be loaded after DOM manipulation
 		this.snapback = new Snapback(element, { preset: 'spytext', selectron: this.selectron});
@@ -919,6 +929,7 @@ var Spytext = (function() {
 		},
 		events: {
 			focus: function () {
+				this.clearTextNodes();
 				this.snapback.enable();
 				this.activate();
 			},
@@ -940,7 +951,7 @@ var Spytext = (function() {
 					case 38:
 					case 39:
 					case 40:
-						this.spytext.setActiveStyles();
+						this.spytext.toolbar.setActiveStyles();
 						break;
 					default:
 				}
