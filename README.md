@@ -1,82 +1,31 @@
-# Bower Spytext
+# Spytext - The Tiny But Fully Functional RTE for the Web
 
-> Front-end contenteditable
+## Why ?
 
-## Install
+## Spytext is Tiny
 
-```sh
-$ bower install --save spytext
-```
+          | Unminified  | Minified  | Compressed
+----------|-------------|-----------|-------------
+Spytext   |             |           |
+Snapback  |             |           |
+Selectron |             |           |
+MOD       |             |           |
+MOD-extras|             |           |
+Total:    |             |           |
 
-## Usage
 
-```
+### Comparison to Other RTE's
 
-<script src="bower_components/jquery/dist/jquery.js"></script>
-<script src="bower_components/lodash/dist/lodash.js"></script>
-<script src="bower_components/rangy/rangy-core.js"></script>
-<script src="bower_components/rangy/rangy-selectionsaverestore.js"></script>
-<script src="bower_components/spytext/js/spytext.js"></script>
-<link href="bower_components/font-awesome/css/font-awesome.css" rel="stylesheet">
-<link href="stylesheets/screen.css" rel="stylesheet">
+## Compatability
 
-<h1>test</h1>
+Firefox has not been tested fully yet. We jus tassume right now
 
-<div contenteditable="true" data-id="content_1">
-    <p>test</p>
-</div>
+        | Quirky    | Full Without Undo | Full      |
+--------|-----------|-------------------|-----------|
+Chrome  |         9 | 16                | 18        |
+IE      |       N/A | 9                 | N/A       |
+Firefox |         1 | 3.6               | 14        |
+Safari  | Unknown   | Unknown           | 6         |
+Opera   | Unknown   | Unknown           | 15        |
 
-<h2>test</h2>
 
-<div contenteditable="true" data-id="content_1">
-    <br>
-</div>
-
-<script>
-    $(function() {
-        SpyText.addGroup($('div[contentEditable="true"]'));
-
-        SpyText.addHooks({
-            save: function(elements, callback){
-                var data = _.map(elements, function(el) { return { 
-                    id: $(el).attr("data-id"),
-                    html: $(el).html()
-                }});
-                $.ajax({
-                    method: 'post',
-                    url: "demo_test.txt",
-                    format: "json",
-                    data: {data: data},
-                    success: function(result){
-                        callback(result);
-                    },
-                    error: function(result){
-                        callback(result);
-                    }
-                });
-            },
-            remove: function(elements, callback){
-                var data = _.invoke(elements, function(){ return $(this).attr("data-id"); });
-                $.ajax({
-                    method: 'post',
-                    url: "demo_test.txt",
-                    format: "json",
-                    data: {data: data},
-                    success: function(result){
-                        callback(result);
-                    },
-                    error: function(result){
-                        callback(result);
-                    }
-                });
-            },
-        });
-    });
-</script>
-```
-
-## Hooks
-```
-	save: function(elements, callback)
-	remove: function(elements, callback)
-```
