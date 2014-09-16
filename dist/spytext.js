@@ -71,7 +71,7 @@
 		return this;
 	});
 	assign(p, 'setBR', function() {
-		if(this.firstChild && this.firstChild === this.lastChild && this.firstChild.textContent.length === 0) this.removeChild(this.firstChild);
+		if(this.firstChild && this.firstChild === this.lastChild && this.firstChild.nodeType === 3 && this.firstChild.textContent.length === 0) this.removeChild(this.firstChild);
 		if(!this.firstChild) this.appendChild(O('<BR>'));
 		else {
 			var br = this.getElementsByTagName('BR');
@@ -158,16 +158,12 @@ var Spytext = (function() {
 		//this.mousedown = false;
 		if(element) {
 			this.toolbar = new SpytextToolbar({ preset: 'standard' }, this);
-			element.prepend(this.toolbar.element);
-			element.M('[spytext-field], .spytext-field').each(function() {
-				that.addField(this, { preset: 'full' });
-			});
-			//element.M('[st-button-type]').each(function() {
-			//	that.addButton(this, { preset: this.attr('st-button-type') });
-			//});
-			//element.M('[st-dropdown-type]').each(function() {
-			//	that.addDropdown(this, { preset: this.attr('st-dropdown-type') });
-			//});
+			if(!config || !config.angular) {
+				element.prepend(this.toolbar.element);
+				element.M('[spytext-field], .spytext-field').each(function() {
+					that.addField(this, { preset: 'full' });
+				});
+			}
 		}
 	};
 	Spytext.prototype = {
@@ -898,8 +894,11 @@ var Spytext = (function() {
 	};
 	SpytextField.prototype = {
 		clearTextNodes: function() {
+			//console.log('clearing text nodes');
 			var children = this.element.childNodes.toArray();
+			//console.log(children);
 			for(var i in children) {
+				//console.log('children[i]: ' + children[i]);
 				if(children[i].nodeType !== 3) continue;
 				if(children[i].textContent.match(/^\s+$/)) {
 					children[i].vanish();
@@ -909,8 +908,16 @@ var Spytext = (function() {
 				}
 			}
 
-			if(!this.element.firstChild) this.element.append(O('<p><br /></p>'));
+			if(!this.element.firstChild) {
+				console.log('no firstChild');
+				console.log(this.element);
+				
+				console.log(O('<p><br /></p>'));
+				this.element.append(O('<p><br /></p>'));
+			}
+			//console.log(this.element.firstChild);
 			this.element.setBR();
+			//console.log(this.element.firstChild);
 		},
 		activate: function() {
 			this.spytext.setCurrentField(this);
