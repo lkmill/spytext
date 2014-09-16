@@ -6,13 +6,11 @@
 
           | Unminified  | Minified  | Compressed
 ----------|-------------|-----------|-------------
-Spytext   |             |           |
-Snapback  |             |           |
-Selectron |             |           |
-MOD       |             |           |
-MOD-extras|             |           |
-Total:    |             |           |
-
+Spytext   | 33.1kb      | 19.5kb    |
+Snapback  | 6.69kb      | 2.94kb    |
+Selectron | 6.27kb      | 3kb       |
+MOD       | 16.7kb      | 7.48kb    |
+Total:    | 62.76kb     | 32.92kb   |
 
 ### Comparison to Other RTE's
 
