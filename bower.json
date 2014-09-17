@@ -13,7 +13,7 @@
   "dependencies": {
     "lodash": "~2.4.1",
     "mod": "~0.2.0",
-    "selectron": "~0.1.0",
-    "snapback": "~0.1.0"
+    "selectron": "~0.1.1",
+    "snapback": "~0.1.1"
   }
 }
