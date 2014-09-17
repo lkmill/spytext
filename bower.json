@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": [
     "dist/spytext.js"
   ],
@@ -12,7 +12,7 @@
   ],
   "dependencies": {
     "lodash": "~2.4.1",
-    "mod": "~0.1.0",
+    "mod": "~0.2.0",
     "selectron": "~0.1.0",
     "snapback": "~0.1.0"
   }
