@@ -460,7 +460,9 @@ var Spytext = (function() {
 			format: function(options){
 				var positron = this.selectron.get(null, true);
 				// NodeList converted to Array to that we can splice it if needed
+				console.log(positron);
 				var containedTextNodes = this.selectron.contained(3).toArray();
+				console.log(containedTextNodes);
 				var rng = this.selectron.range();
 				if(rng.endOffset < rng.endContainer.textContent.length) {
 					node = rng.endContainer;
@@ -909,10 +911,6 @@ var Spytext = (function() {
 			}
 
 			if(!this.element.firstChild) {
-				console.log('no firstChild');
-				console.log(this.element);
-				
-				console.log(O('<p><br /></p>'));
 				this.element.append(O('<p><br /></p>'));
 			}
 			//console.log(this.element.firstChild);
