@@ -1,8 +1,8 @@
 {
-  "name": "spytext",
-  "version": "0.1.2",
+  "name": "tcb-spytext",
+  "version": "0.2.0-pre",
   "main": [
-    "dist/spytext.js"
+    "./lib/index.js"
   ],
   "authors": [
     "Linus Miller <linus.miller@thecodebureau.com>"

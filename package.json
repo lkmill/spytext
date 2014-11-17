@@ -1,0 +1,19 @@
+{
+  "name": "tcb-spytext",
+  "version": "0.2.0-pre",
+  "description": "## Why ?",
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thecodebureau/spytext"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thecodebureau/spytext/issues"
+  },
+  "homepage": "https://github.com/thecodebureau/spytext"
+}
