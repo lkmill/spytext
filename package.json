@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/thecodebureau/spytext/issues"
   },
-  "homepage": "https://github.com/thecodebureau/spytext"
+  "homepage": "https://github.com/thecodebureau/spytext",
+  "dependencies": {
+    "tcb-fork-lodash": "file:../../../../../tmp/npm-8417-199f3be0/1417285956857-0.7498953049071133/c0e2253572448ce7e6455d2fef48d9150cbd0c75"
+  }
 }
