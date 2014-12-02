@@ -1,6 +1,6 @@
 {
   "name": "tcb-spytext",
-  "version": "0.2.0-pre",
+  "version": "0.2.0",
   "description": "## Why ?",
   "main": "./lib/spytext.js",
   "scripts": {
