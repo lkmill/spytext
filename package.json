@@ -17,8 +17,8 @@
   },
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
-    "tcb-fork-lodash": "thecodebureau/fork-lodash#sup3rman",
-    "tcb-mod": "thecodebureau/mod#v0.3.0",
-    "tcb-snapback": "thecodebureau/snapback#v0.2.0"
+    "tcb-fork-lodash": "2.5.0",
+    "tcb-mod": "0.3.0",
+    "tcb-snapback": "0.2.0"
   }
 }
