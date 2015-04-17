@@ -18,6 +18,6 @@
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
     "tcb-mod": "^0.3.0",
-    "tcb-snapback": "^0.2.1"
+    "tcb-snapback": "git://github.com/thecodebureau/snapback.git"
   }
 }
