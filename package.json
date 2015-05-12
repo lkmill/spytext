@@ -1,6 +1,6 @@
 {
   "name": "tcb-spytext",
-  "version": "0.3.0-pre",
+  "version": "0.3.0",
   "description": "## Why ?",
   "main": "./lib/spytext.js",
   "scripts": {
@@ -17,7 +17,6 @@
   },
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
-    "tcb-mod": "^0.3.0",
     "tcb-snapback": "git://github.com/thecodebureau/snapback.git"
   }
 }
