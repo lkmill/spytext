@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
-    "tcb-snapback": "git://github.com/thecodebureau/snapback.git"
+    "tcb-snapback": "git://github.com/thecodebureau/snapback.git#v0.2.2"
   }
 }
