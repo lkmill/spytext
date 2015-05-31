@@ -1,22 +1,22 @@
 {
-  "name": "tcb-spytext",
-  "version": "0.3.0",
+  "name": "sayer",
+  "version": "0.4.0",
   "description": "## Why ?",
-  "main": "./lib/spytext.js",
+  "main": "./lib/sayer.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thecodebureau/spytext"
+    "url": "https://github.com/thecodebureau/sayer"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thecodebureau/spytext/issues"
+    "url": "https://github.com/thecodebureau/sayer/issues"
   },
-  "homepage": "https://github.com/thecodebureau/spytext",
+  "homepage": "https://github.com/thecodebureau/sayer",
   "dependencies": {
-    "tcb-snapback": "git://github.com/thecodebureau/snapback.git#v0.2.2"
+    "snapback": "^0.3.0"
   }
 }
