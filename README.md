@@ -2,6 +2,12 @@
 
 ## Why ?
 
+Always the seer is a sayer. Somehow his dream is told: somehow he publishes it with solemn joy:...
+- Ralph Waldo Emerson
+
+(...) we will call here, the Knower, the Doer, and the Sayer. These stand respectively for the love...
+- Ralph Waldo Emerson
+
 ## Spytext is Tiny
 
           | Unminified  | Minified  | Compressed
