@@ -1,21 +1,21 @@
 {
-  "name": "sayer",
+  "name": "spytext",
   "version": "0.4.1",
   "description": "## Why ?",
-  "main": "./lib/sayer.js",
+  "main": "./lib/spytext.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thecodebureau/sayer"
+    "url": "https://github.com/thecodebureau/spytext"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thecodebureau/sayer/issues"
+    "url": "https://github.com/thecodebureau/spytext/issues"
   },
-  "homepage": "https://github.com/thecodebureau/sayer",
+  "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
     "snapback": "^0.3.0"
   }
