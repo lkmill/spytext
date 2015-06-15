@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "## Why ?",
   "main": "./lib/spytext.js",
   "scripts": {
