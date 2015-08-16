@@ -108,14 +108,32 @@ function descendants(element, ufo, levels) {
 
 	return nodes;
 }
+
 var s = window.getSelection;
 
-var Selectron = function(element) {
-	this.element = element;
+var Positron = function(positions, selectron) {
+	this.selectron = selectron;
+	for(var property in positions) {
+		this[property] = positions[property];
+	}
 };
 
-Selectron.prototype = {
-	contained: function(ufo, levels, notPartlyContained) {
+Positron.prototype = {
+	restore: function() {
+		this.selectron.set(this);
+	},
+
+	isCollapsed: function() {
+		return this.start.ref === this.end.ref && this.start.offset === this.end.offset;
+	},
+
+	clone: function() {
+		return new Positron({ start: this.start, end: this.end }, this.selectron );
+	}
+};
+
+module.exports = {
+	contained: function(element, ufo, levels, notPartlyContained) {
 		// default behaviour of containsNode for textNodes
 		if(ufo === 3) notPartlyContained = false;
 
@@ -125,7 +143,7 @@ Selectron.prototype = {
 		
 		if(ufo instanceof Node) checkNodes = [ ufo ];
 		else if(ufo instanceof NodeList || ufo instanceof Array) checkNodes = ufo;
-		else checkNodes = descendants(this.element, ufo, levels);
+		else checkNodes = descendants(element, ufo, levels);
 
 		if(sel.containsNode) {
 			checkNodes.forEach(function(node) {
@@ -133,13 +151,13 @@ Selectron.prototype = {
 			});
 		} else {
 			var rng = this.range();
-			var startOffset = relativeOffset(rng.startContainer, this.element, rng.startOffset, true, false).offset;
-			var endOffset = relativeOffset(rng.endContainer, this.element, rng.endOffset, true, false).offset;
+			var startOffset = relativeOffset(rng.startContainer, element, rng.startOffset, true, false).offset;
+			var endOffset = relativeOffset(rng.endContainer, element, rng.endOffset, true, false).offset;
 
 			for(var j = 0; j < checkNodes.length; j++) {
 				var node = checkNodes[j];
-				var currentStartOffset = relativeOffset(node, this.element, 0, true, false).offset;
-				var currentEndOffset = relativeOffset(node, this.element, node.textContent.length, true, false).offset;
+				var currentStartOffset = relativeOffset(node, element, 0, true, false).offset;
+				var currentEndOffset = relativeOffset(node, element, node.textContent.length, true, false).offset;
 
 				if(
 						(currentStartOffset >= startOffset && currentEndOffset <= endOffset) ||
@@ -151,7 +169,7 @@ Selectron.prototype = {
 					if(notPartlyContained || 
 							(endOffset !== currentStartOffset && startOffset !== currentEndOffset) ||
 							(node.textContent.length === 0 || node.nodeType !== 1 || getComputedStyle(node).display.match(/inline/)) || 
-							(rng.collapsed && (rng.startContainer.closest(node, this.element))))
+							(rng.collapsed && (rng.startContainer.closest(node, element))))
 						nodes.push(node);
 				}
 			}
@@ -170,15 +188,15 @@ Selectron.prototype = {
 		else return null;
 	},
 
-	get: function(ufo, getRelativeToAncestor) {
-		var ancestor = this.element;
+	get: function(element, ufo, getRelativeToAncestor) {
+		var ancestor = element;
 		var positions;
 		if(this.countRanges() > 0) {
 			if(ufo === true) getRelativeToAncestor = ufo;
 			else if(ufo instanceof Node) ancestor = ufo;
 			positions = { start: position(ancestor, true, getRelativeToAncestor), end: position(ancestor, false, getRelativeToAncestor) };
 		} else {
-			var ref = this.element.children[this.element.children.length - 1];
+			var ref = element.children[element.children.length - 1];
 			var pos = { ref: ref, offset: ref.textContent.length, isAtStart: false };
 			positions = {
 				start: pos,
@@ -233,26 +251,3 @@ Selectron.prototype = {
 		return s().rangeCount;
 	}
 };
-
-var Positron = function(positions, selectron) {
-	this.selectron = selectron;
-	for(var property in positions) {
-		this[property] = positions[property];
-	}
-};
-
-Positron.prototype = {
-	restore: function() {
-		this.selectron.set(this);
-	},
-
-	isCollapsed: function() {
-		return this.start.ref === this.end.ref && this.start.offset === this.end.offset;
-	},
-
-	clone: function() {
-		return new Positron({ start: this.start, end: this.end }, this.selectron );
-	}
-};
-
-module.exports = Selectron;
