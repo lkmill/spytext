@@ -2,7 +2,7 @@
   "name": "spytext",
   "version": "0.4.2",
   "description": "## Why ?",
-  "main": "./lib/spytext.js",
+  "main": "./spytext.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
