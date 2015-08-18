@@ -69,20 +69,6 @@ function check(node) {
 }
 
 function descendants(element, ufo, levels) {
-	//if(ufo instanceof Node) checkNodes = [ ufo ];
-	//else if(ufo instanceof NodeList || ufo instanceof Array) checkNodes = ufo ;
-	//else if(typeof ufo === 'string') checkNodes = this.element.querySelectorAll(ufo);
-	//else if(typeof ufo === 'number') {
-	//	if(ufo === 1) checkNodes = this.element.querySelectorAll('*');
-	//	else {
-	//		// assume ufo === 3, text nodes
-	//		// emulate standard behaviour of text nodes
-	//		notPartlyContained = false;
-	//		var n, walk=document.createTreeWalker(this.element, NodeFilter.SHOW_TEXT,null,false);
-	//		while(n=walk.nextNode()) checkNodes.push(n);
-	//	}
-	//}
-
 	
 	// TODO implement with TreeWalker instead
 	function recurse(node, level) {
@@ -110,27 +96,6 @@ function descendants(element, ufo, levels) {
 }
 
 var s = window.getSelection;
-
-var Positron = function(positions, selectron) {
-	this.selectron = selectron;
-	for(var property in positions) {
-		this[property] = positions[property];
-	}
-};
-
-Positron.prototype = {
-	restore: function() {
-		this.selectron.set(this);
-	},
-
-	isCollapsed: function() {
-		return this.start.ref === this.end.ref && this.start.offset === this.end.offset;
-	},
-
-	clone: function() {
-		return new Positron({ start: this.start, end: this.end }, this.selectron );
-	}
-};
 
 module.exports = {
 	contained: function(element, ufo, levels, notPartlyContained) {
@@ -182,6 +147,10 @@ module.exports = {
 		this.set(this.get());
 	},
 
+	isCollapsed: function() {
+		return s().isCollapsed;
+	},
+
 	range: function() {
 		var sel = s();
 		if(sel.rangeCount > 0) return sel.getRangeAt(0);
@@ -203,41 +172,48 @@ module.exports = {
 				end: pos
 			};
 		}
-		var positron = new Positron(positions,this);
-		return positron;
-	},
-
-	positron: function(positions) {
-		return new Positron(positions,this);
+		//positions.root = element;
+		return positions;
 	},
 
 	select: function(node) {
 		var children = node.offspring();
 		var first = children[0];
 		var last = children[children.length - 1];
-		this.set(new Positron({
+		this.set({
 			start: { ref: first, offset: 0, isAtStart: true },
 			end: { ref: last, offset: last.textContent.length, isAtStart: last.textContent.length === 0 }
-		}, this));
+		});
 	},
 
-	set: function(ufo, startOffset, endNode, endOffset) {
+	set: function(position) {
 		function recurse(node, offset, isStart) {
 			if(!node) return null;
 			var limit = isStart ? node.textContent.length - 1 : node.textContent.length;
-			if(offset === 0 && node.textContent.length === 0) return { ref: node, offset: offset };
-			else if(offset > limit && node.nextSibling) return recurse(node.nextSibling, offset - node.textContent.length, isStart);
-			else if(node.firstChild) return recurse(node.firstChild, offset, isStart);
-			else return { ref: node, offset: offset };
+			if(offset === 0 && node.textContent.length === 0)
+				return { ref: node, offset: offset };
+			else if(offset > limit && node.nextSibling)
+				return recurse(node.nextSibling, offset - node.textContent.length, isStart);
+			else if(node.firstChild)
+				return recurse(node.firstChild, offset, isStart);
+			else
+				return { ref: node, offset: offset };
 		}
+
+		if(position.ref) {
+			position = {
+				start: position
+			};
+		}
+
 		var start, end;
-		if(ufo instanceof Positron) {
-			start = recurse(ufo.start.ref, ufo.start.offset, ufo.start.isAtStart);
-			end = recurse(ufo.end.ref, ufo.end.offset, ufo.end.isAtStart);
-		} else if(ufo instanceof Node) {
-			start = recurse(ufo, startOffset || 0);
-			end = endNode instanceof Node ? recurse(endNode, endOffset || endNode.textContent.length) : start;
-		}
+		//if(_.isObject(positions)) instanceof Positron) {
+			start = recurse(position.start.ref, position.start.offset || 0, position.start.isAtStart);
+			end = position.end ? recurse(position.end.ref, position.end.offset, position.end.isAtStart) : start;
+		//} else if(ufo instanceof Node) {
+		//	start = recurse(ufo, startOffset || 0);
+		//	end = endNode instanceof Node ? recurse(endNode, endOffset || endNode.textContent.length) : start;
+		//}
 
 		var rng = document.createRange();
 		rng.setStart(start.ref, start.offset);
