@@ -1,4 +1,5 @@
 var commands = require('./commands');
+var selectron = require('./selectron');
 
 module.exports = {
 	events: {
@@ -12,15 +13,17 @@ module.exports = {
 	template: 'spytext-toolbar',
 
 	toggle: function(field) {
+		this.field = field;
 		this.$el.toggleClass('active', !!field);
 	},
 
-	command: function() {
+	command: function(e) {
 		var command = $(e.currentTarget).attr('data-command'),
 			option = $(e.currentTarget).attr('data-option'),
 			field = this.field;
 
-		field.selectron.normalize();
+		selectron.normalize();
+
 		field.snapback.register();
 
 		if(commands[command]) {
