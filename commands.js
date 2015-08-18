@@ -4,7 +4,7 @@ var selectron = require('./selectron');
 
 var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
-function align(alignment) {
+function align(element, alignment) {
 	var containedChildren = selectron.contained(element, 1,1);
 	containedChildren.forEach(function(child) {
 		if(!$(child).is('ul, ol')) $(child).css('text-align', alignment);
@@ -25,7 +25,7 @@ function block(element, tag) {
 		blocks.push($tmp[0]);
 	}
 	var that = this;
-	var positron = selectron.get(element, true);
+	var position = selectron.get(element, true);
 	var $wrapper = $('<' + tag + '></' + tag + '>');
 
 	var blocks = [];
@@ -53,7 +53,7 @@ function block(element, tag) {
 			_block(child);
 		}
 	});
-	positron.restore();
+	selectron.set(position);
 }
 
 function clearTextNodes(element) {
@@ -110,7 +110,7 @@ function deleteRangeContents(element, rng) {
 	var commonAncestor = rng.commonAncestorContainer;
 
 	if(commonAncestor === element || (commonAncestor.nodeType === 1 && $(commonAncestor).is('UL, OL'))) {
-		var positron = selectron.get(element);
+		var position = selectron.get(element);
 		var firstNode, lastNode;
 
 		var startAncestors = $(rng.startContainer).ancestors(null, element);
@@ -146,9 +146,9 @@ function deleteRangeContents(element, rng) {
 				$(selectron.contained(element, endBlock.childNodes, null, true)).remove();
 			} else block = endBlock;
 
-			var tmpPositron = positron.clone();
-			tmpPositron.start = { ref: block, offset: 0, isAtStart: true };
-			tmpPositron.restore();
+			var tmpPosition	 = _.clone(position);
+			tmpPosition.start = { ref: block, offset: 0, isAtStart: true };
+			selectron.set(tmpPosition);
 
 			selectron.range().deleteContents();
 
@@ -157,8 +157,8 @@ function deleteRangeContents(element, rng) {
 			}
 
 			$(block).remove();
-			//positron.start = { ref: startBlock, offset: startBlock.textContent.length, isAtStart: startBlock.textContent.length === 0 };
-			//positron.end = positron.start;
+			//position.start = { ref: startBlock, offset: startBlock.textContent.length, isAtStart: startBlock.textContent.length === 0 };
+			//position.end = position.start;
 		}
 
 		if(!startBlock.firstChild || startBlock.firstChild.textContent.length === 0 || startBlock.firstChild.textContent.match(/^\s+$/)) {
@@ -172,13 +172,13 @@ function deleteRangeContents(element, rng) {
 				startBlock = p;
 			}
 			setBR(startBlock);
-			positron.start = { ref: startBlock, offset: 0, isAtStart: true };
+			position.start = { ref: startBlock, offset: 0, isAtStart: true };
 		}
 		//completelyContainedBlocks = completelyContainedBlocks.toArray();
 		//completelyContainedBlocks.shift();
 		$(completelyContainedBlocks).remove();
-		positron.end = positron.start;
-		positron.restore();
+		position.end = position.start;
+		selectron.set(position);
 	} else {
 		rng.deleteContents();
 	}
@@ -186,7 +186,7 @@ function deleteRangeContents(element, rng) {
 
 function indent(element, outdent){
 	var allLi = selectron.contained(element, 'li');
-	var positron = selectron.get(element, null, true);
+	var position = selectron.get(element, null, true);
 	for(var i = 0; i < allLi.length; i++) {
 		//var add = allLi[i].closest('li', element);
 		var listTag = allLi[i].closest('ul, ol', element).tagName;
@@ -207,11 +207,11 @@ function indent(element, outdent){
 		//if(prev) {
 		//}
 	}
-	positron.restore();
+	selectron.set(position);
 }
 
 function join(element, node1, node2) {
-	var positron = selectron.get(element, true);
+	var position = selectron.get(element, true);
 	var pa = node2.parentNode;
 	if($(node1).is('LI') && $(node2).is('LI') && $(node1).closest('UL,OL')[0] !== $(node2).closest('UL, OL')[0]) {
 		$(node1).after(pa.children.slice(0));
@@ -227,11 +227,12 @@ function join(element, node1, node2) {
 	else setBR(node2);
 	if(!pa.firstChild) $(pa).remove();
 	setBR(node1);
-	positron.restore();
+	selectron.set(position);
 }
 
 function format(element, tag){
-	var positron = selectron.get(element, null, true);
+	if(!tag) return removeFormat(element);
+	var position = selectron.get(element, null, true);
 	var containedTextNodes = selectron.contained(element, 3);
 	var rng = selectron.range();
 
@@ -260,7 +261,7 @@ function format(element, tag){
 		contained.normalize();
 	});
 
-	positron.restore();
+	selectron.set(position);
 }
 
 function link(element, attribute) {
@@ -297,7 +298,7 @@ function list(element, tag){
 		unordered: 'UL'
 	};
 	var $list = $('<' + tag + '></' + tag + '>');
-	var positron = selectron.get(null, true);
+	var position = selectron.get(null, true);
 	var containedChildren = selectron.contained(element, 1, 1);
 
 	if(containedChildren.length === 1 && containedChildren[0].tagName === tag) return;
@@ -334,14 +335,14 @@ function list(element, tag){
 			$(child).remove();
 		}
 	});
-	positron.restore();
+	selectron.set(position);
 }
 
 function newline(element) {
 	var rng = selectron.range();
 	var block = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
 
-	var positron = selectron.get(element, block, true);
+	var position = selectron.get(element, block, true);
 	var contents;
 
 	if($(block).is('LI') && block.textContent.length === 0) {
@@ -350,9 +351,9 @@ function newline(element) {
 	} else {
 		var $el = $('<' + block.tagName + '>');
 		$(block).after($el);
-		if(positron.end.offset !== positron.end.ref.textContent.length) {
-			positron.end = { ref: block, offset: block.textContent.length };
-			positron.restore();
+		if(position.end.offset !== position.end.ref.textContent.length) {
+			position.end = { ref: block, offset: block.textContent.length };
+			selectron.set(position);
 			contents = selectron.range().extractContents();
 		}
 
@@ -361,7 +362,9 @@ function newline(element) {
 
 		setBR([ $el[0], block ]);
 
-		selectron.set($el[0], 0);
+		selectron.set({
+			ref: $el[0]
+		});
 	}
 }
 
@@ -373,7 +376,7 @@ function paste(element, dataTransfer) {
 	var arr = str.split(/[\n\r]+/);
 
 	var block = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
-	var positron = selectron.get(element, block);
+	var position = selectron.get(element, block);
 	var textNode;
 	if(arr.length === 0) {
 		return;
@@ -393,11 +396,11 @@ function paste(element, dataTransfer) {
 			node.splitText(rng.endOffset);
 			$(node).after(textNode);
 		}
-		positron.start.offset = positron.start.offset + textNode.textContent.length;
-		positron.end = positron.start;
+		position.start.offset = position.start.offset + textNode.textContent.length;
+		position.end = position.start;
 	} else {
-		positron.end = { ref: block, offset: block.textContent.length };
-		positron.restore();
+		position.end = { ref: block, offset: block.textContent.length };
+		selectron.set(position);
 
 		var contents = selectron.range().extractContents();
 		for(var i = arr.length - 1; i >= 0; i--) {
@@ -413,14 +416,14 @@ function paste(element, dataTransfer) {
 					while(contents.firstChild) {
 						$el.append(contents.firstChild);
 					}
-					positron.start = { ref: $el[0], offset: textNode.textContent.length, isAtStart: false };
-					positron.end = positron.start;
+					position.start = { ref: $el[0], offset: textNode.textContent.length, isAtStart: false };
+					position.end = position.start;
 				}
 				$(block).after($el);
 			}
 		}
 	}
-	positron.restore();
+	selectron.set(position);
 
 	//document.execCommand('insertText', null, str);
 }

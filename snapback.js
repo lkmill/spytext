@@ -13,7 +13,7 @@ var Snapback = function(element, config) {
 	this.mutations = [];
 	this.undoIndex = -1;
 	this.enabled = false;
-	this.positron = this.getPositron();
+	this.position = this.getPosition();
 
 	this.observer = new MO(function(mutations) {
 		mutations.forEach(function(mutation) {
@@ -63,24 +63,24 @@ Snapback.prototype = {
 			if(this.undoIndex < this.undos.length - 1) {
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
-			var positrons = {};
-			positrons.before = this.positron;
-			positrons.after = this.getPositron();
+			var positions = {};
+			positions.before = this.positions;
+			positions.after = this.getPosition();
 
-			this.undos.push({ positrons: positrons, mutations: this.mutations });
+			this.undos.push({ positions: positions, mutations: this.mutations });
 			this.mutations = [];
 			this.undoIndex = this.undos.length -1;
 		}
 
-		this.setPositron();
+		this.setPosition();
 	},
 
-	setPositron: function(positron) {
+	setPosition: function(position) {
 		if(!this.element) return;
-		this.positron = positron || this.getPositron();
+		this.position = position || this.getPosition();
 	},
 
-	getPositron: function() {
+	getPosition: function() {
 		if(!this.element) return;
 		return selectron.get(this.element);
 	},
@@ -145,8 +145,8 @@ Snapback.prototype = {
 			}
 		}
 
-		if(isUndo) undo.positrons.before.restore();
-		else undo.positrons.after.restore();
+		if(isUndo) undo.positions.before.restore();
+		else undo.positions.after.restore();
 		this.enable();
 	}
 };
