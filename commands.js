@@ -5,7 +5,7 @@ var selectron = require('./selectron');
 var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
 function align(element, alignment) {
-	var containedChildren = selectron.contained(element, 1,1);
+	var containedChildren = selectron.contained(element, 1, 1, true);
 	containedChildren.forEach(function(child) {
 		if(!$(child).is('ul, ol')) $(child).css('text-align', alignment);
 	});
@@ -25,15 +25,15 @@ function block(element, tag) {
 		blocks.push($tmp[0]);
 	}
 	var that = this;
-	var position = selectron.get(element, true);
+	var position = selectron.get(element);
 	var $wrapper = $('<' + tag + '></' + tag + '>');
 
 	var blocks = [];
 
-	selectron.contained(element, 1, 1).forEach(function(child){
+	selectron.contained(element, 1, 1, true).forEach(function(child){
 		if(child.nodeName === 'UL' || child.nodeName === 'OL') {
 			var li = $(child).children('li').toArray();
-			var containedLi = that.currentField.selectron.contained(li);
+			var containedLi = selectron.contained(element, li, null, true);
 			var startIndex = li.indexOf(containedLi[0]);
 			containedLi.forEach(function(element) {
 				_block(element, false);
@@ -78,115 +78,71 @@ function clearTextNodes(element) {
 }
 
 function deleteRangeContents(element, rng) {
-	function removeNodes(node, startNode) {
-		startNode = startNode || node;
-		var next;
-		var tmp = node;
-		while(!next && tmp && tmp !== startBlock) {
-			if(tmp.nextSibling) next = tmp.nextSibling;
-			else tmp = tmp.parentNode;
-		}
-		if(node && startNode !== node) {
-			$(node).remove();
-		}
-		if(next) removeNodes(next, startNode);
-	}
-
-	function appendNodes(node, startNode) {
-		startNode = startNode || node;
-		var next;
-		var tmp = node;
-		while(!next && tmp && tmp !== endBlock) {
-			if(tmp.nextSibling) next = tmp.nextSibling;
-			else tmp = tmp.parentNode;
-		}
-		
-		if(node && startNode !== node) {
-			startBlock.appendChild(node);
-		}
-		if(next) appendNodes(next, startNode);
-	}
-
 	var commonAncestor = rng.commonAncestorContainer;
 
+	// Test if we can just call deleteRange contents. basically it checks if we have selected more than
+	// one block element.
 	if(commonAncestor === element || (commonAncestor.nodeType === 1 && $(commonAncestor).is('UL, OL'))) {
-		var position = selectron.get(element);
-		var firstNode, lastNode;
+		var $startBlock = $(rng.startContainer).closest(blockTags.join(','), element);
 
-		var startAncestors = $(rng.startContainer).ancestors(null, element);
-		var startBlock = startAncestors.length > 0 ? startAncestors[startAncestors.length - 1] : element.firstChild;
-		var completelyContainedBlocks = selectron.contained(element, 1, 1, true);
+		var $completelyContainedBlocks = $(selectron.contained(element, blockTags.join(',')));
 
-		if(selectron.contained(element, startBlock, null, true).length > 0) {
-			startBlock.empty();
-		} else {
-			if(startBlock.firstChild.tagName === 'LI') {
-				$(selectron.contained(element, startBlock.childNodes, null, true)).remove();
-				startBlock = rng.startContainer.closest('LI', endBlock);
+		var $endBlock = $(rng.endContainer).closest(blockTags.join(','), element);
+
+		var startPosition = {
+			ref: $startBlock[0],
+			offset: selectron.getOffset($startBlock[0], 'start')
+		};
+
+		var endPosition = {
+			ref: $endBlock[0],
+			offset: selectron.getOffset($endBlock[0], 'end')
+		};
+
+		selectron.set({
+			start: startPosition,
+			end: {
+				ref: $startBlock[0],
+				offset: $startBlock[0].textContent.length
 			}
+		});
 
-			node = rng.startContainer;
+		selectron.range().deleteContents();
 
-			while(node && node.nodeType !== 3) node = node.firstChild;
+		selectron.set({
+			start: {
+				ref: $endBlock[0],
+				offset: 0
+			},
+			end: endPosition
+		});
 
-			if(node) {
-				node.splitText(rng.startOffset);
-				firstNode = node;
-				removeNodes(node);
-			}
+		selectron.range().deleteContents();
+
+		$completelyContainedBlocks.remove();
+
+		$startBlock.append($endBlock[0].childNodes);
+
+		var $parent = $endBlock.parent();
+
+		if($startBlock.is('li') && $endBlock.is('li')) {
+			$startBlock.parent().append($parent.children());
 		}
 
-		var endAncestors = ancestors(rng.endContainer, null, element).toArray();
-		var endBlock = endAncestors[endAncestors.length - 1];
+		$endBlock.remove();
 
-		if(endBlock && selectron.contained(element, M(endBlock), null, true).length < 1) {
-			var block;
-			if(endBlock.firstChild.tagName === 'LI') {
-				block = rng.endContainer.closest('LI', endBlock);
-				$(selectron.contained(element, endBlock.childNodes, null, true)).remove();
-			} else block = endBlock;
 
-			var tmpPosition	 = _.clone(position);
-			tmpPosition.start = { ref: block, offset: 0, isAtStart: true };
-			selectron.set(tmpPosition);
+		setBR($startBlock[0]);
 
-			selectron.range().deleteContents();
-
-			while(block.firstChild) {
-				startBlock.appendChild(block.firstChild);
-			}
-
-			$(block).remove();
-			//position.start = { ref: startBlock, offset: startBlock.textContent.length, isAtStart: startBlock.textContent.length === 0 };
-			//position.end = position.start;
-		}
-
-		if(!startBlock.firstChild || startBlock.firstChild.textContent.length === 0 || startBlock.firstChild.textContent.match(/^\s+$/)) {
-			if(startBlock.firstChild && (startBlock.firstChild.textContent.length === 0 || startBlock.firstChild.textContent.match(/^\s+$/))) {
-				$(startBlock.firstChild).remove();
-			}
-			if($(startBlock).is('UL, OL')) {
-				var p = $('<p>')[0];
-				$(startBlock).before(p);
-				$(startBlock).remove();
-				startBlock = p;
-			}
-			setBR(startBlock);
-			position.start = { ref: startBlock, offset: 0, isAtStart: true };
-		}
-		//completelyContainedBlocks = completelyContainedBlocks.toArray();
-		//completelyContainedBlocks.shift();
-		$(completelyContainedBlocks).remove();
-		position.end = position.start;
-		selectron.set(position);
+		selectron.set(startPosition);
 	} else {
 		rng.deleteContents();
 	}
 }
 
 function indent(element, outdent){
-	var allLi = selectron.contained(element, 'li');
-	var position = selectron.get(element, null, true);
+	var allLi = selectron.contained(element, 'li', null, true);
+	var position = selectron.get(element);
 	for(var i = 0; i < allLi.length; i++) {
 		//var add = allLi[i].closest('li', element);
 		var listTag = allLi[i].closest('ul, ol', element).tagName;
@@ -211,8 +167,9 @@ function indent(element, outdent){
 }
 
 function join(element, node1, node2) {
-	var position = selectron.get(element, true);
+	var position = selectron.get(element);
 	var pa = node2.parentNode;
+
 	if($(node1).is('LI') && $(node2).is('LI') && $(node1).closest('UL,OL')[0] !== $(node2).closest('UL, OL')[0]) {
 		$(node1).after(pa.children.slice(0));
 		$(pa).remove();
@@ -223,17 +180,23 @@ function join(element, node1, node2) {
 			node1.appendChild(node2.firstChild);
 	}
 	setBR(node1);
-	if(!node2.firstChild || node2.textContent.length === 0) $(node2).remove();
-	else setBR(node2);
-	if(!pa.firstChild) $(pa).remove();
+
+	if(!node2.firstChild || node2.textContent.length === 0)
+		$(node2).remove();
+	else
+		setBR(node2);
+
+	if(!pa.firstChild)
+		$(pa).remove();
+
 	setBR(node1);
 	selectron.set(position);
 }
 
 function format(element, tag){
 	if(!tag) return removeFormat(element);
-	var position = selectron.get(element, null, true);
-	var containedTextNodes = selectron.contained(element, 3);
+	var position = selectron.get(element);
+	var containedTextNodes = selectron.contained(element, 3, null, true);
 	var rng = selectron.range();
 
 	if(rng.endOffset < rng.endContainer.textContent.length) {
@@ -256,8 +219,7 @@ function format(element, tag){
 	$(containedTextNodes).wrap($wrapper);
 
 	// TODO: Tidy, ie <b>Hello <b>Again</b><b>. It continues.</b></b> >> <b>Hello Again. It continues.</b>
-	//M(this.currentField.selectron.contained(1, 1)).tidy(options.container ? options.container.tagName : options.tag);
-	selectron.contained(element, 1, 1).forEach(function(contained) {
+	selectron.contained(element, 1, 1, true).forEach(function(contained) {
 		contained.normalize();
 	});
 
@@ -297,9 +259,10 @@ function list(element, tag){
 		ordered: 'OL',
 		unordered: 'UL'
 	};
+
 	var $list = $('<' + tag + '></' + tag + '>');
-	var position = selectron.get(null, true);
-	var containedChildren = selectron.contained(element, 1, 1);
+	var position = selectron.get(element);
+	var containedChildren = selectron.contained(element, 1, 1, true);
 
 	if(containedChildren.length === 1 && containedChildren[0].tagName === tag) return;
 
@@ -308,7 +271,7 @@ function list(element, tag){
 	containedChildren.forEach(function(child){
 		if(child.nodeName === 'UL' || child.nodeName === 'OL') {
 			var li = $(child).children('li').toArray();
-			var containedLi = that.currentField.selectron.contained(li);
+			var containedLi = selectron.contained(element, li, null, true);
 			var startIndex = li.indexOf(containedLi[0]);
 
 			containedLi.forEach(function(innerChild) {
@@ -340,19 +303,21 @@ function list(element, tag){
 
 function newline(element) {
 	var rng = selectron.range();
-	var block = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
+	var blockElement = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
 
-	var position = selectron.get(element, block, true);
-	var contents;
-
-	if($(block).is('LI') && block.textContent.length === 0) {
+	if($(blockElement).is('LI') && blockElement.textContent.length === 0) {
 		// TODO check if there is ancestor LI, if so outdent instead
-		this.actions.block.call(this, { tag: 'P' });
+		block(element, 'P');
 	} else {
-		var $el = $('<' + block.tagName + '>');
-		$(block).after($el);
+		var position = selectron.get(element);
+		var contents;
+
+		var $el = $('<' + blockElement.tagName + '>');
+
+		$(blockElement).after($el);
+
 		if(position.end.offset !== position.end.ref.textContent.length) {
-			position.end = { ref: block, offset: block.textContent.length };
+			position.end = { ref: blockElement, offset: blockElement.textContent.length };
 			selectron.set(position);
 			contents = selectron.range().extractContents();
 		}
@@ -360,7 +325,7 @@ function newline(element) {
 		while(contents && contents.firstChild) 
 			$el.append(contents.firstChild);
 
-		setBR([ $el[0], block ]);
+		setBR([ $el[0], blockElement ]);
 
 		selectron.set({
 			ref: $el[0]
@@ -375,8 +340,8 @@ function paste(element, dataTransfer) {
 	str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '');
 	var arr = str.split(/[\n\r]+/);
 
-	var block = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
-	var position = selectron.get(element, block);
+	var blockElement = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
+	var position = selectron.get(element);
 	var textNode;
 	if(arr.length === 0) {
 		return;
@@ -399,18 +364,18 @@ function paste(element, dataTransfer) {
 		position.start.offset = position.start.offset + textNode.textContent.length;
 		position.end = position.start;
 	} else {
-		position.end = { ref: block, offset: block.textContent.length };
+		position.end = { ref: blockElement, offset: blockElement.textContent.length };
 		selectron.set(position);
 
 		var contents = selectron.range().extractContents();
 		for(var i = arr.length - 1; i >= 0; i--) {
 			textNode = document.createTextNode(arr[i]);
 			if(i === 0) {
-				if(block.lastChild.nodeName === 'BR')
-					$(block.lastChild).remove();
-				$(block).append(textNode);
+				if(blockElement.lastChild.nodeName === 'BR')
+					$(blockElement.lastChild).remove();
+				$(blockElement).append(textNode);
 			} else {
-				var $el = $('<' + block.tagName + '>');
+				var $el = $('<' + blockElement.tagName + '>');
 				$el.append(textNode);
 				if(i === arr.length - 1) {
 					while(contents.firstChild) {
@@ -419,7 +384,7 @@ function paste(element, dataTransfer) {
 					position.start = { ref: $el[0], offset: textNode.textContent.length, isAtStart: false };
 					position.end = position.start;
 				}
-				$(block).after($el);
+				$(blockElement).after($el);
 			}
 		}
 	}
