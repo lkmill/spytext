@@ -4,6 +4,8 @@ var selectron = require('./selectron');
 
 var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
+var descendants = require('./descendants');
+
 function align(element, alignment) {
 	var containedChildren = selectron.contained(element, 1, 1, true);
 	containedChildren.forEach(function(child) {
@@ -12,68 +14,65 @@ function align(element, alignment) {
 }
 
 function block(element, tag) {
-	function _block(node, insert) {
-		var $tmp = $wrapper.clone();
-		if(insert !== false) {
-			$(node).before($tmp);
-		}
-		while(node.firstChild) {
-			$tmp.append(node.firstChild);
-		}
+	function _block(node, ref) {
+		var $newBlock = $('<' + tag + '>');
+		if(ref)
+			$(ref).before($newBlock);
+		else
+			$(element).append($newBlock);
+
+		$newBlock.append(node.childNodes);
 		$(node).remove();
-		setBR($tmp[0]);
-		blocks.push($tmp[0]);
+		setBR($newBlock[0]);
+		blocks.push($newBlock[0]);
 	}
-	var that = this;
-	var position = selectron.get(element);
-	var $wrapper = $('<' + tag + '></' + tag + '>');
+	var contained = selectron.contained(element, blockTags.join(','), null, true),
+		startOffset = selectron.getOffset(_.first(contained), 'start'),
+		endOffset = selectron.getOffset(_.last(contained), 'end'),
+		blocks = [];
+	
+	contained.forEach(function(child){
+		if(child.nodeName === 'LI') {
+			var $list = $(child.parentNode);
+			_block(child, child.previousSibling ? $list[0].nextSibling : $list[0]);
 
-	var blocks = [];
-
-	selectron.contained(element, 1, 1, true).forEach(function(child){
-		if(child.nodeName === 'UL' || child.nodeName === 'OL') {
-			var li = $(child).children('li').toArray();
-			var containedLi = selectron.contained(element, li, null, true);
-			var startIndex = li.indexOf(containedLi[0]);
-			containedLi.forEach(function(element) {
-				_block(element, false);
-			});
-
-			if(startIndex > 0 && startIndex < child.childNodes.length - 1) {
-				var $bottomList = $('<' + child.tagName + '><' + child.tagName + '/>');
-				$(child).after($bottomList);
-				while(startIndex < child.childNodes.length) {
-					$bottomList.prepend(child.lastChild);
-				}
-			}
-
-			$(child).after(blocks);
-			if(!child.firstChild) $(child).remove();
+			if(!$list[0].firstChild) $(child).remove();
 		} else {
-			_block(child);
+			_block(child, child);
 		}
 	});
-	selectron.set(position);
+	
+	selectron.set({
+		start: {
+			ref: _.first(blocks),
+			offset: startOffset
+		},
+		end: {
+			ref: _.last(blocks),
+			offset: endOffset
+		},
+	});
 }
 
 function clearTextNodes(element) {
-	var children = [];
-	for(var i = 0; i < element.childNodes.length; i++) {
-		children.push(element.childNodes[i]);
+	function isBlock(node) {
+		return node && node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 	}
-	for(i in children) {
-		if(children[i].nodeType !== 3) continue;
-		if(children[i].textContent.match(/^\s+$/)) {
-			$(children[i]).remove();
-		} else {
-			$(children[i]).text(children[i].textContent.trim());
-			$(children[i]).wrap('<p></p>');
+	descendants(element, 3).forEach(function(textNode) {
+		if(textNode.previousSibling || isBlock(textNode.nextSibling)) {
+			if(textNode.textContent.match(/^\s+$/)) {
+				$(textNode).remove();
+			} else {
+				$(textNode).text(textNode.textContent.trim());
+				$(textNode).wrap('<p>');
+			}
 		}
-	}
+	});
 
 	if(!element.firstChild) {
 		$(element).append('<p><br /></p>');
 	}
+
 	setBR(element);
 }
 
