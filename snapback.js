@@ -13,7 +13,7 @@ var Snapback = function(element, config) {
 	this.mutations = [];
 	this.undoIndex = -1;
 	this.enabled = false;
-	this.position = this.getPosition();
+	//this.position = this.getPosition();
 
 	this.observer = new MO(function(mutations) {
 		mutations.forEach(function(mutation) {
