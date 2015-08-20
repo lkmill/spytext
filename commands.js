@@ -81,11 +81,11 @@ function clearTextNodes(element) {
 		return node && node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 	}
 	descendants(element, 3).forEach(function(textNode) {
-		if(textNode.previousSibling || isBlock(textNode.nextSibling)) {
-			if(textNode.textContent.match(/^\s+$/)) {
+		if(isBlock(textNode.previousSibling) || isBlock(textNode.nextSibling)) {
+			textNode.textContent = textNode.textContent.trim();
+			if(textNode.textContent.match(/^\s*$/)) {
 				$(textNode).remove();
 			} else if(textNode.parentNode.nodeName !== 'LI') {
-				$(textNode).text(textNode.textContent.trim());
 				$(textNode).wrap('<p>');
 			}
 		}
