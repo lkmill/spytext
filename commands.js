@@ -62,7 +62,7 @@ function block(element, tag) {
 		setBR($newBlock[0]);
 	});
 
-	$(':empty', element).remove();
+	$(':empty:not("BR")', element).remove();
 	
 	selectron.set({
 		start: {
@@ -474,11 +474,11 @@ function removeFormat(element) {
 }
 
 function setBR(element) {
-	if(element instanceof Array) 
+	if(_.isArray(element)) 
 		return element.forEach(setBR);
 	
-	if(element.firstChild && element.firstChild === element.lastChild && element.firstChild.nodeType === 3 && element.firstChild.textContent.length === 0)
-		element.removeChild(element.firstChild);
+	if(element.firstChild && element.firstChild.tagName !== 'BR' && element.textContent.length === 0)
+		$(element).empty();
 
 	if(!element.firstChild) $(element).append('<BR>');
 	else {
