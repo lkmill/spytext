@@ -14,32 +14,42 @@ function align(element, alignment) {
 }
 
 function block(element, tag) {
-	function _block(node, ref) {
-		var $newBlock = $('<' + tag + '>');
-		if(ref)
-			$(ref).before($newBlock);
-		else
-			$(element).append($newBlock);
-
-		$newBlock.append(node.childNodes);
-		$(node).remove();
-		setBR($newBlock[0]);
-		blocks.push($newBlock[0]);
-	}
 	var contained = selectron.contained(element, blockTags.join(','), null, true),
 		startOffset = selectron.getOffset(_.first(contained), 'start'),
 		endOffset = selectron.getOffset(_.last(contained), 'end'),
 		blocks = [];
 	
 	contained.forEach(function(child){
-		if(child.nodeName === 'LI') {
-			var $list = $(child.parentNode);
-			_block(child, child.previousSibling ? $list[0].nextSibling : $list[0]);
+		var $newBlock = $('<' + tag + '>').append(child.childNodes);
+		blocks.push($newBlock[0]);
 
-			if(!$list[0].firstChild) $(child).remove();
+		var $list;
+		if(child.nodeName === 'LI') {
+			$list = $(child.parentNode);
+
+			if(child.previousSibling) {
+				if(child.nextSibling) { 
+					var $newList = $('<' + $list[0].tagName + '>');
+
+					$newList.append($(child).nextAll());
+
+					$list.after($newList);
+				}
+				$list.after($newBlock);
+			} else {
+				$list.before($newBlock);
+
+				if(!child.nextSibling) $list.remove();
+			}
 		} else {
-			_block(child, child);
+			$(child).before($newBlock);
 		}
+
+		$(child).remove();
+
+		//if($list && !$list[0].firstChild) $list.remove();
+
+		setBR($newBlock[0]);
 	});
 	
 	selectron.set({
