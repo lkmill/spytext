@@ -104,7 +104,7 @@ module.exports = {
 						// 46: delete
 						var element = this.el;
 						if(rng.collapsed) {
-							var check = blockTags.join(',');
+							//var check = blockTags.join(',');
 							var block = $(element.childNodes).is(rng.startContainer) ?
 								rng.startContainer :
 								$(rng.startContainer).closest(blockTags.join(','), element)[0];
@@ -114,7 +114,7 @@ module.exports = {
 							// join lines if backspace and start of block, or delete and end of block
 							if(e.keyCode === 8 && positron.start.offset === 0) {
 								e.preventDefault();
-								var prev = block.previousSibling;
+								var prev = block.previousSibling || block.parentNode.previousSibling;
 								if(prev) {
 									commands.join(this.el, $(prev).is('UL, OL') ? prev.lastChild : prev, block);
 								}
@@ -182,7 +182,7 @@ module.exports = {
 	activate: function() {
 		var _field = this;
 
-		commands.clearTextNodes(_field.el);
+		//commands.clearTextNodes(_field.el);
 		
 		_field.snapback.enable();
 		_field.observe();
