@@ -176,8 +176,9 @@ function indent(element, outdent){
 }
 
 function join(element, node1, node2) {
-	var position = selectron.get(element);
 	var pa = node2.parentNode;
+
+	var length = node1.textContent.length;
 
 	if($(node1).is('LI') && $(node2).is('LI') && $(node1).closest('UL,OL')[0] !== $(node2).closest('UL, OL')[0]) {
 		$(node1).after(pa.children.slice(0));
@@ -199,7 +200,10 @@ function join(element, node1, node2) {
 		$(pa).remove();
 
 	setBR(node1);
-	selectron.set(position);
+	selectron.set({
+		ref: node1,
+		offset: length
+	});
 }
 
 function format(element, tag){
