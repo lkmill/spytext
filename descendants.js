@@ -1,5 +1,5 @@
 // ufo can to be a nodeType (1 or 3) or a selector string
-module.exports = function descendants(element, ufo, levels) {
+module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 	// IE fix... IE will try to call filter property directly,
 	// while good browsers (correctly) tries to call filter.acceptNode
 	function filter(node) {
@@ -47,12 +47,16 @@ module.exports = function descendants(element, ufo, levels) {
 			break;
 	}
 
+
 	filter.acceptNode = filter;
 
 	var tw = document.createTreeWalker(element, whatToShow, filter, false),
 		nodes = [];
 
 	while((node = tw.nextNode())) {
+		if(nodeType === 1 && (!levels || levels > 1) && onlyDeepest) {
+			nodes = _.without.apply(null, [ nodes ].concat($(node).ancestors(selector, element).toArray()));
+		}
 		nodes.push(node);
 	}
 
