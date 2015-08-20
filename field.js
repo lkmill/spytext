@@ -150,7 +150,7 @@ module.exports = {
 				commands.deleteRangeContents(this.el, rng);
 			}
 
-			this.spytext.execute('paste', e.clipboardData ? e.clipboardData : clipboardData);
+			commands.paste(this.el, e.clipboardData ? e.clipboardData : clipboardData);
 
 			setTimeout(function() {
 				this.snapback.register();
