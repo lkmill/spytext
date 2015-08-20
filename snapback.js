@@ -13,7 +13,6 @@ var Snapback = function(element, config) {
 	this.mutations = [];
 	this.undoIndex = -1;
 	this.enabled = false;
-	//this.position = this.getPosition();
 
 	this.observer = new MO(function(mutations) {
 		mutations.forEach(function(mutation) {
@@ -64,7 +63,7 @@ Snapback.prototype = {
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
 			var positions = {};
-			positions.before = this.positions;
+			positions.before = this.position;
 			positions.after = this.getPosition();
 
 			this.undos.push({ positions: positions, mutations: this.mutations });
@@ -76,12 +75,10 @@ Snapback.prototype = {
 	},
 
 	setPosition: function(position) {
-		if(!this.element) return;
 		this.position = position || this.getPosition();
 	},
 
 	getPosition: function() {
-		if(!this.element) return;
 		return selectron.get(this.element);
 	},
 
@@ -126,27 +123,27 @@ Snapback.prototype = {
 					mutation.target.textContent = isUndo ? mutation.oldValue : mutation.newValue;
 					break;
 				case 'attributes':
-					mutation.target.attr(mutation.attributeName, isUndo ? mutation.oldValue : mutation.newValue);
+					$(mutation.target).attr(mutation.attributeName, isUndo ? mutation.oldValue : mutation.newValue);
 					break;
 				case 'childList':
 					var addNodes = isUndo ? mutation.removedNodes : mutation.addedNodes;
 					var removeNodes = isUndo ? mutation.addedNodes : mutation.removedNodes;
 					for(var j = 0; j < addNodes.length; j++) {
 						if (mutation.nextSibling) {
-							mutation.nextSibling.before(addNodes[j]);
+							$(mutation.nextSibling).before(addNodes[j]);
 						} else {
-							mutation.target.append(addNodes[j]);
+							$(mutation.target).append(addNodes[j]);
 						}
 					}
 					for(var i = 0; i < removeNodes.length; i++) {
-						removeNodes[i].vanish();
+						$(removeNodes[i]).remove();
 					}
 					break;
 			}
 		}
 
-		if(isUndo) undo.positions.before.restore();
-		else undo.positions.after.restore();
+		if(isUndo) selectron.set(undo.positions.before);
+		else selectron.set(undo.positions.after);
 		this.enable();
 	}
 };
