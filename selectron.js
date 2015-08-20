@@ -2,10 +2,6 @@ var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 var p = Element.prototype;
 
-p.matches = p.matches || p.matchesSelector ||
-	p.msMatchesSelector || p.mozMatchesSelector ||
-	p.webkitMatchesSelector || p.oMatchesSelector;
-
 function isBlock(node) {
 	return node.nodeType === 1 && blockTags.indexOf(node.tagName) !== -1;
 	//return node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
@@ -78,14 +74,14 @@ module.exports = {
 
 	getOffset: getOffset,
 	
-	contained: function(element, ufo, levels, partlyContained) {
+	contained: function(element, ufo, levels, partlyContained, onlyDeepest) {
 		var _selectron = this,
 			nodes = [];
 			
 		if(ufo instanceof NodeList)
 			ufo = _.toArray(ufo);
 			
-		var check = _.isArray(ufo)? ufo : descendants(element, ufo, levels);
+		var check = _.isArray(ufo)? ufo : descendants(element, ufo, levels, onlyDeepest);
 
 		check.forEach(function(node) {
 			if(_selectron.contains(node, partlyContained))
@@ -129,6 +125,27 @@ module.exports = {
 			//	}
 			//}
 		}
+	},
+
+	containsEvery: function(nodes, partlyContained) {
+		var that = this;
+
+		_.toArray(nodes);
+
+		return nodes.every(function(node) {
+			return that.contains(node, partlyContained);
+		});
+	},
+
+	containsSome: function(nodes, partlyContained) {
+		var that = this;
+
+		_.toArray(nodes);
+
+		return nodes.some(function(node) {
+			return that.contains(node, partlyContained);
+		});
+
 	},
 
 	normalize: function() {
