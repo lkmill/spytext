@@ -13,8 +13,7 @@ module.exports = {
 		blur: 'deactivate',
 
 		mouseup: function(e) {
-			console.log('field mouseup');
-			//e.stopPropagation();
+			e.stopPropagation();
 			//this.spytext.toolbar.setActiveStyles();
 		},
 
@@ -190,8 +189,6 @@ module.exports = {
 	activate: function() {
 		var _field = this;
 
-		//commands.clearTextNodes(_field.el);
-		
 		_field.snapback.enable();
 		_field.observe();
 		_field.active = true;
@@ -199,12 +196,16 @@ module.exports = {
 
 		// this is to capture events when mousedown on 
 		// fields element but mouseup outside
-		$(document).on('mouseup', function(e) {
-			_field.snapback.register();
-			// cannot remember why there is a timeout
-			//setTimeout(function() {
-			//	_field.toolbar.setActiveStyles();
-			//}, 100);
+		setTimeout(function() {
+			_field.snapback.setPosition();
+
+			$(document).on('mouseup', function(e) {
+				_field.snapback.register();
+				// cannot remember why there is a timeout
+				//setTimeout(function() {
+				//	_field.toolbar.setActiveStyles();
+				//}, 100);
+			});
 		});
 	},
 
