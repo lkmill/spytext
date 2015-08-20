@@ -15,21 +15,34 @@ function align(element, alignment) {
 
 function block(element, tag) {
 	var contained = selectron.contained(element, blockTags.join(','), null, true),
-		startOffset = selectron.getOffset(_.first(contained), 'start'),
-		endOffset = selectron.getOffset(_.last(contained), 'end'),
 		blocks = [];
 	
+	contained = contained.filter(function(node) {
+		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(descendants(node, 3, 1));
+	});
+
+	var startOffset = selectron.getOffset(_.first(contained), 'start'),
+		endOffset = selectron.getOffset(_.last(contained), 'end');
+	
 	contained.forEach(function(child){
-		var $newBlock = $('<' + tag + '>').append(child.childNodes);
+		var $newBlock = $('<' + tag + '>');
 		blocks.push($newBlock[0]);
 
-		var $list;
 		if(child.nodeName === 'LI') {
-			$list = $(child.parentNode);
+			var $list = $(child).closest(element.tagName + ' > *');
 
-			if(child.previousSibling) {
-				if(child.nextSibling) { 
-					var $newList = $('<' + $list[0].tagName + '>');
+			var $newList;
+
+			if($(child).has('UL,OL').length > 0) {
+				$newList = $(child).children('UL,OL');
+				$newList.insertAfter($list);
+			}
+			
+			$newBlock.append(child.childNodes);
+
+			if(child.previousSibling) { 
+				if(child.nextSibling) {
+					$newList = $newList || $('<' + $list[0].tagName + '>');
 
 					$newList.append($(child).nextAll());
 
@@ -38,19 +51,18 @@ function block(element, tag) {
 				$list.after($newBlock);
 			} else {
 				$list.before($newBlock);
-
-				if(!child.nextSibling) $list.remove();
 			}
+			
 		} else {
-			$(child).before($newBlock);
+			$(child).before($newBlock.append(child.childNodes));
 		}
 
 		$(child).remove();
 
-		//if($list && !$list[0].firstChild) $list.remove();
-
 		setBR($newBlock[0]);
 	});
+
+	$(':empty', element).remove();
 	
 	selectron.set({
 		start: {
@@ -72,7 +84,7 @@ function clearTextNodes(element) {
 		if(textNode.previousSibling || isBlock(textNode.nextSibling)) {
 			if(textNode.textContent.match(/^\s+$/)) {
 				$(textNode).remove();
-			} else {
+			} else if(textNode.parentNode.nodeName !== 'LI') {
 				$(textNode).text(textNode.textContent.trim());
 				$(textNode).wrap('<p>');
 			}
@@ -267,51 +279,102 @@ function link(element, attribute) {
 }
 
 function list(element, tag){
-	var that = this;
-	var tags = {
-		ordered: 'OL',
-		unordered: 'UL'
-	};
+	var contained = selectron.contained(element, blockTags.join(','), null, true),
+		firstContained = _.first(contained),
+		lastContained = _.last(contained),
+		startOffset = selectron.getOffset(firstContained, 'start'),
+		endOffset = selectron.getOffset(lastContained, 'end'),
+		blocks = [];
 
-	var $list = $('<' + tag + '></' + tag + '>');
-	var position = selectron.get(element);
-	var containedChildren = selectron.contained(element, 1, 1, true);
+	var $list;
+	
+	if(firstContained.nodeName === 'LI') {
+		// if selection starts in a list, set $list to that list;
+		$list = $(firstContained).closest(element.tagName + ' > *');
 
-	if(containedChildren.length === 1 && containedChildren[0].tagName === tag) return;
+		var $lastList = $(lastContained).closest(element.tagName + ' > *');
 
-	$(containedChildren[0]).before($list);
-
-	containedChildren.forEach(function(child){
-		if(child.nodeName === 'UL' || child.nodeName === 'OL') {
-			var li = $(child).children('li').toArray();
-			var containedLi = selectron.contained(element, li, null, true);
-			var startIndex = li.indexOf(containedLi[0]);
-
-			containedLi.forEach(function(innerChild) {
-					$list.append(innerChild);
-			});
-
-			if(!child.firstChild) $(child).remove();
-
-			else if(startIndex > 0) {
-				var $bottomList = $('<' + child.tagName + '><' + child.tagName + '/>');
-				while(startIndex < child.childNodes.length) {
-					$(child).after($bottomList);
-					$bottomList.prepend(child.lastChild);
-				}
-				$(child).after($list);
+		if($list.is($lastList)) {
+			// if entire selection is within a single list,
+			// then change it's type (if it is the wrong type)
+			// and do nothing else.
+			if($list[0].tagName.toUpperCase() !== tag) {
+				var position = selectron.get(element);
+				$list.add("UL,OL", $list).replaceWith(function () {
+					return $('<' + tag + '>').append(this.childNodes);
+				});
+				selectron.set(position);
 			}
-		} else {
-			var $listItem = $('<li></li>');
-			$list.append($listItem);
-			while(child.firstChild) {
-				$listItem.append(child.firstChild);
-			}
-			$list.append($listItem);
-			$(child).remove();
+
+			return;
+		} else if($list[0].tagName !== tag.toUpperCase()) {
+			// selection end is not in a list, but the 
+			// list the selection starts in is a wrong type;
+			// create a new list with the correct type, and
+			// insert it after the first list
+			var $newList = $('<' + tag + '>');//.append($list.children());
+			$list.after($newList);
+
+			$list = $newList;
 		}
+	} else {
+		// selection does not start in a list,
+		// create a new empty list and insert it
+		// before the first contained block element
+		$list = $('<' + tag + '>');
+		$(contained[0]).before($list);
+	}
+
+	var first, last;
+
+	contained.forEach(function(child, i, arr) {
+		var $listItem;
+		if(child.nodeName === 'LI' && $(child).ancestors('UL,OL', element).is($list)) {
+			// contained element is a listItem already belonging to 
+			// the right list. do nothing but save a reference to the child
+			$listItem = $(child);
+		} else {
+			$listItem = $('<li>').append(child.childNodes);
+
+			// replace all nested lists
+			$($list[0].tagName === 'UL' ? 'OL' : 'UL', $listItem).replaceWith(function () {
+				return $('<' + tag + '>').append(this.childNodes);
+			});
+			$list.append($listItem);
+
+			if(!child.previousSibling && !child.nextSibling)
+				// remove parent if child is only child
+				$(child).parent().remove();
+			else
+				// remove child if it is not the only child
+				$(child).remove();
+		}
+
+		// save references for resetting the selection/range.
+		if(i === 0)
+			first = $listItem[0];
+
+		if(i === arr.length - 1)
+			last = $listItem[0];
 	});
-	selectron.set(position);
+
+	if($list.next()[0].tagName === $list[0].tagName) {
+		// merge new list with next element if it is a list
+		// of the same type
+		$list.append($list.next().children());
+		$list.next().remove();
+	}
+	
+	selectron.set({
+		start: {
+			ref: first,
+			offset: startOffset
+		},
+		end: {
+			ref: last,
+			offset: endOffset
+		},
+	});
 }
 
 function newline(element) {
