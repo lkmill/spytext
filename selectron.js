@@ -135,10 +135,6 @@ module.exports = {
 		this.set(this.get());
 	},
 
-	isCollapsed: function() {
-		return s().isCollapsed;
-	},
-
 	range: function() {
 		var sel = s();
 
@@ -190,46 +186,5 @@ module.exports = {
 
 		sel.removeAllRanges();
 		sel.addRange(rng);
-	},
-
-	oldset: function(position) {
-		function recurse(node, offset, isStart) {
-			if(!node) return null;
-			var limit = isStart ? node.textContent.length - 1 : node.textContent.length;
-			if(offset === 0 && node.textContent.length === 0)
-				return { ref: node, offset: offset };
-			else if(offset > limit && node.nextSibling)
-				return recurse(node.nextSibling, offset - node.textContent.length, isStart);
-			else if(node.firstChild)
-				return recurse(node.firstChild, offset, isStart);
-			else
-				return { ref: node, offset: offset };
-		}
-
-		if(position.ref) {
-			position = {
-				start: position
-			};
-		}
-
-		var start, end;
-		//if(_.isObject(positions)) instanceof Positron) {
-			start = recurse(position.start.ref, position.start.offset || 0, position.start.isAtStart);
-			end = position.end ? recurse(position.end.ref, position.end.offset, position.end.isAtStart) : start;
-		//} else if(ufo instanceof Node) {
-		//	start = recurse(ufo, startOffset || 0);
-		//	end = endNode instanceof Node ? recurse(endNode, endOffset || endNode.textContent.length) : start;
-		//}
-
-		var rng = document.createRange();
-		rng.setStart(start.ref, start.offset);
-		rng.setEnd(end.ref, end.offset);
-
-		s().removeAllRanges();
-		s().addRange(rng);
-	},
-
-	countRanges: function() {
-		return s().rangeCount;
 	}
 };
