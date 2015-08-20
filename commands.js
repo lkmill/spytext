@@ -188,30 +188,29 @@ function indent(element, outdent){
 }
 
 function join(element, node1, node2) {
-	var pa = node2.parentNode;
-
 	var length = node1.textContent.length;
 
-	if($(node1).is('LI') && $(node2).is('LI') && $(node1).closest('UL,OL')[0] !== $(node2).closest('UL, OL')[0]) {
-		$(node1).after(pa.children.slice(0));
-		$(pa).remove();
-	} else {
-		if(node1.lastChild.tagName === 'BR') node1.removeChild(node1.lastChild);
-		if(node2.nodeType === 1 && $(node2).is('UL, OL')) node2 = node2.firstChild;
-		while(node2.firstChild) 
-			node1.appendChild(node2.firstChild);
+	if($(node1).is('LI') && $(node2).is('LI')) {
+		// both nodes to join are listitems...
+		var $list1 = $(node1).closest(element.tagName + ' > *');
+		var $list2 = $(node2).closest(element.tagName + ' > *');
+		if(!$list1.is($list2)) {
+			// we are joining two lists.
+			$list1.append($list2.children());
+			return;
+		}
 	}
+
+	if(node1.lastChild.tagName === 'BR') node1.removeChild(node1.lastChild);
+	$(node1).append(node2.childNodes);
+
 	setBR(node1);
 
-	if(!node2.firstChild || node2.textContent.length === 0)
-		$(node2).remove();
+	if(!node2.nextSibling && !node2.previousSibling)
+		$(node2).parent().remove();
 	else
-		setBR(node2);
+		$(node2).remove();
 
-	if(!pa.firstChild)
-		$(pa).remove();
-
-	setBR(node1);
 	selectron.set({
 		ref: node1,
 		offset: length

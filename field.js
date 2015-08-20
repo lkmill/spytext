@@ -52,9 +52,9 @@ module.exports = {
 					case 85://u
 						e.preventDefault();
 						var arr = [];
-						arr[66] = 'bold';
-						arr[85] = 'underline';
-						this.spytext.command('format', arr[e.keyCode], this.element);
+						arr[66] = 'b';
+						arr[85] = 'u';
+						commands.format(this.el, arr[e.keyCode], this);
 						break;
 					case 89://y
 						e.preventDefault();
@@ -66,7 +66,7 @@ module.exports = {
 						break;
 					case 65://a
 						e.preventDefault();
-						selectron.select(this.element);
+						selectron.select(this.el);
 						break;
 					case 84://t
 						e.preventDefault();
@@ -105,24 +105,30 @@ module.exports = {
 						var element = this.el;
 						if(rng.collapsed) {
 							//var check = blockTags.join(',');
-							var block = $(element.childNodes).is(rng.startContainer) ?
-								rng.startContainer :
-								$(rng.startContainer).closest(blockTags.join(','), element)[0];
+							var block = $(rng.startContainer).closest(blockTags.join(','))[0];
 
-							var positron = selectron.get(block);
+							var position = selectron.get(block);
+							
+							this.treeWalker.currentNode = block;
 
 							// join lines if backspace and start of block, or delete and end of block
-							if(e.keyCode === 8 && positron.start.offset === 0) {
+							if(e.keyCode === 8 && position.start.offset === 0) {
 								e.preventDefault();
-								var prev = block.previousSibling || block.parentNode.previousSibling;
-								if(prev) {
-									commands.join(this.el, $(prev).is('UL, OL') ? prev.lastChild : prev, block);
+								var prev = this.treeWalker.previousNode();
+								while(prev && blockTags.indexOf(prev.tagName) === -1) { 
+									prev = this.treeWalker.previousNode();
 								}
-							} else if(e.keyCode === 46 && positron.start.offset === positron.start.ref.textContent.length) {
+								if(prev) {
+									commands.join(this.el, prev, block);
+								}
+							} else if(e.keyCode === 46 && position.start.offset === position.start.ref.textContent.length) {
 								e.preventDefault();
-								var next = block.nextSibling;
+								var next = this.treeWalker.nextNode();
+								while(next && blockTags.indexOf(next.tagName) === -1) { 
+									next = this.treeWalker.nextNode();
+								}
 								if(next) {
-									commands.join(this.el, block, $(next).is('UL, OL') ? next.firstChild : next);
+									commands.join(this.el, block, next);
 								}
 							}
 						}
@@ -172,6 +178,8 @@ module.exports = {
 			this.app.spytextToolbar = new this.app.views.SpytextToolbar();
 			$(document.body).append(this.app.spytextToolbar.el);
 		}
+
+		this.treeWalker = document.createTreeWalker(this.el, NodeFilter.SHOW_ELEMENT, null, false);
 
 		this.toolbar = this.app.spytextToolbar;
 
