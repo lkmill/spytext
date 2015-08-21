@@ -15,65 +15,60 @@ function align(element, alignment) {
 
 function block(element, tag) {
 	var contained = selectron.contained(element, blockTags.join(','), null, true),
-		blocks = [];
+		newBlocks = [];
 	
 	contained = contained.filter(function(node) {
+		// this is to filter out LI with nested lists where only text in the nested
+		// list is selected, not text in the actual LI tag ((previous) siblings to the nested <ul>)
 		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(descendants(node, 3, 1));
 	});
 
-	var startOffset = selectron.getOffset(_.first(contained), 'start'),
-		endOffset = selectron.getOffset(_.last(contained), 'end');
+	var $startBlock = $(_.first(contained)),
+		$endBlock = $(_.last(contained)),
+		startOffset = selectron.getOffset($startBlock[0], 'start'),
+		endOffset = selectron.getOffset($endBlock[0], 'end'),
+		$ref;
 	
-	contained.forEach(function(child){
-		var $newBlock = $('<' + tag + '>');
-		blocks.push($newBlock[0]);
+	if($endBlock.is('LI')) {
+		var $startList = $startBlock.closest('.spytext-field > *'),
+			$endList = $endBlock.closest('.spytext-field > *');
 
-		if(child.nodeName === 'LI') {
-			var $list = $(child).closest(element.tagName + ' > *');
-
-			var $newList;
-
-			if($(child).has('UL,OL').length > 0) {
-				$newList = $(child).children('UL,OL');
-				$newList.insertAfter($list);
-			}
-			
-			if(child.previousSibling) { 
-				if(child.nextSibling) {
-					$newList = $newList || $('<' + $list[0].tagName + '>');
-
-					$list.after($newList);
-
-					$newList.append($(child).nextAll());
-					//while(child.nextSibling)
-					//	$newList.append(child.nextSibling);
-				}
-				$list.after($newBlock);
-			} else {
-				$list.before($newBlock);
-			}
+		if(!$startList.is($endList)) {
+			$ref = $endList;
+		} if($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0) {
+			$ref = $('<' + $endList[0].tagName + '>').insertAfter($startList).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
 		} else {
-			$(child).before($newBlock);
+			$ref = $endList.next();
 		}
+	} else {
+		$ref = $endBlock.next();
+	}
 
-		$newBlock.append(child.childNodes);
-		//while(child.firstChild)
-		//	$newBlock.append(child.firstChild);
+	contained.forEach(function(child,i){
+		var $newBlock = $('<' + tag + '>');
 
-		$(child).remove();
+		if($ref.length > 0) 
+			$ref.before($newBlock);
+		else
+			$(element).append($newBlock);
 
-		setBR($newBlock[0]);
+		newBlocks.push($newBlock.append(child.childNodes)[0]);
+
+		if($(child).parent().is(':empty'))
+			$(child).parent().remove();
+		else
+			$(child).remove();
 	});
 
 	$(':empty:not("BR")', element).remove();
 	
 	selectron.set({
 		start: {
-			ref: _.first(blocks),
+			ref: _.first(newBlocks),
 			offset: startOffset
 		},
 		end: {
-			ref: _.last(blocks),
+			ref: _.last(newBlocks),
 			offset: endOffset
 		},
 	});
