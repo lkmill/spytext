@@ -5,25 +5,21 @@ var Snapback = function(element, config) {
 
 	if(!MO) return;
 
-	var that = this;
+	var _snapback = this;
 
-	this.config = { subtree: true, attributeFilter: [ 'style' ], attributes: true, attributeOldValue: true, childList: true, characterData: true, characterDataOldValue: true };
-	this.element = element;
-	this.undos = [];
-	this.mutations = [];
-	this.undoIndex = -1;
-	this.enabled = false;
+	_.bindAll(_snapback, 'addMutation');
 
-	this.observer = new MO(function(mutations) {
-		mutations.forEach(function(mutation) {
-			switch(mutation.type) {
-				case 'childList':
-				case 'attributes':
-				case 'characterData':
-					that.addMutation(mutation);
-					break;
-			}
-		});    
+	_.extend(_snapback, {
+		config: { subtree: true, attributeFilter: [ 'style' ], attributes: true, attributeOldValue: true, childList: true, characterData: true, characterDataOldValue: true },
+		element: element,
+		undos: [],
+		mutations: [],
+		undoIndex: -1,
+		enabled: false
+	});
+
+	_snapback.observer = new MO(function(mutations) {
+		mutations.forEach(_snapback.addMutation);    
 	});
 };
 
@@ -32,12 +28,15 @@ Snapback.prototype = {
 		switch(mutation.type) {
 			case 'characterData': 
 				mutation.newValue = mutation.target.textContent;
-				var lastIndex = this.mutations.length - 1;
-				if(lastIndex > -1 && this.mutations[lastIndex].type === 'characterData' && this.mutations[lastIndex].target === mutation.target && this.mutations[lastIndex].newValue === mutation.oldValue) {
+				var lastIndex = this.mutations.length - 1,
+					lastMutation = this.mutations[lastIndex];
+
+				if(lastIndex > -1 && lastMutation.type === 'characterData' && lastMutation.target === mutation.target && lastMutation.newValue === mutation.oldValue) {
 					this.mutations[lastIndex].newValue = mutation.newValue;
 				} else {
 					this.mutations.push(mutation);
 				}
+
 				break;
 			case 'attributes':
 				mutation.newValue = mutation.target.getAttribute(mutation.attributeName);
@@ -51,20 +50,20 @@ Snapback.prototype = {
 
 	redo: function() {
 		if(this.enabled && this.undoIndex < this.undos.length - 1) {
-			this.undoIndex++;
-			this.undoRedo(this.undos[this.undoIndex], false);
+			this.undoRedo(this.undos[++this.undoIndex], false);
 		}
 	},
 
 	register: function() {
-		if(!this.element) return;
 		if(this.enabled && this.mutations.length > 0) {
 			if(this.undoIndex < this.undos.length - 1) {
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
-			var positions = {};
-			positions.before = this.position;
-			positions.after = this.getPosition();
+
+			var positions = {
+				before: this.position,
+				after: selectron.get(this.element)
+			};
 
 			this.undos.push({ positions: positions, mutations: this.mutations });
 			this.mutations = [];
@@ -75,19 +74,10 @@ Snapback.prototype = {
 	},
 
 	setPosition: function(position) {
-		this.position = position || this.getPosition();
-	},
-
-	getPosition: function() {
-		return selectron.get(this.element);
-	},
-
-	size: function() {
-		return this.undos.length;
+		this.position = position || selectron.get(this.element);
 	},
 
 	enable: function() {
-		if(!this.element) return;
 		if(!this.enabled) {
 			this.observer.observe(this.element, this.config);
 			this.enabled = true;
@@ -103,8 +93,7 @@ Snapback.prototype = {
 
 	undo: function() {
 		if(this.enabled && this.undoIndex >= 0) {
-			this.undoRedo(this.undos[this.undoIndex], true);
-			this.undoIndex--;
+			this.undoRedo(this.undos[this.undoIndex--], true);
 		}
 	},
 
