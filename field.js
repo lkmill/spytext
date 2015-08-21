@@ -53,7 +53,7 @@ module.exports = {
 						var arr = [];
 						arr[66] = 'b';
 						arr[85] = 'u';
-						commands.format(this.el, arr[e.keyCode], this);
+						this.command('format', arr[e.keyCode]);
 						break;
 					case 89://y
 						e.preventDefault();
@@ -83,7 +83,7 @@ module.exports = {
 					this.snapback.register();
 				} else if(rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
 					this.snapback.register();
-					commands.deleteRangeContents(this.el, rng);
+					this.command('deleteRangeContents',rng);
 
 					if(e.keyCode === 8 || e.keyCode === 46) {
 						e.preventDefault();
@@ -118,7 +118,7 @@ module.exports = {
 									prev = this.treeWalker.previousNode();
 								}
 								if(prev) {
-									commands.join(this.el, prev, block);
+									this.command('join', prev, block);
 								}
 							} else if(e.keyCode === 46 && position.start.offset === position.start.ref.textContent.length) {
 								e.preventDefault();
@@ -127,7 +127,7 @@ module.exports = {
 									next = this.treeWalker.nextNode();
 								}
 								if(next) {
-									commands.join(this.el, block, next);
+									this.command('join', block, next);
 								}
 							}
 						}
@@ -136,7 +136,7 @@ module.exports = {
 					case 13:
 						//enter
 						e.preventDefault();
-						commands.newline(this.el);
+						this.command('newline');
 						break;
 				}
 			}
@@ -217,6 +217,22 @@ module.exports = {
 		this.toolbar.toggle();
 
 		$(document).off('mouseup');
+	},
+
+	command: function(command, option) {
+		var field = this;
+
+		selectron.normalize();
+
+		field.snapback.register();
+
+		if(commands[command]) {
+			commands[command](field.el, option);
+
+			setTimeout(function() {
+				field.snapback.register();
+			}, 100);
+		}
 	},
 
 	// observe() emits 'change' events on changes to the element
