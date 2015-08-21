@@ -190,8 +190,8 @@ function join(element, node1, node2) {
 
 	if($(node1).is('LI') && $(node2).is('LI')) {
 		// both nodes to join are listitems...
-		var $list1 = $(node1).closest(element.tagName + ' > *');
-		var $list2 = $(node2).closest(element.tagName + ' > *');
+		var $list1 = $(node1).closest('.spytext-field > *');
+		var $list2 = $(node2).closest('.spytext-field > *');
 		if(!$list1.is($list2)) {
 			// we are joining two lists.
 			$list1.append($list2.children());
