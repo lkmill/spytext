@@ -148,8 +148,8 @@ module.exports = {
 
 	},
 
-	normalize: function() {
-		this.set(this.get());
+	normalize: function(element) {
+		this.set(this.get(element));
 	},
 
 	range: function() {
