@@ -219,7 +219,7 @@ module.exports = {
 		$(document).off('mouseup');
 	},
 
-	command: function(command, option) {
+	command: function(command) {
 		var field = this;
 
 		selectron.normalize();
@@ -227,11 +227,8 @@ module.exports = {
 		field.snapback.register();
 
 		if(commands[command]) {
-			commands[command](field.el, option);
-
-			setTimeout(function() {
-				field.snapback.register();
-			}, 100);
+			commands[command].apply(null,  [ field.el ].concat(_.rest(arguments)));
+			field.snapback.register();
 		}
 	},
 
