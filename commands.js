@@ -275,85 +275,79 @@ function link(element, attribute) {
 	}
 }
 
-function list(element, tag){
+function list(element, tag) {
 	var contained = selectron.contained(element, blockTags.join(','), null, true),
-		firstContained = _.first(contained),
-		lastContained = _.last(contained),
-		startOffset = selectron.getOffset(firstContained, 'start'),
-		endOffset = selectron.getOffset(lastContained, 'end'),
-		blocks = [];
-
-	var $list;
+		listItems = [];
 	
-	if(firstContained.nodeName === 'LI') {
-		// if selection starts in a list, set $list to that list;
-		$list = $(firstContained).closest(element.tagName + ' > *');
+	contained = contained.filter(function(node) {
+		// this is to filter out LI with nested lists where only text in the nested
+		// list is selected, not text in the actual LI tag ((previous) siblings to the nested <ul>)
+		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(descendants(node, 3, 1));
+	});
 
-		var $lastList = $(lastContained).closest(element.tagName + ' > *');
+	var $startBlock = $(_.first(contained)),
+		$endBlock = $(_.last(contained)),
+		startOffset = selectron.getOffset($startBlock[0], 'start'),
+		endOffset = selectron.getOffset($endBlock[0], 'end'),
+		$list;
+	
+	if($startBlock.is('LI')) {
+		var $startList = $startBlock.closest('.spytext-field > *'),
+			$endList;
 
-		if($list.is($lastList)) {
-			// if entire selection is within a single list,
-			// then change it's type (if it is the wrong type)
-			// and do nothing else.
-			if($list[0].tagName.toUpperCase() !== tag) {
-				var position = selectron.get(element);
-				$list.add("UL,OL", $list).replaceWith(function () {
-					return $('<' + tag + '>').append(this.childNodes);
-				});
-				selectron.set(position);
+		if($endBlock.is('LI'))
+			$endList = $endBlock.closest('.spytext-field > *');
+
+		if($startList.is(tag)) {
+			$list = $startList;
+
+			if($endList && $startList.is($endList))
+				return;
+		} else {
+			$list = $('<' + tag + '>').insertAfter($startList);
+
+			if($endList && $startList.is($endList) && ($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0)) {
+				$('<' + $endList[0].tagName + '>').insertAfter($list).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
 			}
-
-			return;
-		} else if($list[0].tagName !== tag.toUpperCase()) {
-			// selection end is not in a list, but the 
-			// list the selection starts in is a wrong type;
-			// create a new list with the correct type, and
-			// insert it after the first list
-			var $newList = $('<' + tag + '>');//.append($list.children());
-			$list.after($newList);
-
-			$list = $newList;
 		}
 	} else {
-		// selection does not start in a list,
-		// create a new empty list and insert it
-		// before the first contained block element
-		$list = $('<' + tag + '>');
-		$(contained[0]).before($list);
+		$list = $('<' + tag + '>').insertBefore($startBlock);
 	}
 
-	var first, last;
-
-	contained.forEach(function(child, i, arr) {
+	contained.forEach(function(child,i){
 		var $listItem;
-		if(child.nodeName === 'LI' && $(child).ancestors('UL,OL', element).is($list)) {
-			// contained element is a listItem already belonging to 
-			// the right list. do nothing but save a reference to the child
+
+		if(child.tagName === 'LI') {
 			$listItem = $(child);
+
+			if(!$list.is($listItem.closest('.spytext-field > *'))) {
+				(function recurse($listItem, $ref) {
+					var $children = $listItem.children("UL,OL").remove();
+
+					$ref.append($listItem);
+
+					if($children.length > 0) {
+						var $nestedList = $('<' + tag + '>').appendTo($listItem);
+						$children.children().each(function() {
+							recurse($(this), $nestedList);
+						});
+					}
+				})($listItem, $list);
+			}
 		} else {
-			$listItem = $('<li>').append(child.childNodes);
-
-			// replace all nested lists
-			$($list[0].tagName === 'UL' ? 'OL' : 'UL', $listItem).replaceWith(function () {
-				return $('<' + tag + '>').append(this.childNodes);
-			});
+			$listItem = $('<li>');
 			$list.append($listItem);
+			$listItem.append(child.childNodes);
 
-			if(!child.previousSibling && !child.nextSibling)
-				// remove parent if child is only child
+			if($(child).parent().is(':empty'))
 				$(child).parent().remove();
 			else
-				// remove child if it is not the only child
 				$(child).remove();
 		}
-
-		// save references for resetting the selection/range.
-		if(i === 0)
-			first = $listItem[0];
-
-		if(i === arr.length - 1)
-			last = $listItem[0];
+		listItems.push($listItem[0]);
 	});
+
+	$(':empty:not("BR")', element).remove();
 
 	if($list.next()[0].tagName === $list[0].tagName) {
 		// merge new list with next element if it is a list
@@ -361,14 +355,15 @@ function list(element, tag){
 		$list.append($list.next().children());
 		$list.next().remove();
 	}
+
 	
 	selectron.set({
 		start: {
-			ref: first,
+			ref: _.first(listItems),
 			offset: startOffset
 		},
 		end: {
-			ref: last,
+			ref: _.last(listItems),
 			offset: endOffset
 		},
 	});
