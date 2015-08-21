@@ -83,7 +83,6 @@ Snapback.prototype = {
 	},
 
 	size: function() {
-		if(!this.element) return;
 		return this.undos.length;
 	},
 
@@ -110,12 +109,15 @@ Snapback.prototype = {
 	},
 
 	undoRedo: function(undo, isUndo) {
-		if(!this.element) return;
 		this.disable();
+
 		if(this.mutations.length > 0) {
 			this.register();
 		}
-		var mutations = isUndo ? undo.mutations.slice(0).reverse() : undo.mutations;
+		
+		var mutations = isUndo ? undo.mutations.slice(0).reverse() : undo.mutations,
+			position = isUndo ? undo.positions.before : undo.positions.after;
+
 		for(var s = 0; s < mutations.length; s++) {
 			var mutation = mutations[s];
 			switch(mutation.type) {
@@ -126,8 +128,9 @@ Snapback.prototype = {
 					$(mutation.target).attr(mutation.attributeName, isUndo ? mutation.oldValue : mutation.newValue);
 					break;
 				case 'childList':
-					var addNodes = isUndo ? mutation.removedNodes : mutation.addedNodes;
-					var removeNodes = isUndo ? mutation.addedNodes : mutation.removedNodes;
+					var addNodes = isUndo ? mutation.removedNodes : mutation.addedNodes,
+						removeNodes = isUndo ? mutation.addedNodes : mutation.removedNodes;
+
 					for(var j = 0; j < addNodes.length; j++) {
 						if (mutation.nextSibling) {
 							$(mutation.nextSibling).before(addNodes[j]);
@@ -135,16 +138,15 @@ Snapback.prototype = {
 							$(mutation.target).append(addNodes[j]);
 						}
 					}
-					for(var i = 0; i < removeNodes.length; i++) {
-						$(removeNodes[i]).remove();
-					}
+					$(removeNodes).remove();
 					break;
 			}
 		}
 
-		if(isUndo) selectron.set(undo.positions.before);
-		else selectron.set(undo.positions.after);
+		selectron.set(position);
+
 		this.enable();
 	}
 };
+
 module.exports = Snapback;
