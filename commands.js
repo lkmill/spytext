@@ -38,24 +38,27 @@ function block(element, tag) {
 				$newList.insertAfter($list);
 			}
 			
-			$newBlock.append(child.childNodes);
-
 			if(child.previousSibling) { 
 				if(child.nextSibling) {
 					$newList = $newList || $('<' + $list[0].tagName + '>');
 
-					$newList.append($(child).nextAll());
-
 					$list.after($newList);
+
+					$newList.append($(child).nextAll());
+					//while(child.nextSibling)
+					//	$newList.append(child.nextSibling);
 				}
 				$list.after($newBlock);
 			} else {
 				$list.before($newBlock);
 			}
-			
 		} else {
-			$(child).before($newBlock.append(child.childNodes));
+			$(child).before($newBlock);
 		}
+
+		$newBlock.append(child.childNodes);
+		//while(child.firstChild)
+		//	$newBlock.append(child.firstChild);
 
 		$(child).remove();
 
