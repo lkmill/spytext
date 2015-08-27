@@ -11,29 +11,29 @@ function getOffset(root, caret, countAll) {
 	var rng = s().getRangeAt(0),
 		ref = rng[(caret || 'start') + 'Container'],
 		off = rng[(caret || 'start') + 'Offset'],
-		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false),
-		value = 0,
-		last,
-		node;
+		tw,
+		last;
 
-	while((node = tw.nextNode())) {
-		var nodeType = tw.currentNode.nodeType;
+	if(root !== ref) {
+		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false);
 
-		if(last && (isBlock(node) || countAll && !(nodeType === 1 && last === node.parentNode || last === node.previousSibling)))
-			value++;
+		while((node = tw.nextNode())) {
+			var nodeType = tw.currentNode.nodeType;
 
-		if(node === ref) {
-			value = value + off;
-			break;
+			if(last && (isBlock(node) || countAll && !(nodeType === 1 && last === node.parentNode || last === node.previousSibling)))
+				off++;
+
+			if(node === ref) 
+				break;
+
+			if(node.nodeType === 3)
+				off = off + node.textContent.length;
+
+			last = tw.currentNode;
 		}
-
-		if(node.nodeType === 3)
-			value = value + node.textContent.length;
-
-		last = tw.currentNode;
 	}
 
-	return value;
+	return off;
 }
 
 function restore(root, offset, countAll) {
