@@ -19,7 +19,13 @@ function block(element, tag) {
 	
 	contained = contained.filter(function(node) {
 		// this is to filter out LI with nested lists where only text in the nested
-		// list is selected, not text in the actual LI tag ((previous) siblings to the nested <ul>)
+		// list is selected, not text in the actual LI tag siblings to the nested <ul>)
+		//
+		// this is to fix error that occurs if you have selected LI from nested list, but not any text
+		// nodes in the LI containing the nested list. The LI containing 
+		//
+		// TODO this does not work if LI containing the nested list has formatting tags, such as strong or em, since
+		// then its text nodes will not be direct children
 		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(descendants(node, 3, 1));
 	});
 
@@ -28,32 +34,57 @@ function block(element, tag) {
 		startOffset = selectron.getOffset($startBlock[0], 'start'),
 		endOffset = selectron.getOffset($endBlock[0], 'end'),
 		$ref;
+
+	// $ref is the DOM element which we place our new
+	// blocks before. if it is undefined, new blocks will
+	// be appended to 'element'.
 	
 	if($endBlock.is('LI')) {
+		// if endblock is in a list, we have to do some crazyness
+		
+		// begin by getting a reference to the ancestor lists
+		// NOTE: $startList might not be a list. if $startBlock is not
+		// a list, the $startList will be $startBlock (since all block
+		// elements except LI are children of 'element'
 		var $startList = $startBlock.closest('.spytext-field > *'),
 			$endList = $endBlock.closest('.spytext-field > *');
 
 		if(!$startList.is($endList)) {
+			// if $startList and $endList are not the same
+			// we place all new blocks before $endList
 			$ref = $endList;
-		} if($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0) {
+		} else if($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0) {
+			// if endBlock has following siblings or has a nested list,
+			// create a new list and place it after startList.
+			// place all new blocks before this new list
 			$ref = $('<' + $endList[0].tagName + '>').insertAfter($startList).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
 		} else {
+			// $startList is $endList and last selected LI is last child and has no 
+			// nested list. simply place all new blocks after $startList/endList, ie
+			// before the next element
 			$ref = $endList.next();
 		}
 	} else {
+		// $endBlock is not a list, simply place
+		// new elements after $endBlocks next sibling
 		$ref = $endBlock.next();
 	}
 
 	contained.forEach(function(child,i){
 		var $newBlock = $('<' + tag + '>');
 
+		// place the newBlock before the reference,
+		// or append it to element
 		if($ref.length > 0) 
 			$ref.before($newBlock);
 		else
 			$(element).append($newBlock);
 
+
 		newBlocks.push($newBlock.append(child.childNodes)[0]);
 
+		// remove parent if child has no siblings,
+		// otherwise simply remove the child
 		if(!child.nextSibling && !child.previousSibling)
 			$(child).parent().remove();
 		else
@@ -62,6 +93,7 @@ function block(element, tag) {
 
 	$(':empty:not("BR")', element).remove();
 	
+	// set the selection
 	selectron.set({
 		start: {
 			ref: _.first(newBlocks),
