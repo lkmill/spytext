@@ -1,31 +1,28 @@
-var Snapback = require('./snapback');
-
 var selectron = require('./selectron');
+var commands = require('./commands');
 
 var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
-
-var commands = require('./commands');
 
 module.exports = {
 	mouseup: function(e) {
 		e.stopPropagation();
 	},
 
-	//keyup: function(e) {
-	//	switch(e.keyCode) {
-	//		case 33:
-	//		case 34:
-	//		case 35:
-	//		case 36:
-	//		case 37:
-	//		case 38:
-	//		case 39:
-	//		case 40:
-	//			this.spytext.toolbar.setActiveStyles();
-	//			break;
-	//		default:
-	//	}
-	//},
+	keyup: function(e) {
+		switch(e.keyCode) {
+			case 33:
+			case 34:
+			case 35:
+			case 36:
+			case 37:
+			case 38:
+			case 39:
+			case 40:
+				//this.spytext.toolbar.setActiveStyles();
+				break;
+			default:
+		}
+	},
 
 	keydown: function(e) {
 		function inbetween(a, b) {
@@ -71,6 +68,7 @@ module.exports = {
 		} else {
 			rng = selectron.range();
 			if(inbetween(33,40)) {
+				// TODO move up to keyup event
 				// 33-40 are navigation keys.
 				clearTimeout(this.timeout);
 				this.timeout = null;
@@ -91,41 +89,30 @@ module.exports = {
 			}
 
 			switch(e.keyCode) {
-				case 8:
-				case 46:
-					// 8: backspace
-					// 46: delete
-					var element = this.el;
+				case 8: //backspace
+				case 46: // delete
 					if(rng.collapsed) {
-						//var check = blockTags.join(',');
 						var block = $(rng.startContainer).closest(blockTags.join(','))[0];
 
 						var position = selectron.get(block);
 						
-						this.treeWalker.currentNode = block;
-
 						// join lines if backspace and start of block, or delete and end of block
 						if(e.keyCode === 8 && position.start.offset === 0) {
+							// 8 === backspace
+
 							e.preventDefault();
-							var prev = this.treeWalker.previousNode();
-							while(prev && blockTags.indexOf(prev.tagName) === -1) { 
-								prev = this.treeWalker.previousNode();
-							}
-							if(prev) {
-								this.command('join', prev, block);
-							}
-						} else if(e.keyCode === 46 && position.start.offset === position.start.ref.textContent.length) {
-							e.preventDefault();
-							var next = this.treeWalker.nextNode();
-							while(next && blockTags.indexOf(next.tagName) === -1) { 
-								next = this.treeWalker.nextNode();
-							}
-							if(next) {
-								this.command('join', block, next);
+							this.command('joinPrev', block);
+						} else if(e.keyCode === 46) {
+							// 46 === delete
+							var nestedList = $(block).children('UL,OL');
+
+							if(nestedList.length === 0 && position.start.offset === position.start.ref.textContent.length ||
+									nestedList.length === 1 && position.start.offset === position.start.ref.textContent.length - nestedList.text().length) {
+								e.preventDefault();
+								this.command('joinNext', block);
 							}
 						}
 					}
-					// 'called' instead of execute 
 					break;
 				case 13:
 					//enter
@@ -139,10 +126,12 @@ module.exports = {
 	paste: function (e) {
 		e.preventDefault();
 
+		// handle jQuery events	
 		if(e.originalEvent) 
 			e = e.originalEvent;
 
 		this.snapback.register();
+
 		var rng = selectron.range();
 
 		if(!rng.collapsed) {

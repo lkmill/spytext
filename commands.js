@@ -54,7 +54,7 @@ function block(element, tag) {
 
 		newBlocks.push($newBlock.append(child.childNodes)[0]);
 
-		if($(child).parent().is(':empty'))
+		if(!child.nextSibling && !child.previousSibling)
 			$(child).parent().remove();
 		else
 			$(child).remove();
@@ -97,6 +97,8 @@ function clearTextNodes(element) {
 }
 
 function deleteRangeContents(element, rng) {
+	rng = rng || selectron.range();
+
 	var commonAncestor = rng.commonAncestorContainer;
 
 	// Test if we can just call deleteRange contents. basically it checks if we have selected more than
@@ -185,28 +187,72 @@ function indent(element, outdent){
 	selectron.set(position);
 }
 
+function joinPrev(element, block) {
+	var treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
+	treeWalker.currentNode = block;
+
+	var prev = treeWalker.previousNode();
+	while(prev && blockTags.indexOf(prev.tagName) === -1) { 
+		prev = treeWalker.previousNode();
+	}
+
+	// prev should only be null or undefined if backspace is called at beginning of field
+	if(prev)
+		return join(element, prev, block);
+}
+
+function joinNext(element, block) {
+	var treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
+	treeWalker.currentNode = block;
+
+	// delete
+	var next = treeWalker.nextNode();
+	while(next && blockTags.indexOf(next.tagName) === -1) { 
+		next = treeWalker.nextNode();
+	}
+
+	// next should only be null or undefined if delete is called at beginning of field
+	if(next)
+		return join(element, block, next);
+}
+
 function join(element, node1, node2) {
 	var length = node1.textContent.length;
 
-	if($(node1).is('LI') && $(node2).is('LI')) {
-		// both nodes to join are listitems...
-		var $list1 = $(node1).closest('.spytext-field > *');
-		var $list2 = $(node2).closest('.spytext-field > *');
-		if(!$list1.is($list2)) {
-			// we are joining two lists.
-			$list1.append($list2.children());
-			return;
-		}
+	if(node1.firstChild && node1.firstChild.tagName === 'BR') $(node1.firstChild).remove();
+	if(node1.lastChild && node1.lastChild.tagName === 'BR') $(node1.lastChild).remove();
+	if(node2.lastChild && node2.lastChild.tagName === 'BR') $(node2.lastChild).remove();
+
+	var $nestedList;
+
+	if(($nestedList = $(node1).children('UL,OL')).length === 1) {
+		// we have found a nested list in node1. this should
+		// mean node2 is the first LI in the nested list
+		// place all node2 childNOdes BEFORE the nested list
+		// instead of appending to node1
+		//
+		// also update length to only be length of
+		// text in node1 excluding length of text in nested list
+		length = length - $nestedList.text().length;
+		$nestedList.before(node2.childNodes);
+	} else if(!$(node1).is('LI') && ($nestedList = $(node2).children('UL,OL')).length === 1) {
+		// if first node is a normal block tag like P or H1,
+		// and node2 is a list item with nested list
+		$(node2).after($nestedList.children());
+		$nestedList.remove();
 	}
 
-	if(node1.lastChild.tagName === 'BR') node1.removeChild(node1.lastChild);
-	$(node1).append(node2.childNodes);
+	if(node2.firstChild)
+		$(node1).append(node2.childNodes);
 
 	setBR(node1);
 
 	if(!node2.nextSibling && !node2.previousSibling)
+		// node2 has no siblings, IE parent is empty except
+		// for node2. So remove parent
 		$(node2).parent().remove();
 	else
+		// node2 has at least one sibling, only remove node2
 		$(node2).remove();
 
 	selectron.set({
@@ -349,7 +395,9 @@ function list(element, tag) {
 
 	$(':empty:not("BR")', element).remove();
 
-	if($list.next()[0].tagName === $list[0].tagName) {
+	var next = $list.next()[0];
+
+	if(next && next.tagName === $list[0].tagName) {
 		// merge new list with next element if it is a list
 		// of the same type
 		$list.append($list.next().children());
@@ -495,6 +543,8 @@ module.exports = {
 	format: format,
 	indent: indent,
 	join: join,
+	joinPrev: joinPrev,
+	joinNext: joinNext,
 	link: link,
 	list: list,
 	newline: newline,
