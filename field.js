@@ -78,6 +78,7 @@ module.exports = {
 		if(commands[command]) {
 			commands[command].apply(null,  [ field.el ].concat(_.rest(arguments)));
 			field.snapback.register();
+			this.el.normalize();
 		}
 	},
 
