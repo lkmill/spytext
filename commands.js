@@ -28,8 +28,8 @@ function block(element, tag) {
 
 	var $startBlock = $(_.first(contained)),
 		$endBlock = $(_.last(contained)),
-		startOffset = selectron.getOffset($startBlock[0], 'start'),
-		endOffset = selectron.getOffset($endBlock[0], 'end'),
+		startOffset = selectron.offset($startBlock[0], 'start'),
+		endOffset = selectron.offset($endBlock[0], 'end'),
 		$ref;
 
 	// $ref is the DOM element which we place our new
@@ -134,7 +134,7 @@ function deleteRangeContents(element, rng) {
 		$endBlock = $(rng.endContainer).closest(blockTags.join(','), element),
 		startPosition = {
 			ref: $startBlock[0],
-			offset: selectron.getOffset($startBlock[0], 'start')
+			offset: selectron.offset($startBlock[0], 'start')
 		};
 
 	rng.deleteContents();
@@ -358,8 +358,8 @@ function list(element, tag) {
 
 	var $startBlock = $(_.first(contained)),
 		$endBlock = $(_.last(contained)),
-		startOffset = selectron.getOffset($startBlock[0], 'start'),
-		endOffset = selectron.getOffset($endBlock[0], 'end'),
+		startOffset = selectron.offset($startBlock[0], 'start'),
+		endOffset = selectron.offset($endBlock[0], 'end'),
 		$list;
 
 	// $list is a reference to the list all new
