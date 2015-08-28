@@ -14,19 +14,16 @@ function align(element, alignment) {
 }
 
 function block(element, tag) {
-	var contained = selectron.contained(element, blockTags.join(','), null, true),
-		newBlocks = [];
-	
-	contained = contained.filter(function(node) {
-		// this is to filter out LI with nested lists where only text in the nested
-		// list is selected, not text in the actual LI tag siblings to the nested <ul>)
-		//
-		// this is to fix error that occurs if you have selected LI from nested list, but not any text
-		// nodes in the LI containing the nested list. The LI containing 
-		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
-	});
-
-	var $startBlock = $(_.first(contained)),
+	var contained = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+			// this is to filter out LI with nested lists where only text in the nested
+			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
+			//
+			// this is to fix error that occurs if you have selected LI from nested list, but not any text
+			// nodes in the LI containing the nested list. The LI containing 
+			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
+		}),
+		newBlocks = [],
+		$startBlock = $(_.first(contained)),
 		$endBlock = $(_.last(contained)),
 		startOffset = selectron.offset($startBlock[0], 'start'),
 		endOffset = selectron.offset($endBlock[0], 'end'),
@@ -184,29 +181,37 @@ function deleteRangeContents(element, rng) {
 }
 
 function indent(element, outdent){
-	var allLi = selectron.contained(element, 'li', null, true);
-	var position = selectron.get(element);
-	for(var i = 0; i < allLi.length; i++) {
-		//var add = allLi[i].closest('li', element);
-		var listTag = allLi[i].closest('ul, ol', element).tagName;
+	var blocks = selectron.contained(element, blockTags.join(','), null, true),
+		startBlock = _.first(blocks),
+		endBlock = _.last(blocks),
+		startOffset = selectron.offset(startBlock, 'start'),
+		endOffset = selectron.offset(endBlock, 'end');
 
-		var prev = allLi[i].previousSibling;
-		if(prev) {
-			var nested = $(prev).children(listTag)[0];
-			var list = nested || $('<' + listTag + '></' + listTag + '>')[0];
+	blocks.forEach(function(el) {
+		if(!$(el).is('LI')) return;
 
-			if(list !== nested) $(prev).append(list);
+		var $prev = $(el).prev();
 
-			$(list).append(allLi[i]);
+		if($prev.length === 1) {
+			var $nestedList = $prev.children('UL,OL');
+			if($nestedList.length === 0) {
+				var tagName = $(el).closest('OL,UL')[0].tagName;
+				$nestedList = $('<' + tagName + '>').appendTo($(el).prev());
+			}
+			$nestedList.append(el).append($(el).children('UL,OL').children());
 		}
-		//if(!add) add = allLi[i];
-		//
-		//if(li.indexOf(add) === -1) li.push
-		//var prev = listItems[i].previousSibling;
-		//if(prev) {
-		//}
-	}
-	selectron.set(position);
+	});
+
+	selectron.set({
+		start: {
+			ref: startBlock,
+			offset: startOffset
+		},
+		end: {
+			ref: endBlock,
+			offset: endOffset
+		},
+	});
 }
 
 function joinPrev(element, block) {
@@ -477,6 +482,47 @@ function newline(element) {
 	}
 }
 
+function outdent(element){
+	var blocks = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+			// this is to filter out LI with nested lists where only text in the nested
+			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
+			//
+			// this is to fix error that occurs if you have selected LI from nested list, but not any text
+			// nodes in the LI containing the nested list. The LI containing 
+			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
+		}),
+		startOffset = selectron.offset(_.first(blocks), 'start'),
+		endOffset = selectron.offset(_.last(blocks), 'end');
+
+	blocks.reverse().forEach(function(el, i) {
+		if(!$(el).is('LI') || $(el).parent().is($(element).children())) {
+			return;
+		} else {
+			if(el.nextSibling) {
+				var $nestedList = $(el).children('UL,OL');
+				if($nestedList.length === 0) {
+					var tagName = $(el).closest('OL,UL')[0].tagName;
+					$nestedList = $('<' + tagName + '>').appendTo(el);
+				}
+				$nestedList.append($(el).nextAll());
+			}
+			$(el).parent().parent().after(el);
+		}
+	});
+
+	selectron.set({
+		start: {
+			ref: _.last(blocks),
+			offset: startOffset
+		},
+		end: {
+			ref: _.first(blocks),
+			offset: endOffset
+		},
+	});
+}
+
+
 function paste(element, dataTransfer) {
 	var rng = selectron.range();
 
@@ -576,6 +622,7 @@ module.exports = {
 	link: link,
 	list: list,
 	newline: newline,
+	outdent: outdent,
 	paste: paste,
 	removeFormat: removeFormat,
 	setBR: setBR
