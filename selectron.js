@@ -130,9 +130,7 @@ module.exports = {
 	containsEvery: function(nodes, partlyContained) {
 		var that = this;
 
-		_.toArray(nodes);
-
-		return nodes.every(function(node) {
+		return _.toArray(nodes).every(function(node) {
 			return that.contains(node, partlyContained);
 		});
 	},
@@ -140,9 +138,7 @@ module.exports = {
 	containsSome: function(nodes, partlyContained) {
 		var that = this;
 
-		_.toArray(nodes);
-
-		return nodes.some(function(node) {
+		return _.toArray(nodes).some(function(node) {
 			return that.contains(node, partlyContained);
 		});
 
