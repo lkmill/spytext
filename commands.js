@@ -183,7 +183,9 @@ function deleteRangeContents(element, rng) {
 }
 
 function indent(element, outdent){
-	var blocks = selectron.contained(element, blockTags.join(','), null, true),
+	var blocks = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true) || selectron.containsEvery(descendants(node, function(node) { return node.nodeType === 1 && !node.previousSibling; }, null, true), true);
+		}),
 		startBlock = _.first(blocks),
 		endBlock = _.last(blocks),
 		startOffset = selectron.offset(startBlock, 'start'),
