@@ -128,66 +128,59 @@ function clearTextNodes(element) {
 function deleteRangeContents(element, rng) {
 	rng = rng || selectron.range();
 
-	var commonAncestor = rng.commonAncestorContainer;
 
-	// Test if we can just call deleteRange contents. basically it checks if we have selected more than
-	// one block element.
-	if(commonAncestor === element || (commonAncestor.nodeType === 1 && $(commonAncestor).is('UL, OL'))) {
-		var $startBlock = $(rng.startContainer).closest(blockTags.join(','), element);
-
-		var $completelyContainedBlocks = $(selectron.contained(element, blockTags.join(',')));
-
-		var $endBlock = $(rng.endContainer).closest(blockTags.join(','), element);
-
-		var startPosition = {
+	var $startContainer = $(rng.startContainer),
+		$startBlock = $startContainer.closest(blockTags.join(','), element),
+		$endBlock = $(rng.endContainer).closest(blockTags.join(','), element),
+		startPosition = {
 			ref: $startBlock[0],
 			offset: selectron.getOffset($startBlock[0], 'start')
 		};
 
-		var endPosition = {
-			ref: $endBlock[0],
-			offset: selectron.getOffset($endBlock[0], 'end')
-		};
+	rng.deleteContents();
 
-		selectron.set({
-			start: startPosition,
-			end: {
-				ref: $startBlock[0],
-				offset: $startBlock[0].textContent.length
+	if(!$startBlock.is($endBlock)) {
+		if($endBlock.is('LI')) {
+			var $list;
+			
+			if($startBlock.is('LI')) {
+				$list = $startBlock.parent();
+			} else {
+				$list = $endBlock.closest('.spytext-field > *');
 			}
-		});
 
-		selectron.range().deleteContents();
+			var $nestedList = $endBlock.children('UL,OL');
+			if($nestedList.length === 1) {
+				if($startBlock.is('LI'))
+					$startBlock.append($nestedList);
+				else
+					$list.append($nestedList.children());
+			}
 
-		selectron.set({
-			start: {
-				ref: $endBlock[0],
-				offset: 0
-			},
-			end: endPosition
-		});
+			if(!$list.is($endBlock.parent()) && $endBlock[0].nextSibling) {
+				$list.append($endBlock.nextAll());
+			}
+		} 
 
-		selectron.range().deleteContents();
-
-		$completelyContainedBlocks.remove();
-
-		$startBlock.append($endBlock[0].childNodes);
-
-		var $parent = $endBlock.parent();
-
-		if($startBlock.is('li') && $endBlock.is('li')) {
-			$startBlock.parent().append($parent.children());
-		}
+		$startContainer.after($endBlock[0].childNodes);
 
 		$endBlock.remove();
-
-
-		setBR($startBlock[0]);
-
-		selectron.set(startPosition);
-	} else {
-		rng.deleteContents();
 	}
+
+	setBR($startBlock[0]);
+
+	// deleteRangeContents will leave empty LI and UL. remove them.
+	$(':empty:not("BR")', element).each(function() {
+		var $el = $(this);
+		var $parent;
+		while($el.is(':empty')) {
+			$parent = $el.parent();
+			$el.remove();
+			$el = $parent;
+		}
+	});
+
+	selectron.set(startPosition);
 }
 
 function indent(element, outdent){
@@ -368,6 +361,9 @@ function list(element, tag) {
 		startOffset = selectron.getOffset($startBlock[0], 'start'),
 		endOffset = selectron.getOffset($endBlock[0], 'end'),
 		$list;
+
+	// $list is a reference to the list all new
+	// list items should be appended to
 	
 	if($startBlock.is('LI')) {
 		var $startList = $startBlock.closest('.spytext-field > *'),
