@@ -7,10 +7,9 @@ function isBlock(node) {
 	//return node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 }
 
-function getOffset(root, caret, countAll) {
-	var rng = s().getRangeAt(0),
-		ref = rng[(caret || 'start') + 'Container'],
-		off = rng[(caret || 'start') + 'Offset'],
+function count(root, ref, countAll) {
+	var node,
+		off = 0,
 		tw,
 		last;
 
@@ -34,6 +33,16 @@ function getOffset(root, caret, countAll) {
 	}
 
 	return off;
+}
+
+function offset(element, caret, countAll) {
+	if(!element) throw new Error('element needs to be defined');
+
+	var rng = s().getRangeAt(0),
+		ref = rng[(caret || 'start') + 'Container'],
+		off = rng[(caret || 'start') + 'Offset'];
+
+	return count(element, ref, countAll) + off;
 }
 
 function restore(root, offset, countAll) {
@@ -72,7 +81,9 @@ var s = window.getSelection;
 module.exports = {
 	restore: restore,
 
-	getOffset: getOffset,
+	count: count,
+
+	offset: offset,
 	
 	contained: function(element, ufo, levels, partlyContained, onlyDeepest) {
 		var _selectron = this,
@@ -92,7 +103,7 @@ module.exports = {
 	},
 
 	contains: function(node, partlyContained) {
-		// default, unoverridable behaviour of containsNode for textNodes
+		// default, unoverridable behaviour of Selection.containsNode() for textNodes
 		if(node.nodeType === 3) partlyContained = true;
 
 		var sel = s();
@@ -101,9 +112,6 @@ module.exports = {
 			return sel.containsNode(node, partlyContained);
 		} else {
 			throw new Error('sel.containsNode not defined');
-			//var rng = this.range();
-			//var startOffset = relativeOffset(rng.startContainer, element, rng.startOffset, true, false).offset;
-			//var endOffset = relativeOffset(rng.endContainer, element, rng.endOffset, true, false).offset;
 
 			//for(var j = 0; j < checkNodes.length; j++) {
 			//	var node = checkNodes[j];
@@ -163,11 +171,11 @@ module.exports = {
 		return {
 			start: {
 				ref: element,
-				offset: getOffset(element, 'start', countAll)
+				offset: offset(element, 'start', countAll)
 			},
 			end: {
 				ref: element,
-				offset: getOffset(element, 'end', countAll)
+				offset: offset(element, 'end', countAll)
 			}
 		};
 	},
