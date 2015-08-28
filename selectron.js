@@ -111,27 +111,24 @@ module.exports = {
 		if(sel.containsNode) {
 			return sel.containsNode(node, partlyContained);
 		} else {
-			throw new Error('sel.containsNode not defined');
+			var rng = sel.getRangeAt(0),
+				element = rng.commonAncestorContainer;
 
-			//for(var j = 0; j < checkNodes.length; j++) {
-			//	var node = checkNodes[j];
-			//	var currentStartOffset = relativeOffset(node, element, 0, true, false).offset;
-			//	var currentEndOffset = relativeOffset(node, element, node.textContent.length, true, false).offset;
+			if(element.nodeType !== 1) {
+				element = element.parentNode;
+			}
 
-			//	if(
-			//			(currentStartOffset >= startOffset && currentEndOffset <= endOffset) ||
-			//			(!notPartlyContained && 
-			//			 ((rng.collapsed && startOffset >= currentStartOffset && startOffset <= currentEndOffset) || 
-			//				(startOffset > currentStartOffset && startOffset < currentEndOffset) ||
-			//				(endOffset > currentStartOffset && endOffset < currentEndOffset)
-			//				))) {
-			//		if(notPartlyContained || 
-			//				(endOffset !== currentStartOffset && startOffset !== currentEndOffset) ||
-			//				(node.textContent.length === 0 || node.nodeType !== 1 || getComputedStyle(node).display.match(/inline/)) || 
-			//				(rng.collapsed && (rng.startContainer.closest(node, element))))
-			//			nodes.push(node);
-			//	}
-			//}
+			if(element !== node && !$.contains(element, node))
+				return false;
+
+			var rangeStartOffset = offset(element, 'start', true),
+				rangeEndOffset = offset(element, 'end', true),
+				startOffset = count(element, node, true),
+				endOffset = node.nodeType === 1 ? startOffset + count(node, null, true) + 2 : startOffset + node.textContent.length;
+
+			return (startOffset >= rangeStartOffset && endOffset <= rangeEndOffset ||
+					partlyContained && ((rangeStartOffset >= startOffset && rangeStartOffset <= endOffset) || (rangeEndOffset >= startOffset && rangeEndOffset <= endOffset)));
+
 		}
 	},
 
