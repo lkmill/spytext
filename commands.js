@@ -23,10 +23,7 @@ function block(element, tag) {
 		//
 		// this is to fix error that occurs if you have selected LI from nested list, but not any text
 		// nodes in the LI containing the nested list. The LI containing 
-		//
-		// TODO this does not work if LI containing the nested list has formatting tags, such as strong or em, since
-		// then its text nodes will not be direct children
-		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(descendants(node, 3, 1));
+		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
 	});
 
 	var $startBlock = $(_.first(contained)),
@@ -359,8 +356,11 @@ function list(element, tag) {
 	
 	contained = contained.filter(function(node) {
 		// this is to filter out LI with nested lists where only text in the nested
-		// list is selected, not text in the actual LI tag ((previous) siblings to the nested <ul>)
-		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(descendants(node, 3, 1));
+		// list is selected, not text in the actual LI tag siblings to the nested <ul>)
+		//
+		// this is to fix error that occurs if you have selected LI from nested list, but not any text
+		// nodes in the LI containing the nested list. The LI containing 
+		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
 	});
 
 	var $startBlock = $(_.first(contained)),
