@@ -26,14 +26,15 @@ module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 
 	if(_.isString(ufo)) {
 		selector = ufo;
+		nodeType = 1;
 		filters.push(function(node) {
-			return node.matches(selector);
+			return $(node).is(selector);
 		});
 	} else if(_.isNumber(ufo)) {
 		nodeType = ufo;
 	}
 
-	switch((nodeType = nodeType || 1)) {
+	switch(nodeType) {
 		case 1:
 			filters.push(function(node) {
 				return ['SCRIPT', 'STYLE'].indexOf(node.tagName) === -1;
@@ -44,6 +45,9 @@ module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 			// TODO do we need to worry about textnodes that only contain whitespaces
 			// and are adjacent to block elements.
 			whatToShow = NodeFilter.SHOW_TEXT;
+			break;
+		default:
+			whatToShow = NodeFilter.SHOW_ALL;
 			break;
 	}
 
