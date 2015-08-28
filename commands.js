@@ -119,6 +119,8 @@ function clearTextNodes(element) {
 		$(element).append('<p><br /></p>');
 	}
 
+	element.normalize();
+
 	setBR(element);
 }
 
@@ -452,34 +454,42 @@ function list(element, tag) {
 
 function newline(element) {
 	var rng = selectron.range();
-	var blockElement = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
+	var $blockElement = $(rng.startContainer).closest(blockTags.join(','), element);
 
-	if($(blockElement).is('LI') && blockElement.textContent.length === 0) {
+	if($blockElement.is('LI') && $blockElement.text().length - $blockElement.children('UL,OL').text().length === 0) {
 		// TODO check if there is ancestor LI, if so outdent instead
-		block(element, 'P');
-	} else {
-		var position = selectron.get(element);
-		var contents;
-
-		var $el = $('<' + blockElement.tagName + '>');
-
-		$(blockElement).after($el);
-
-		if(position.end.offset !== position.end.ref.textContent.length) {
-			position.end = { ref: blockElement, offset: blockElement.textContent.length };
-			selectron.set(position);
-			contents = selectron.range().extractContents();
+		if($blockElement.parent().is($(element).children())) {
+			block(element, 'P');
+		} else {
+			outdent(element);
 		}
-
-		while(contents && contents.firstChild) 
-			$el.append(contents.firstChild);
-
-		setBR([ $el[0], blockElement ]);
-
-		selectron.set({
-			ref: $el[0]
-		});
+		return;
 	}
+
+	var position = selectron.get($blockElement[0]);
+	var contents;
+
+	var $el = $('<' + $blockElement[0].tagName + '>').append('<BR>');
+
+	$blockElement.before($el);
+
+	if(position.end.offset !== 0) {
+		position.start = { ref: $blockElement[0], offset: 0 };
+		selectron.set(position);
+		contents = selectron.range().extractContents();
+	}
+
+	while(contents && contents.lastChild) 
+		$el.prepend(contents.lastChild);
+
+	$el[0].normalize();
+	$blockElement[0].normalize();
+
+	setBR([ $el[0], $blockElement[0] ]);
+
+	selectron.set({
+		ref: $blockElement[0]
+	});
 }
 
 function outdent(element){
@@ -595,7 +605,8 @@ function setBR(element) {
 	if(element.firstChild && element.firstChild.tagName !== 'BR' && element.textContent.length === 0)
 		$(element).empty();
 
-	if(!element.firstChild) $(element).append('<BR>');
+	if(!element.firstChild || $(element.firstChild).is('UL,OL'))
+		$(element).prepend('<BR>');
 	else {
 		var br = element.getElementsByTagName('BR');
 		var length = br.length;
