@@ -15,9 +15,6 @@ module.exports = {
 	initialize: function() {
 		this.$el.addClass('spytext-field').attr('contentEditable', 'true');
 
-		//this.timeout = null;
-		//this.active = false;
-
 		commands.clearTextNodes(this.el);
 
 		this.originalValue = this.el.innerHTML;
@@ -42,17 +39,15 @@ module.exports = {
 		_field.active = true;
 		_field.toolbar.toggle(_field);
 
-		// this is to capture events when mousedown on 
-		// fields element but mouseup outside
+		// i think the timeout is because of the range not being initialized
+		// so snapback.setPosition/selectron produces an error
 		setTimeout(function() {
 			_field.snapback.setPosition();
 
+			// this is to capture events when mousedown on 
+			// fields element but mouseup outside
 			$(document).on('mouseup', function(e) {
 				_field.snapback.register();
-				// cannot remember why there is a timeout
-				//setTimeout(function() {
-				//	_field.toolbar.setActiveStyles();
-				//}, 100);
 			});
 		});
 	},
