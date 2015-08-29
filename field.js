@@ -39,7 +39,6 @@ module.exports = {
 		var _field = this;
 
 		_field.snapback.enable();
-		_field.observe();
 		_field.active = true;
 		_field.toolbar.toggle(_field);
 
@@ -61,7 +60,6 @@ module.exports = {
 	deactivate: function() {
 		this.snapback.register();
 		this.snapback.disable();
-		this.unobserve();
 		this.active = false;
 		this.toolbar.toggle();
 
@@ -81,41 +79,5 @@ module.exports = {
 			this.el.normalize();
 		}
 	},
-
-	// observe() emits 'change' events on changes to the element
-	observe: function() {
-		// TODO enable option to turn on/off observation of changes
-		var that = this;
-		var timeout;
-		function dispatch(mutation) {
-			that.el.dispatchEvent(new CustomEvent('change', { bubbles: true , details: { mutation: mutation }}));
-		}
-
-		function change(mutations) {
-			if(mutations[0].type === 'characterData') {
-				if(timeout) 
-					clearTimeout(timeout);
-
-				timeout = setTimeout(dispatch, 300);
-			} else {
-				dispatch(mutations);
-			}
-		}
-
-		if(!this.mutationObserver) {
-			var mo = typeof MutationObserver !== 'undefined' ? MutationObserver : (typeof WebKitMutationObserver !== 'undefined' ? WebKitMutationObserver : undefined);
-
-			this.mutationObserver = new mo(change);
-		}
-
-		this.mutationObserver.observe(this.el, { subtree: true, characterData: true, childList: true, attributes: true });
-	},
-
-	// unobserve() disables emitting of change events
-	unobserve: function() {
-		if(this.mutationObserver) {
-			this.mutationObserver.disconnect();
-		}
-	}
 };
 
