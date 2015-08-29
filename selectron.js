@@ -11,15 +11,15 @@ function count(root, ref, countAll) {
 	var node,
 		off = 0,
 		tw,
-		last;
+		prev;
 
 	if(root !== ref) {
 		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false);
 
 		while((node = tw.nextNode())) {
-			var nodeType = tw.currentNode.nodeType;
+			var nodeType = node.nodeType;
 
-			if(last && (isBlock(node) || countAll && !(nodeType === 1 && last === node.parentNode || last === node.previousSibling)))
+			if(prev && (isBlock(node) || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
 				off++;
 
 			if(node === ref) 
@@ -28,7 +28,7 @@ function count(root, ref, countAll) {
 			if(node.nodeType === 3)
 				off = off + node.textContent.length;
 
-			last = tw.currentNode;
+			prev = node;
 		}
 	}
 
@@ -47,14 +47,16 @@ function offset(element, caret, countAll) {
 
 function restore(root, offset, countAll) {
 	var tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false),
-		last,
-		node = tw.nextNode();
+		prev,
+		node;
 
-	while(offset > 0) {
-		var nodetype = tw.currentNode.nodeType;
+	while(offset > 0 && (node = tw.nextNode())) {
+		var nodetype = node.nodeType;
 
-		if(last && (isBlock(node) || countAll && !(nodeType === 1 && last === node.parentNode || last === node.previousSibling)))
+		if(prev && (isBlock(node) || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
 			offset--;
+
+		prev = node;
 
 		if(node.nodeType === 3) {
 			if(offset > node.textContent.length)
@@ -62,14 +64,10 @@ function restore(root, offset, countAll) {
 			else
 				break;
 		}
-
-		last = tw.currentNode;
-		// this was put inside loop to allow for empty elements
-		node = tw.nextNode();
 	}
 
 	return {
-		ref: node,
+		ref: prev || root,
 		offset: offset
 	};
 }
@@ -204,8 +202,11 @@ module.exports = {
 			};
 		}
 
-		var start = restore(position.start.ref, position.start.offset || 0),
-			end = position.end ? restore(position.end.ref, position.end.offset) : start,
+		position.start.offset = position.start.offset || 0;
+
+		var start = position.start.offset === 0 ? position.start : restore(position.start.ref, position.start.offset);
+
+		var end = position.end ? restore(position.end.ref, position.end.offset) : start,
 			rng = document.createRange(),
 			sel = s();
 
