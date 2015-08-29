@@ -24,7 +24,9 @@ module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 		return !levels;
 	});
 
-	if(_.isString(ufo)) {
+	if(_.isFunction(ufo)) {
+		filters.push(ufo);
+	} else if(_.isString(ufo)) {
 		selector = ufo;
 		nodeType = 1;
 		filters.push(function(node) {
@@ -58,7 +60,7 @@ module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 		nodes = [];
 
 	while((node = tw.nextNode())) {
-		if(nodeType === 1 && (!levels || levels > 1) && onlyDeepest) {
+		if((!levels || levels > 1) && onlyDeepest) {
 			nodes = _.without.apply(null, [ nodes ].concat($(node).ancestors(selector, element).toArray()));
 		}
 		nodes.push(node);
