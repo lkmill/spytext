@@ -1,10 +1,13 @@
-require('jquery-ancestors');
+/**
+ * All the commands for Spytext
+ *
+ * @module spytext/commands 
+ */
 
-var selectron = require('./selectron');
+var selectron = require('./selectron'),
+	descendants = require('./descendants'),
+	blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
-var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
-
-var descendants = require('./descendants');
 
 function align(element, alignment) {
 	var containedChildren = selectron.contained(element, 1, 1, true);

@@ -4,6 +4,8 @@
  * @module spytext/descendants 
  */
 
+require('jquery-ancestors');
+
 /**
  * Uses TreeWalker to traverse `element`s DOM subtree and collect all descendants
  * that match different filters
