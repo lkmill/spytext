@@ -18,7 +18,9 @@ module.exports = {
 			case 38:
 			case 39:
 			case 40:
-				//this.spytext.toolbar.setActiveStyles();
+				clearTimeout(this.timeout);
+				this.timeout = null;
+				this.snapback.register();
 				break;
 			default:
 		}
@@ -56,7 +58,7 @@ module.exports = {
 					break;
 				case 65://a
 					e.preventDefault();
-					selectron.select(this.el);
+					//selectron.select(this.el);
 					break;
 				case 84://t
 					e.preventDefault();
@@ -67,13 +69,8 @@ module.exports = {
 			}
 		} else {
 			rng = selectron.range();
-			if(inbetween(33,40)) {
-				// TODO move up to keyup event
-				// 33-40 are navigation keys.
-				clearTimeout(this.timeout);
-				this.timeout = null;
-				this.snapback.register();
-			} else if(rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
+
+			if(rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
 				this.snapback.register();
 				this.command('deleteRangeContents',rng);
 
@@ -115,9 +112,13 @@ module.exports = {
 					}
 					break;
 				case 13:
-					//enter
-					e.preventDefault();
-					this.command('newline');
+					// only override default behaviour if shift-key is not pressed. all
+					// tested browser seems to do correct behaviour for Shift-Enter, namely
+					// insert a <BR>
+					if(!e.shiftKey) {
+						e.preventDefault();
+						this.command('newline');
+					}
 					break;
 			}
 		}
