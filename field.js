@@ -24,11 +24,8 @@ module.exports = {
 			$(document.body).append(this.app.spytextToolbar.el);
 		}
 
-		this.treeWalker = document.createTreeWalker(this.el, NodeFilter.SHOW_ELEMENT, null, false);
-
 		this.toolbar = this.app.spytextToolbar;
 
-		// needs to be loaded after DOM manipulation
 		this.snapback = new Snapback(this.el);
 	},
 
