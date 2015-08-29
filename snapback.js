@@ -60,21 +60,22 @@ Snapback.prototype = {
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
 
-			var positions = {
-				before: this.position,
-				after: selectron.get(this.element)
-			};
-
-			this.undos.push({ positions: positions, mutations: this.mutations });
+			this.undos.push({
+				positions: {
+					before: this.position,
+					after: this.setPosition()
+				},
+				mutations: this.mutations
+			});
 			this.mutations = [];
 			this.undoIndex = this.undos.length -1;
+		} else {
+			this.setPosition();
 		}
-
-		this.setPosition();
 	},
 
 	setPosition: function(position) {
-		this.position = position || selectron.get(this.element);
+		return (this.position = position || selectron.get(this.element));
 	},
 
 	enable: function() {
