@@ -162,6 +162,16 @@ module.exports = {
 			return null;
 	},
 
+	isAtEnd: function() {
+		var rng = this.range();
+
+		var $block = $(rng.startContainer).closest(blockTags.join(','));
+		var off = offset($block[0], 'start');
+
+		return $block.text().length === 0 || off === count($block[0]) - count($block.children('UL,OL')[0]);
+	},
+
+
 	get: function(element, countAll) {
 		element = element || document.body;
 
