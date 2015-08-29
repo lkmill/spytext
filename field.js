@@ -64,7 +64,7 @@ module.exports = {
 	command: function(command) {
 		var field = this;
 
-		selectron.normalize();
+		selectron.normalize(this.el);
 
 		field.snapback.register();
 
