@@ -770,15 +770,10 @@ function setBR(element) {
 	if(!element.firstChild || $(element.firstChild).is('UL,OL'))
 		$(element).prepend('<BR>');
 	else {
-		var br = element.getElementsByTagName('BR');
-		var length = br.length;
-		for(var i = 0; i < length; i++) {
-			if(br[i].previousSibling) {
-				$(br[i]).remove();
-				i--;
-				length--;
-			}
-		}
+		_.toArray(element.getElementsByTagName('BR')).forEach(function(br) {
+			if(br.previousSibling && !br.nextSibling)
+				$(br).remove();
+		});
 	}
 }
 
