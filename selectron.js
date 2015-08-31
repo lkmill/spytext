@@ -41,6 +41,7 @@ function isBlock(node) {
  *
  * This is essentially the inverse of restore
  *
+ * @static
  * @param	{Node} root - Element to count relative
  * @param	{Node} ref - Element to reach
  * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all steps
@@ -78,6 +79,7 @@ function count(root, ref, countAll) {
  * Return the total offset for a caret (start or end) of a range relative to a
  * specific element
  *
+ * @static
  * @param	{Element} element - Containing element to count offset relative to
  * @param	{string} [caret=start] - Parameter that determines whether we should fetch start or endContainer
  * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all elements
@@ -101,6 +103,7 @@ function offset(element, caret, countAll) {
  *
  * This is essentially the inverse of count
  *
+ * @static
  * @param	{Element} root
  * @param	{number} offset
  * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all elements

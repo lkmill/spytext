@@ -9,13 +9,31 @@ var selectron = require('./selectron'),
 	blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
 
+/**
+ * Uses inline CSS styles to set text-align property for
+ * all blocks contained in current selection
+ *
+ * @static
+ * @param	{Element} element - Reference element to be used for selectron to fetch elements contained in selection
+ * @return {string} alignment
+ */
 function align(element, alignment) {
-	var containedChildren = selectron.contained(element, 1, 1, true);
+	// get all partlyContained children of element
+	var containedChildren = selectron.contained(element, element.children, null, true);
+
 	containedChildren.forEach(function(child) {
+		// do not set text-align property on lists
 		if(!$(child).is('ul, ol')) $(child).css('text-align', alignment);
 	});
 }
 
+/**
+ * Changes all contained elements with `blockTags` tagName to tag `tag`.
+ *
+ * @static
+ * @param	{Element} element - Reference element to be used for selectron to fetch elements contained in selection
+ * @return {string} tag - Tag to turn blocks into. Ie H1 or P
+ */
 function block(element, tag) {
 	var contained = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
 			// this is to filter out LI with nested lists where only text in the nested
@@ -103,33 +121,55 @@ function block(element, tag) {
 	});
 }
 
+/**
+ * Removes all empty text nodes adjacent to block level elements
+ *
+ * @static
+ * @param	{Element} element - Element which descendants to look for empty text nodes
+ */
 function clearTextNodes(element) {
 	function isBlock(node) {
 		return node && node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 	}
+
 	descendants(element, 3).forEach(function(textNode) {
 		if(isBlock(textNode.previousSibling) || isBlock(textNode.nextSibling)) {
+			// previous or next sibling is a block element
+
+			// trim any whitespaces away from textNode
 			textNode.textContent = textNode.textContent.trim();
+
 			if(textNode.textContent.match(/^\s*$/)) {
+				// textNode is empty or only contains whitespaces
 				$(textNode).remove();
-			} else if(textNode.parentNode.nodeName !== 'LI') {
+			} else if(textNode.parentNode === element) {
+				// if textNode is a child of element, wrap it in <p> tag
 				$(textNode).wrap('<p>');
 			}
 		}
 	});
 
 	if(!element.firstChild) {
+		// if element is empty, insert <p> element with <BR>
 		$(element).append('<p><br /></p>');
+	} else {
+		// normalize all text nodes in element if not empty
+		element.normalize();
 	}
-
-	element.normalize();
 
 	setBR(element);
 }
 
+/**
+ * Removes all empty text nodes adjacent to block level elements
+ *
+ * @static
+ * @param	{Element} element - Element which descendants to look for empty text nodes
+ * @param	{Range} [rng] - 
+ */
 function deleteRangeContents(element, rng) {
+	// fetch range if rng is not set
 	rng = rng || selectron.range();
-
 
 	var $startContainer = $(rng.startContainer),
 		$startBlock = $startContainer.closest(blockTags.join(','), element),
@@ -139,42 +179,66 @@ function deleteRangeContents(element, rng) {
 			offset: selectron.offset($startBlock[0], 'start')
 		};
 
+	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
 
 	if(!$startBlock.is($endBlock)) {
-		if($endBlock.is('LI')) {
-			var $list;
-			
-			if($startBlock.is('LI')) {
-				$list = $startBlock.parent();
-			} else {
-				$list = $endBlock.closest('.spytext-field > *');
-			}
+		// if $startBlock is not $endBlock, we need to clean up any mess that
+		// deleteContents has left and then append all childNodes of $endBlock to $startBlock
 
-			var $nestedList = $endBlock.children('UL,OL');
-			if($nestedList.length === 1) {
-				if($startBlock.is('LI'))
-					$startBlock.append($nestedList);
-				else
-					$list.append($nestedList.children());
+		if($endBlock.is('LI')) {
+			// $endBlock is a list item... we might need to clear up a mess
+		
+			// $list will be the list to which we move any nested lists of $endBlock
+			// to and any of $endBlock's next siblings
+			var $list, 
+				$nestedList = $endBlock.children('UL,OL');
+
+			if($startBlock.is('LI')) {
+				// $startBlock is a listItem,
+
+				// move listItems to $startBlock's parent list)
+				$list = $startBlock.parent();
+
+				// append potential $nestedList to $startBlock
+				$startBlock.append($nestedList);
+			} else {
+				// $startBlock is not a listItem which means all $endBlock's previous listItems
+				// have been selected. Move listItems to $endBlocks outermost containing list
+				$list = $endBlock.closest('.spytext-field > *');
+
+				// append all $nestedList's children to $list
+				$list.append($nestedList.children());
 			}
 
 			if(!$list.is($endBlock.parent()) && $endBlock[0].nextSibling) {
+				// append all next siblings to $endBlock, but only
+				// if $list is not $endBlock's parent (because then target
+				// and source will be same)
 				$list.append($endBlock.nextAll());
 			}
 		} 
 
+		// Move all childNodes from $endBlock to $startBlock by inserting them
+		// after $startContainer (should now be a at the end of $startBlock).
+		// $startContainer is used instead of appending to $startBlock in case a nested list
+		// has been appended to $startBlock, otherwise the childNodes would be
+		// incorrectly placed after this nested list.
 		$startContainer.after($endBlock[0].childNodes);
 
+		// remove the empty $endBlock
 		$endBlock.remove();
 	}
 
 	setBR($startBlock[0]);
 
-	// deleteRangeContents will leave empty LI and UL. remove them.
+	// rng.deleteContents() will leave empty LI and UL. remove them (recursively)
 	$(':empty:not("BR")', element).each(function() {
-		var $el = $(this);
-		var $parent;
+		var $el = $(this),
+			$parent;
+
+		// recurse up the DOM and delete all elements
+		// until a non-empty $el is found
 		while($el.is(':empty')) {
 			$parent = $el.parent();
 			$el.remove();
@@ -182,11 +246,24 @@ function deleteRangeContents(element, rng) {
 		}
 	});
 
+	// restore the selection to the position of the start caret before
+	// deleteRangeContents was called
 	selectron.set(startPosition);
 }
 
-function indent(element, outdent){
+/**
+ * Indents all list items (<LI>) contained in the current selection
+ *
+ * @static
+ * @param	{Element} element - Element which descendants to look for empty text nodes
+ */
+function indent(element){
 	var blocks = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+			// this filter will ensure all list items with nested lists are only selected if all
+			// descendant list items selected or the first list items in their list.
+			//
+			// this was mainly done to allow indenting ancestor list items if a selected list item is
+			// the first item in a nested list
 			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true) || selectron.containsEvery(descendants(node, function(node) { return node.nodeType === 1 && !node.previousSibling; }, null, true), true);
 		}),
 		startBlock = _.first(blocks),
@@ -195,20 +272,29 @@ function indent(element, outdent){
 		endOffset = selectron.offset(endBlock, 'end');
 
 	blocks.forEach(function(el) {
+		// only run the command of 'LI' blocks
 		if(!$(el).is('LI')) return;
 
 		var $prev = $(el).prev();
 
 		if($prev.length === 1) {
+			// only allow indenting list items if they are not the first items in their list
+
+			// try to fetch the current element's nested list
 			var $nestedList = $prev.children('UL,OL');
 			if($nestedList.length === 0) {
+				// if the previous list item has no nested list, create a new one
 				var tagName = $(el).closest('OL,UL')[0].tagName;
 				$nestedList = $('<' + tagName + '>').appendTo($(el).prev());
 			}
+			// append the list item itself to the previous list items nested list.
+			// if the list item itself has a nested list, append all list items
+			// on this nested list to the previous elements nested list
 			$nestedList.append(el).append($(el).children('UL,OL').children());
 		}
 	});
 
+	// restore the selection
 	selectron.set({
 		start: {
 			ref: startBlock,
@@ -221,6 +307,14 @@ function indent(element, outdent){
 	});
 }
 
+/**
+ * Join `block` with the previous block. Uses a treeWalker to determine
+ * what the previous block will be
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for the TreeWalker
+ * @param	{Element} block - Element which should be join the the previous block
+ */
 function joinPrev(element, block) {
 	var treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
 	treeWalker.currentNode = block;
@@ -235,6 +329,14 @@ function joinPrev(element, block) {
 		return join(element, prev, block);
 }
 
+/**
+ * Join `block` with the next block. Uses a treeWalker to determine
+ * which the next block is
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for the TreeWalker
+ * @param	{Element} block - Element which should be join the next block
+ */
 function joinNext(element, block) {
 	var treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
 	treeWalker.currentNode = block;
@@ -250,6 +352,14 @@ function joinNext(element, block) {
 		return join(element, block, next);
 }
 
+/**
+ * Joins `node1` with `node2`.
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for the TreeWalker
+ * @param	{Element} node1 - First node to join
+ * @param	{Element} node2 - Second node to join
+ */
 function join(element, node1, node2) {
 	var length = node1.textContent.length;
 
@@ -260,33 +370,38 @@ function join(element, node1, node2) {
 	var $nestedList;
 
 	if(($nestedList = $(node1).children('UL,OL')).length === 1) {
-		// we have found a nested list in node1. this should
-		// mean node2 is the first LI in the nested list
-		// place all node2 childNOdes BEFORE the nested list
-		// instead of appending to node1
-		//
-		// also update length to only be length of
-		// text in node1 excluding length of text in nested list
+		// `node1` has a nested list, and `node2` should
+		// be the first list item in the nested list. this means
+		// we can leave the nested list, and simply insert
+		// `node2` children before the nested list in `node1`.
+
+		// update length to only be length of text in `node1` excluding length of
+		// text in nested list, so selectron sets the position correctly
 		length = length - $nestedList.text().length;
+
 		$nestedList.before(node2.childNodes);
 	} else if(!$(node1).is('LI') && ($nestedList = $(node2).children('UL,OL')).length === 1) {
-		// if first node is a normal block tag like P or H1,
-		// and node2 is a list item with nested list
+		// `node1` is a not a list item, and `node2` has nested list. decrease the
+		// nested list's level by moving all its children to after `node2`, then
+		// remove the nested list.
+	
+		// insert $nestedList's list items after `node2`
 		$(node2).after($nestedList.children());
+
+		// remove the empty $nestedList
 		$nestedList.remove();
 	}
 
-	if(node2.firstChild)
-		$(node1).append(node2.childNodes);
+	// append any childNodes of `node2` to `node1` (this will already be done if `node1` had a nested list
+	$(node1).append(node2.childNodes);
 
 	setBR(node1);
 
 	if(!node2.nextSibling && !node2.previousSibling)
-		// node2 has no siblings, IE parent is empty except
-		// for node2. So remove parent
+		// `node2` has no siblings, so remove parent
 		$(node2).parent().remove();
 	else
-		// node2 has at least one sibling, only remove node2
+		// `node2` has at least one sibling, only remove `node2`
 		$(node2).remove();
 
 	selectron.set({
@@ -295,11 +410,19 @@ function join(element, node1, node2) {
 	});
 }
 
+/**
+ * Formats text by wrapping text nodes in elements with tagName `tag`.
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for the TreeWalker
+ * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
+ */
 function format(element, tag){
 	if(!tag) return removeFormat(element);
-	var position = selectron.get(element);
-	var containedTextNodes = selectron.contained(element, 3, null, true);
-	var rng = selectron.range();
+
+	var position = selectron.get(element),
+		containedTextNodes = selectron.contained(element, 3, null, true),
+		rng = selectron.range();
 
 	if(rng.endOffset < rng.endContainer.textContent.length) {
 		node = rng.endContainer;
