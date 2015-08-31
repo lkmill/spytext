@@ -414,7 +414,7 @@ function join(element, node1, node2) {
  * Formats text by wrapping text nodes in elements with tagName `tag`.
  *
  * @static
- * @param	{Element} element - Element which is used as root for the TreeWalker
+ * @param	{Element} element - Element which is used as root for selectron.
  * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
 function format(element, tag){
@@ -424,19 +424,31 @@ function format(element, tag){
 		containedTextNodes = selectron.contained(element, 3, null, true),
 		rng = selectron.range();
 
-	if(rng.endOffset < rng.endContainer.textContent.length) {
-		node = rng.endContainer;
-
-		while(node.firstChild && node.nodeType !== 3) node = node.firstChild;
-
-		if(node) node.splitText(rng.endOffset);
-	}
 	if(rng.startOffset > 0) {
+		// range is not at the start of first selected node, we need to split the text node
 		node = rng.startContainer;
 
+		// select the innermost textNode
 		while(node && node.nodeType !== 3) node = node.firstChild;
 
-		if(node) containedTextNodes.splice(0, 1, node.splitText(rng.startOffset));
+		if(node)
+			// split the text node. we only want to style the second part of the split textNode,
+			// which means we need to replace the reference to node with the new node returned by
+			// splitText
+			containedTextNodes.splice(0, 1, node.splitText(rng.startOffset));
+	}
+
+	if(rng.endOffset < rng.endContainer.textContent.length) {
+		// range is not at the end of last selected node, we need to split the text node
+		node = rng.endContainer;
+
+		// selected the innermost textNode
+		while(node.firstChild && node.nodeType !== 3) node = node.firstChild;
+
+		if(node)
+			// simply split the text node.we only want to style the first part of the split textNode,
+			// which will still be the node referenced by `node`
+			node.splitText(rng.endOffset);
 	}
 
 	var $wrapper = _.isString(tag) ? $('<' + tag + '></' + tag + '>') : $(tag).clone();
@@ -444,13 +456,21 @@ function format(element, tag){
 	$(containedTextNodes).wrap($wrapper);
 
 	// TODO: Tidy, ie <b>Hello <b>Again</b><b>. It continues.</b></b> >> <b>Hello Again. It continues.</b>
-	selectron.contained(element, 1, 1, true).forEach(function(contained) {
+	selectron.contained(element, element.children, null, true).forEach(function(contained) {
 		contained.normalize();
 	});
 
+	// restore the selection
 	selectron.set(position);
 }
 
+/**
+ * Formats text by wrapping text nodes in elements with tagName `tag`.
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
+ */
 function link(element, attribute) {
 	var sel = window.getSelection();
 	var node = sel.focusNode.parentNode;
@@ -478,6 +498,13 @@ function link(element, attribute) {
 	}
 }
 
+/**
+ * Turns block elements into list items
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
+ */
 function list(element, tag) {
 	var contained = selectron.contained(element, blockTags.join(','), null, true),
 		listItems = [];
@@ -580,6 +607,13 @@ function list(element, tag) {
 	});
 }
 
+/**
+ * Creates a new block
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
+ */
 function newline(element) {
 	var rng = selectron.range();
 	var $blockElement = $(rng.startContainer).closest(blockTags.join(','), element);
