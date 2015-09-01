@@ -22,6 +22,7 @@
 var selectron = require('./selectron');
 
 /**
+ *
  * @constructor
  * @alias module:spytext/snapback
  * @param {Element} element - The element used as the root for the MutationObserver and root for selectron
@@ -60,25 +61,26 @@ Snapback.prototype = {
 	addMutation: function(mutation) {
 		switch(mutation.type) {
 			case 'characterData': 
+				// save the new value of the textNode
 				mutation.newValue = mutation.target.textContent;
-				var lastIndex = this.mutations.length - 1,
-					lastMutation = this.mutations[lastIndex];
 
-				if(lastIndex > -1 && lastMutation.type === 'characterData' && lastMutation.target === mutation.target && lastMutation.newValue === mutation.oldValue) {
-					this.mutations[lastIndex].newValue = mutation.newValue;
-				} else {
-					this.mutations.push(mutation);
-				}
+				var lastMutation = _.last(this.mutations);
 
+				if(lastMutation && lastMutation.type === 'characterData' && lastMutation.target === mutation.target && lastMutation.newValue === mutation.oldValue) {
+					// current and last mutations were characterData mutations on the same textNode.
+					// simply set newValue of lastMutation to newValue of current
+					lastMutation.newValue = mutation.newValue;
+					return;
+				} 
 				break;
 			case 'attributes':
+				// save new value of the updated attribute
 				mutation.newValue = mutation.target.getAttribute(mutation.attributeName);
-				this.mutations.push(mutation);
-				break;
-			case 'childList':
-				this.mutations.push(mutation);
 				break;
 		}
+
+		// add a new mutation to the stack
+		this.mutations.push(mutation);
 	},
 
 	/**
@@ -90,35 +92,46 @@ Snapback.prototype = {
 		}
 	},
 
+	/**
+	 * Registers any mutations in the mutation stack as an undo
+	 */
 	register: function() {
-		if(this.enabled && this.mutations.length > 0) {
+		if(this.mutations.length > 0) {
+			// only register a new undo if there are mutations in the stack
 			if(this.undoIndex < this.undos.length - 1) {
+				// remove any undos after undoIndex (ie, the user has undo:n
+				// several steps and then started new commands
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
 
+			// push a new Undo object to the undo stack
 			this.undos.push({
 				positions: {
 					before: this.position,
-					after: this.setPosition()
+					after: this.getPositions()
 				},
 				mutations: this.mutations
 			});
+
+			// reset the mutations stack
 			this.mutations = [];
-			this.undoIndex = this.undos.length -1;
-		} else {
-			this.setPosition();
+
+			// update the undoIndex
+			this.undoIndex = this.undos.length - 1;
 		}
 	},
 
 	/**
-	 * Save positions of current selection
+	 * Save and return the positions of current selection
+	 *
+	 * @return {Positions}
 	 */
-	setPosition: function(position) {
+	getPositions: function(position) {
 		return (this.position = position || selectron.get(this.element));
 	},
 
 	/**
-	 * Start observering mutations to the DOM
+	 * Enable observering mutations to the DOM
 	 */
 	enable: function() {
 		if(!this.enabled) {
@@ -128,7 +141,8 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Stop observering mutations to the DOM
+	 * Stop observering mutations to the DOM. This does not register
+	 * any mutations in the mutation stack.
 	 */
 	disable: function() {
 		if(this.enabled) {

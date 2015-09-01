@@ -59,9 +59,9 @@ module.exports = {
 		_field.toolbar.toggle(_field);
 
 		// i think the timeout is because of the range not being initialized
-		// so snapback.setPosition/selectron produces an error
+		// so snapback.getPositions/selectron produces an error
 		setTimeout(function() {
-			_field.snapback.setPosition();
+			_field.snapback.getPositions();
 
 			// this is to capture events when mousedown on 
 			// fields element but mouseup outside
