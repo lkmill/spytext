@@ -61,8 +61,8 @@ function block(element, tag) {
 		// NOTE: $startList might not be a list. if $startBlock is not
 		// a list, the $startList will be $startBlock (since all block
 		// elements except LI are children of 'element'
-		var $startList = $startBlock.closest('.spytext-field > *'),
-			$endList = $endBlock.closest('.spytext-field > *');
+		var $startList = $startBlock.closest(element.children),
+			$endList = $endBlock.closest(element.children);
 
 		if(!$startList.is($endList)) {
 			// if $startList and $endList are not the same
@@ -205,7 +205,7 @@ function deleteRangeContents(element, rng) {
 			} else {
 				// $startBlock is not a listItem which means all $endBlock's previous listItems
 				// have been selected. Move listItems to $endBlocks outermost containing list
-				$list = $endBlock.closest('.spytext-field > *');
+				$list = $endBlock.closest(element.children);
 
 				// append all $nestedList's children to $list
 				$list.append($nestedList.children());
@@ -528,16 +528,19 @@ function list(element, tag) {
 	// list items should be appended to
 	
 	if($startBlock.is('LI')) {
-		var $startList = $startBlock.closest('.spytext-field > *'),
+		// $startList and $endList should reference lists furthest up the DOM, ie children of 
+		// the fields element
+		var $startList = $startBlock.closest(element.children),
 			$endList;
 
 		if($endBlock.is('LI'))
-			$endList = $endBlock.closest('.spytext-field > *');
+			$endList = $endBlock.closest(element.children);
 
 		if($startList.is(tag)) {
 			$list = $startList;
 
 			if($endList && $startList.is($endList))
+				// $endList is the same as $startList... do nothing
 				return;
 		} else {
 			$list = $('<' + tag + '>').insertAfter($startList);
@@ -547,6 +550,13 @@ function list(element, tag) {
 			}
 		}
 	} else {
+		// if $startBlock is not a list we need to create a new
+		// list that we can append all new list items to.
+		// insert this new list before $startBlock
+		//
+		// if $endBlock is also a list, all blocks inbetween $startBlock
+		// and $endBlock will be selected, thus moved into $list and $list
+		// will eventually become previousSibling to $endBlock
 		$list = $('<' + tag + '>').insertBefore($startBlock);
 	}
 
@@ -556,7 +566,7 @@ function list(element, tag) {
 		if(child.tagName === 'LI') {
 			$listItem = $(child);
 
-			if(!$list.is($listItem.closest('.spytext-field > *'))) {
+			if(!$list.is(element.children)) {
 				(function recurse($listItem, $ref) {
 					var $children = $listItem.children("UL,OL").remove();
 
@@ -631,6 +641,8 @@ function newline(element) {
 		return;
 	}
 
+	// Select everything from the start of blockElement to the caret. This
+	// includes everything that will be moved into the new block placed before the current
 	selectron.set({
 		start: {
 			ref: $blockElement[0],
@@ -641,13 +653,17 @@ function newline(element) {
 			offset: rng.startOffset
 		}
 	});
-
+	// extract the contents
 	var contents = selectron.range().extractContents();
 
-	var $el = $('<' + $blockElement[0].tagName + '>').insertBefore($blockElement).prepend(contents.childNodes);
+	// create a new block with the same tag as blockElement, insert it before blockElement and append
+	// the contents of the extracted range to it's end
+	var $el = $('<' + $blockElement[0].tagName + '>').insertBefore($blockElement).append(contents.childNodes);
 
+	// normalize any textnodes
 	$el[0].normalize();
 
+	// ensure correct BR on both affected elements
 	setBR([ $el[0], $blockElement[0] ]);
 
 	selectron.set({
