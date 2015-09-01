@@ -694,65 +694,51 @@ function outdent(element){
 	});
 }
 
-
 function paste(element, dataTransfer) {
-	var rng = selectron.range();
+	var rng = selectron.range(),
+		textBlocks = dataTransfer.getData('Text').replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').split(/[\n\r]+/);
 
-	var str = dataTransfer.getData('Text');
-	str = str.replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '');
-	var arr = str.split(/[\n\r]+/);
+	if(!rng.collapsed) {
+		deleteRangeContents(element, rng);
+		rng = selectron.range();
+	}
 
-	var blockElement = rng.startContainer.nodeType === 1 && $(rng.startContainer).is(blockTags.join(',')) ? rng.startContainer : $(rng.startContainer).closest(blockTags.join(','), element)[0];
-	var position = selectron.get(element);
-	var textNode;
-	if(arr.length === 0) {
-		return;
-	} else if (arr.length === 1) {
-		textNode = document.createTextNode(arr[0]);
-		if(rng.startOffset === 0) {
-			if(rng.startContainer.nodeType === 1) {
-				if(rng.startContainer.lastChild.nodeName === 'BR')
-					$(rng.startContainer.lastChild).remove();
-				$(rng.startContainer).prepend(textNode);
-			} else $(rng.startContainer.parentNode).prepend(textNode);
-		} else if (rng.startOffset === rng.startContainer.textContent.length) {
-			if(rng.startContainer.nodeType === 1) $(rng.startContainer).append(textNode);
-			else $(rng.startContainer.parentNode).append(textNode);
-		} else {
-			var node = rng.startContainer;
-			node.splitText(rng.endOffset);
-			$(node).after(textNode);
-		}
-		position.start.offset = position.start.offset + textNode.textContent.length;
-		position.end = position.start;
-	} else {
-		position.end = { ref: blockElement, offset: blockElement.textContent.length };
-		selectron.set(position);
+	if(textBlocks.length > 0) {
+		var blockElement = $(rng.startContainer).closest(blockTags.join(','), element)[0];
 
-		var contents = selectron.range().extractContents();
-		for(var i = arr.length - 1; i >= 0; i--) {
-			textNode = document.createTextNode(arr[i]);
+		selectron.set({
+			start: { ref: rng.startContainer, offset: rng.startOffset },
+			end: { ref: blockElement, offset: blockElement.textContent.length }
+		});
+
+		var contents = selectron.range().extractContents(),
+			ref = blockElement.nextSibling,
+			textNode,
+			$el;
+
+		for(var i = 0; i < textBlocks.length; i++) {
+			textNode = document.createTextNode(textBlocks[i]);
 			if(i === 0) {
 				if(blockElement.lastChild.nodeName === 'BR')
 					$(blockElement.lastChild).remove();
-				$(blockElement).append(textNode);
+
+				$el = $(blockElement).append(textNode);
 			} else {
-				var $el = $('<' + blockElement.tagName + '>');
-				$el.append(textNode);
-				if(i === arr.length - 1) {
-					while(contents.firstChild) {
-						$el.append(contents.firstChild);
-					}
-					position.start = { ref: $el[0], offset: textNode.textContent.length, isAtStart: false };
-					position.end = position.start;
-				}
-				$(blockElement).after($el);
+				$el = $('<' + blockElement.tagName + '>').append(textNode);
+
+				if(ref)
+					$(ref).before($el);
+				else
+					$(element).append($el);
 			}
 		}
-	}
-	selectron.set(position);
+		$el.append(contents.childNodes);
 
-	//document.execCommand('insertText', null, str);
+		selectron.set({
+			ref: textNode,
+			offset: textNode.textContent.length,
+		});
+	}
 }
 
 function removeFormat(element) {
