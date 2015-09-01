@@ -31,8 +31,10 @@ var selectron = require('./selectron');
  * @param {Element} element - The element who's subTree we want to observe for changes
  **/
 var Snapback = function(element) {
+	// determine which version of MutationObserver to use
 	var MO = typeof MutationObserver !== 'undefined' ? MutationObserver : (typeof WebKitMutationObserver !== 'undefined' ? WebKitMutationObserver : undefined);
 
+	// stop everything if no MutationObserver is found
 	if(!MO) return;
 
 	var _snapback = this;
@@ -54,6 +56,7 @@ var Snapback = function(element) {
 		undoIndex: -1,
 	});
 
+	// instantiate a MutationObserver (this will be started and stopped in this.enable and this.disable respectively
 	_snapback.observer = new MO(function(mutations) {
 		mutations.forEach(_snapback.addMutation);    
 	});
@@ -91,12 +94,35 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Redo (if we are not already at the newest change)
+	 * Stop observering mutations to the DOM. This does not register
+	 * any mutations in the mutation stack. Essentially
+	 * this just callc MutationObserver.disconnect().
 	 */
-	redo: function() {
-		if(this.enabled && this.undoIndex < this.undos.length - 1) {
-			this.undoRedo(this.undos[++this.undoIndex], false);
+	disable: function() {
+		if(this.enabled) {
+			this.observer.disconnect();
+			this.enabled = false;
 		}
+	},
+
+	/**
+	 * Enable observering mutations to the DOM. Essentially
+	 * just calls MutationObserver.observe().
+	 */
+	enable: function() {
+		if(!this.enabled) {
+			this.observer.observe(this.element, this.config);
+			this.enabled = true;
+		}
+	},
+
+	/**
+	 * Saves and returns the positions of the current selection
+	 *
+	 * @return {Positions}
+	 */
+	getPositions: function(position) {
+		return (this.position = position || selectron.get(this.element));
 	},
 
 	/**
@@ -129,34 +155,11 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Saves and returns the positions of the current selection
-	 *
-	 * @return {Positions}
+	 * Redo (if we are not already at the newest change)
 	 */
-	getPositions: function(position) {
-		return (this.position = position || selectron.get(this.element));
-	},
-
-	/**
-	 * Enable observering mutations to the DOM. Essentially
-	 * just calls MutationObserver.observe().
-	 */
-	enable: function() {
-		if(!this.enabled) {
-			this.observer.observe(this.element, this.config);
-			this.enabled = true;
-		}
-	},
-
-	/**
-	 * Stop observering mutations to the DOM. This does not register
-	 * any mutations in the mutation stack. Essentially
-	 * this just callc MutationObserver.disconnect().
-	 */
-	disable: function() {
-		if(this.enabled) {
-			this.observer.disconnect();
-			this.enabled = false;
+	redo: function() {
+		if(this.enabled && this.undoIndex < this.undos.length - 1) {
+			this.undoRedo(this.undos[++this.undoIndex], false);
 		}
 	},
 
