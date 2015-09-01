@@ -16,16 +16,19 @@
  * @property {Object} positions - Reference node to count `offset` from
  * @property {Positions} positions.before - The position of the selection before the first mutation
  * @property {Positions} positions.after - The position of the selection after the last mutation in the undo
- * @property {MutationRecord[]} positions.mutations - An array of all the mutations for the undo
+ * @property {MutationRecord[]} positions.mutations - An array of all the mutations for the undo. All mutations
+ * are stored in chronological order, so if you want to UNDO them, you need to reverse the mutation array first.
  */
 
 var selectron = require('./selectron');
 
 /**
+ * Creates a new Snapback instance that will handle undo's and redo's for `element`s DOM sub tree
  *
+ * @class
  * @constructor
  * @alias module:spytext/snapback
- * @param {Element} element - The element used as the root for the MutationObserver and root for selectron
+ * @param {Element} element - The element who's subTree we want to observe for changes
  **/
 var Snapback = function(element) {
 	var MO = typeof MutationObserver !== 'undefined' ? MutationObserver : (typeof WebKitMutationObserver !== 'undefined' ? WebKitMutationObserver : undefined);
@@ -35,16 +38,20 @@ var Snapback = function(element) {
 	var _snapback = this;
 
 	// bind `this` to the instance snapback instance inside addMutation,
-	// see line 50
+	// see line 57
 	_.bindAll(_snapback, 'addMutation');
 
+	// extend the current instance of snapback with some properties
 	_.extend(_snapback, {
+		// this is the config pass to the observe function on the Mutation Observer
 		config: { subtree: true, attributeFilter: [ 'style' ], attributes: true, attributeOldValue: true, childList: true, characterData: true, characterDataOldValue: true },
 		element: element,
+		// the undo stack is a collection of Undo objects
 		undos: [],
+		// the mutations stack holds all mutations that have not yet been registered in an undo
 		mutations: [],
+		// pointer to where in the undo history we are
 		undoIndex: -1,
-		enabled: false
 	});
 
 	_snapback.observer = new MO(function(mutations) {
@@ -99,8 +106,8 @@ Snapback.prototype = {
 		if(this.mutations.length > 0) {
 			// only register a new undo if there are mutations in the stack
 			if(this.undoIndex < this.undos.length - 1) {
-				// remove any undos after undoIndex (ie, the user has undo:n
-				// several steps and then started new commands
+				// remove any undos after undoIndex, ie the user
+				// has undo'd and a new undo branch/tree is needed
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
 
@@ -122,7 +129,7 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Save and return the positions of current selection
+	 * Saves and returns the positions of the current selection
 	 *
 	 * @return {Positions}
 	 */
@@ -131,7 +138,8 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Enable observering mutations to the DOM
+	 * Enable observering mutations to the DOM. Essentially
+	 * just calls MutationObserver.observe().
 	 */
 	enable: function() {
 		if(!this.enabled) {
@@ -142,7 +150,8 @@ Snapback.prototype = {
 
 	/**
 	 * Stop observering mutations to the DOM. This does not register
-	 * any mutations in the mutation stack.
+	 * any mutations in the mutation stack. Essentially
+	 * this just callc MutationObserver.disconnect().
 	 */
 	disable: function() {
 		if(this.enabled) {
@@ -152,7 +161,7 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Unfo (if we are not already at the oldest change)
+	 * Undo (if we are not already at the oldest change)
 	 */
 	undo: function() {
 		if(this.enabled && this.undoIndex >= 0) {
@@ -161,48 +170,59 @@ Snapback.prototype = {
 	},
 
 	/**
-	 * Goes through a Undo items mutations and either does them
-	 * or undos them
+	 * This is the function that actually performs the mutations in Undo items and
+	 * then restores appropriate selection. It uses the undoIndex property to
+	 * determine which Undo to redo or undo.
 	 *
 	 * @param {Object} undo
+	 * @param {boolean} [isUndo] - Determines whether we should do or undo `undo`.
 	 */
 	undoRedo: function(undo, isUndo) {
 		this.disable();
 
 		if(this.mutations.length > 0) {
+			// register a new undo if we have unregistered mutations in the stack
 			this.register();
 		}
 		
+		// reverse the mutation collection if we are doing undone (we want to execute the mutations
+		// in the opposite order to undo them
 		var mutations = isUndo ? undo.mutations.slice(0).reverse() : undo.mutations,
+			// use `isUndo` to determine whether we should use selection before or after mutations
 			position = isUndo ? undo.positions.before : undo.positions.after;
 
-		for(var s = 0; s < mutations.length; s++) {
-			var mutation = mutations[s];
+		mutations.forEach(function(mutation) {
 			switch(mutation.type) {
 				case 'characterData':
+					// update the textContent 
 					mutation.target.textContent = isUndo ? mutation.oldValue : mutation.newValue;
 					break;
 				case 'attributes':
+					// update the attribute 
 					$(mutation.target).attr(mutation.attributeName, isUndo ? mutation.oldValue : mutation.newValue);
 					break;
 				case 'childList':
+					// set up correctly what nodes to be added and removed
 					var addNodes = isUndo ? mutation.removedNodes : mutation.addedNodes,
 						removeNodes = isUndo ? mutation.addedNodes : mutation.removedNodes;
 
-					for(var j = 0; j < addNodes.length; j++) {
+					_.toArray(addNodes).forEach(function(node) {
 						if (mutation.nextSibling) {
-							$(mutation.nextSibling).before(addNodes[j]);
+							$(mutation.nextSibling).before(node);
 						} else {
-							$(mutation.target).append(addNodes[j]);
+							$(mutation.target).append(node);
 						}
-					}
+					});
+
+					// remove all nodes to be removed
 					$(removeNodes).remove();
 					break;
 			}
-		}
+		});
 
 		selectron.set(position);
 
+		// reenable
 		this.enable();
 	}
 };
