@@ -65,8 +65,12 @@ module.exports = {
 
 			// this is to capture events when mousedown on 
 			// fields element but mouseup outside
-			$(document).on('mouseup', function(e) {
+			$(document).on('mousedown', function(e) {
+				clearTimeout(this.timeout);
 				_field.snapback.register();
+			});
+			$(document).on('mouseup', function(e) {
+				_field.snapback.getPositions();
 			});
 		});
 	},
@@ -84,8 +88,9 @@ module.exports = {
 		// deactivate toolbar
 		this.toolbar.toggle();
 
-		// stop listening to mouseup
+		// stop listening to mouseup and mousedown on document
 		$(document).off('mouseup');
+		$(document).off('mousedown');
 	},
 
 	/**
@@ -108,8 +113,15 @@ module.exports = {
 			// call the command
 			commands[command].apply(null,  [ field.el ].concat(_.rest(arguments)));
 
-			// register the called command as an undo
-			field.snapback.register();
+			// unfortunately, the called commands can take a little bit of time
+			// to execute. would be nice to implement some sort of "popcorn" algorithm...
+			// ie when it stops popping (the mutation observer stops getting mutation records)
+			// at a certain frequency then register the event. instead of just waiting an
+			// arbitrary 100 ms.
+			setTimeout(function(){
+				// register the called command as an undo
+				field.snapback.register();
+			},100);
 
 			// normalize any text nodes in the field's element
 			this.el.normalize();
