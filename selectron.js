@@ -85,7 +85,7 @@ function count(root, ref, countAll) {
  * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all elements
  * @return {number}	The total offset of the caret relative to `element`
  * @see count	
- * @throws {TypeError} Throws an error if element is undefined
+ * @throws {TypeError} Throws an error if `element` is undefined
  */
 function offset(element, caret, countAll) {
 	if(!element) throw new TypeError('element needs to be defined');
@@ -307,6 +307,11 @@ module.exports = {
 		};
 	},
 
+	/**
+	 * Sets the current selection to contain `node`
+	 *
+	 * @param {Node} node - The node to select
+	 */
 	select: function(node) {
 		var children = node.offspring();
 		var first = children[0];
