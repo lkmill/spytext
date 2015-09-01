@@ -608,7 +608,7 @@ function list(element, tag) {
 }
 
 /**
- * Creates a new block
+ * Creates a new block (same type as the type of block the caret is currently in.)
  *
  * @static
  * @param	{Element} element - Element which is used as root for selectron.
@@ -619,33 +619,34 @@ function newline(element) {
 	var $blockElement = $(rng.startContainer).closest(blockTags.join(','), element);
 
 	if($blockElement.is('LI') && $blockElement.text().length - $blockElement.children('UL,OL').text().length === 0) {
-		// TODO check if there is ancestor LI, if so outdent instead
+		// we are in an empty list item (could have a nested list though)
 		if($blockElement.parent().is($(element).children())) {
+			// list items containing list is child of element... no levels to outdent
+			// so create a new 
 			block(element, 'P');
 		} else {
+			// list item of level greater than 1, outdent
 			outdent(element);
 		}
 		return;
 	}
 
-	var position = selectron.get($blockElement[0]);
-	var contents;
+	selectron.set({
+		start: {
+			ref: $blockElement[0],
+			offset: 0,
+		},
+		end: {
+			ref: rng.startContainer,
+			offset: rng.startOffset
+		}
+	});
 
-	var $el = $('<' + $blockElement[0].tagName + '>').append('<BR>');
+	var contents = selectron.range().extractContents();
 
-	$blockElement.before($el);
-
-	if(position.end.offset !== 0) {
-		position.start = { ref: $blockElement[0], offset: 0 };
-		selectron.set(position);
-		contents = selectron.range().extractContents();
-	}
-
-	while(contents && contents.lastChild) 
-		$el.prepend(contents.lastChild);
+	var $el = $('<' + $blockElement[0].tagName + '>').insertBefore($blockElement).prepend(contents.childNodes);
 
 	$el[0].normalize();
-	$blockElement[0].normalize();
 
 	setBR([ $el[0], $blockElement[0] ]);
 
@@ -654,6 +655,12 @@ function newline(element) {
 	});
 }
 
+/**
+ * Outdents all list items contained in the selection one level
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for selectron.
+ */
 function outdent(element){
 	var blocks = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
 			// this is to filter out LI with nested lists where only text in the nested
@@ -666,19 +673,33 @@ function outdent(element){
 		startOffset = selectron.offset(_.first(blocks), 'start'),
 		endOffset = selectron.offset(_.last(blocks), 'end');
 
-	blocks.reverse().forEach(function(el, i) {
-		if(!$(el).is('LI') || $(el).parent().is($(element).children())) {
+	// we outdent in the reverse order from indent
+	blocks.reverse().forEach(function(li, i) {
+		if(!$(li).is('LI') || $(li).parent().is($(element).children())) {
+			// do nothing if not a list item, or if list item
+			// is already top level (level 1), ie if it's parent is a child
+			// of element
 			return;
 		} else {
-			if(el.nextSibling) {
-				var $nestedList = $(el).children('UL,OL');
+			if(li.nextSibling) {
+				// the list item has following siblings, we need
+				// to move them into a new or existing nested list
+
+				// attempt to selected a nested list
+				var $nestedList = $(li).children('UL,OL');
+
 				if($nestedList.length === 0) {
-					var tagName = $(el).closest('OL,UL')[0].tagName;
-					$nestedList = $('<' + tagName + '>').appendTo(el);
+					// if there is no nested list, create a new one
+					var tagName = $(li).closest('OL,UL')[0].tagName;
+					$nestedList = $('<' + tagName + '>').appendTo(li);
 				}
-				$nestedList.append($(el).nextAll());
+
+				// append all list item's next siblings to the nestedlist
+				$nestedList.append($(li).nextAll());
 			}
-			$(el).parent().parent().after(el);
+
+			// actual outdenting. Place the list item after its closest LI ancestor
+			$(li).parent().parent().after(li);
 		}
 	});
 
@@ -694,11 +715,20 @@ function outdent(element){
 	});
 }
 
+/**
+ * Pastes the data of the dataTransfer. Deletes range contents if selection is
+ * not collapsed
+ *
+ * @static
+ * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{DataTransfer} dataTransfer - Must have a getData method which returns pure text string
+ */
 function paste(element, dataTransfer) {
 	var rng = selectron.range(),
 		textBlocks = dataTransfer.getData('Text').replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').split(/[\n\r]+/);
 
 	if(!rng.collapsed) {
+		// delete range contents if not collapsed
 		deleteRangeContents(element, rng);
 		rng = selectron.range();
 	}
@@ -706,13 +736,20 @@ function paste(element, dataTransfer) {
 	if(textBlocks.length > 0) {
 		var blockElement = $(rng.startContainer).closest(blockTags.join(','), element)[0];
 
+		// Select everything from the caret to the end of blockElement and
+		// extract the contents. this is so we can to append the first text block
+		// to the current block, and insert the extracted contents after the
+		// last text block. if we are only pasting one text block, we could
+		// have simply split the current node and inserted the contents inbetween
 		selectron.set({
 			start: { ref: rng.startContainer, offset: rng.startOffset },
 			end: { ref: blockElement, offset: blockElement.textContent.length }
 		});
+		var contents = selectron.range().extractContents();
 
-		var contents = selectron.range().extractContents(),
-			ref = blockElement.nextSibling,
+		
+		var ref = blockElement.nextSibling,// will be used to place new blocks into the DOM
+			parent = blockElement.parentNode,// if no next sibling, save reference to parent
 			textNode,
 			$el;
 
@@ -720,20 +757,30 @@ function paste(element, dataTransfer) {
 			textNode = document.createTextNode(textBlocks[i]);
 			if(i === 0) {
 				if(blockElement.lastChild.nodeName === 'BR')
+					// remove the last item if it is a line break
 					$(blockElement.lastChild).remove();
 
-				$el = $(blockElement).append(textNode);
+				// since this is the first text Block,
+				// simply append the textNode to the blockElement
+				$(blockElement).append(textNode);
 			} else {
+				// create a new block 
 				$el = $('<' + blockElement.tagName + '>').append(textNode);
 
 				if(ref)
+					// insert before the ref
 					$(ref).before($el);
 				else
-					$(element).append($el);
+					// append to parent if we have no ref
+					$(parent).append($el);
 			}
 		}
-		$el.append(contents.childNodes);
+		// append any contents extracted from the range prevously to the
+		// last inserted new block, or blockElement if only
+		// one text block was pasted
+		($el || $(blockElement)).append(contents.childNodes);
 
+		// set the range to end of last inserted textnode
 		selectron.set({
 			ref: textNode,
 			offset: textNode.textContent.length,
@@ -741,11 +788,24 @@ function paste(element, dataTransfer) {
 	}
 }
 
+
+/**
+ * Removes inline formatting of selection
+ *
+ * @static
+ * @param	{Element} element - Only used to normalize text nodes
+ */
 function removeFormat(element) {
 	document.execCommand('removeFormat');
 	element.normalize();
 }
 
+/**
+ * Ensures empty block text
+ *
+ * @static
+ * @param	{Element} element - Only used to normalize text nodes
+ */
 function setBR(element) {
 	if(_.isArray(element)) 
 		return element.forEach(setBR);
