@@ -1,5 +1,6 @@
 /**
- * Method to 
+ * Exposes a single function which assists in fetcing a list of all descendants
+ * to an element that match certain filters.
  *
  * @module spytext/descendants 
  */
@@ -11,12 +12,13 @@ require('jquery-ancestors');
  * that match different filters
  *
  * @param	{Element} element - Root element to whos descenants we want to collect
- * @param	{string|number|function} [ufo] - Used to pass different filters. 
+ * @param	{string|number|function} [ufo] - Used to decide what descendant elements will be returned. 
  * @param	{number} [levels] - How many levels of descendants should be collected. If `levels` is not set, all levels will be traversed
  * @param	{boolean} [onlyDeepest] - Boolean to determine whether only deepest level of nodes should be collected, ie reject all nodes ancestor nodes.
  * @return {Node[]}	An array containing all matched descendants
  */
 module.exports = function descendants(element, ufo, levels, onlyDeepest) {
+	// the function that tests all filters in the filters array
 	function filter(node) {
 		return filters.every(function(fnc) {
 			return fnc(node);
@@ -30,17 +32,16 @@ module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 	// add default filter for ensuring we only traverse
 	// the correct number of levels
 	filters.push(function(node) {
-		// count number of steps it takes to
-		// go up the DOM to reach `element`
+		// count number of steps it takes to go up the DOM to reach `element`
+		// return true if element is reached in less steps than `levels`
 		for(var i = 0; i < levels; i++) {
 			node = node.parentNode;
 			if(node === element)
-				// reached `element` in less steps than `levels`, returning true
 				return true;
 		}
 
-		// return false if `levels` is set and we have
-		// made it through entire loop
+		// return true if levels is falsy or if levels
+		// is set and we have made it through the for loop
 		return !levels;
 	});
 
@@ -51,7 +52,7 @@ module.exports = function descendants(element, ufo, levels, onlyDeepest) {
 		// ufo is a selector string
 		selector = ufo;
 		
-		// only test Element nodes
+		// only traverse Element nodes
 		nodeType = 1;
 		
 		// add selector filter

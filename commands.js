@@ -525,7 +525,10 @@ function list(element, tag) {
 		$list;
 
 	// $list is a reference to the list all new
-	// list items should be appended to
+	// list items should be appended to. Essentially,
+	// after the next block of conditionals
+	// we should be able to append all contained blockElements
+	// to $list and not have to wrorry about remaining lists
 	
 	if($startBlock.is('LI')) {
 		// $startList and $endList should reference lists furthest up the DOM, ie children of 
@@ -538,24 +541,27 @@ function list(element, tag) {
 
 		if($startList.is(tag)) {
 			// $startList is already the correct list type
-			// set $list to refer to $startList
+			// simply append all new list items to this
 			$list = $startList;
 
 			if($endList && $startList.is($endList)) {
-				// we have only selected one list that
-				// is already the correct list type, do nothing
-				console.log('stop!');
+				// we have only selected one list and that list
+				// is already the correct list type, so do nothing
 				return;
 			}
 		} else {
-			// $startList is the wrong list type, create a new list
+			// $startList is the wrong list type, we need to create a new list
 			// and insert it after $startList
 			$list = $('<' + tag + '>').insertAfter($startList);
 
 			if($endList && $startList.is($endList) && ($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0)) {
-				// $endBlock is a listItem, $startList is the same as $endList and is the wrong list type
-				// and $endBlock either has following siblings or has a nested list. Thus, we need to create a new $list,
-				// place it after $list and append following siblings or nested lists children to it
+				// $endBlock is a listItem, $startList is the same as $endList and is
+				// the wrong list type AND $endBlock either has following siblings or
+				// has a nested list. Thus, we need to create a new list, place it
+				// after $list and append siblings and nested lists of $endBlock to it
+				//
+				// the important part here is that $endBlock has either next siblings or nested lists. if it did not,
+				// $endList would be empty at the end of the call to list and thus removed automatically
 				$('<' + $endList[0].tagName + '>').insertAfter($list).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
 			}
 		}
@@ -574,16 +580,35 @@ function list(element, tag) {
 		var $listItem;
 
 		if(child.tagName === 'LI') {
+			// the child is itself a list item, we can simply
+			// move it around and do not need a new element
 			$listItem = $(child);
 
 			if(!$list.is($listItem.closest(element.children))) {
+				// only move the listItem if it is not already
+				// contained within the target $list
+
+				// recurse essentially appends the list items to the
+				// target $list, but also correctly handles nested lists
+				// of the wrong type.
 				(function recurse($listItem, $ref) {
+					// TODO do not do this if target and soruce list are the same type
+					// ie. all nested lists are already the correct list type
+					//
+					// remove any nested list and save a reference to it
 					var $children = $listItem.children("UL,OL").remove();
 
+					// append $listItem to $ref (which will be the target list
+					// if we are on first level
 					$ref.append($listItem);
 
+					// check if we had found (and removed) any nested lists
 					if($children.length > 0) {
+						// create a new nested list and append it to the $listItem
 						var $nestedList = $('<' + tag + '>').appendTo($listItem);
+
+						// recurse through all of the old nested lists list items
+						// and add them to the new nested list
 						$children.children().each(function() {
 							recurse($(this), $nestedList);
 						});
@@ -591,16 +616,23 @@ function list(element, tag) {
 				})($listItem, $list);
 			}
 		} else {
+			// child is not a list item, create a new list item
+			// and append all of child's childNodes to it
 			$listItem = $('<li>').appendTo($list).append(child.childNodes);
 
 			if(!child.previousSibling && !child.nextSibling)
+				// remove child's parent if child is only sibling
 				$(child).parent().remove();
 			else
+				// remove only child if it has no siblings
 				$(child).remove();
 		}
+		// we save a reference to all listItems so we can use
+		// them to correctly restore the selection
 		listItems.push($listItem[0]);
 	});
 
+	// remove empty elements
 	$(':empty:not("BR")', element).remove();
 
 	selectron.set({
