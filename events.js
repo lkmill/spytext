@@ -156,18 +156,6 @@ module.exports = {
 		if(e.originalEvent) 
 			e = e.originalEvent;
 
-		this.snapback.register();
-
-		var rng = selectron.range();
-
-		if(!rng.collapsed) {
-			commands.deleteRangeContents(this.el, rng);
-		}
-
-		commands.paste(this.el, e.clipboardData ? e.clipboardData : clipboardData);
-
-		setTimeout(function() {
-			this.snapback.register();
-		}.bind(this), 100);
+		this.command('paste', e.clipboardData ? e.clipboardData : clipboardData);
 	}
 };
