@@ -11,20 +11,12 @@ var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 module.exports = {
 	/**
-	 * Prevent mouseup from propogating up the DOM. This to prevent the mouseup
-	 * event handler attached to the document in SpytextField.activate from being
-	 * called.
-	 */
-	mouseup: function(e) {
-		e.stopPropagation();
-	},
-
-	/**
 	 * The keyup event listeners only listens to navigation keys.
-	 * If the user navigates around we want to clear any timeouts 
-	 * and register any mutations as an undo
+	 * After a navigation key has been pressed, update the position in snapback
 	 */
 	keyup: function(e) {
+		// TODO make sure we cover all different kinds of navigation keys, such as
+		// home and end
 		switch(e.keyCode) {
 			case 33:
 			case 34:
@@ -34,11 +26,10 @@ module.exports = {
 			case 38:
 			case 39:
 			case 40:
-				clearTimeout(this.timeout);
-				this.timeout = null;
-				this.snapback.register();
+				// navigation keys... set new (initial) position in snapback
+				// clear timeout (if any) and register undo (if any) will already have been done in keydown
+				this.snapback.getPositions();
 				break;
-			default:
 		}
 	},
 
@@ -47,6 +38,7 @@ module.exports = {
 	 * in the contentEditable elements
 	 */
 	keydown: function(e) {
+		// simple helper function to determine if a number is inbetween two values
 		function inbetween(a, b) {
 			var num = e.keyCode;
 			var min = Math.min(a,b);
@@ -54,41 +46,32 @@ module.exports = {
 			return num >= min && num <= max;
 		}
 
-		var rng;
 		if (e.ctrlKey) {
-			clearTimeout(this.timeout);
-			this.timeout = null;
-			this.snapback.register();
+			// prevent all ctrl key bindings
+			e.preventDefault();
+			// NOTE paste events are handled directly
 			switch(e.keyCode) {
 				case 66://b
+				case 73://i
 				case 85://u
-					e.preventDefault();
 					var arr = [];
-					arr[66] = 'b';
+					arr[66] = 'strong';
+					arr[73] = 'em';
 					arr[85] = 'u';
 					this.command('format', arr[e.keyCode]);
 					break;
 				case 89://y
-					e.preventDefault();
 					this.snapback.redo();
 					break;
 				case 90://z
-					e.preventDefault();
 					this.snapback.undo();
 					break;
 				case 65://a
-					e.preventDefault();
 					//selectron.select(this.el);
-					break;
-				case 84://t
-					e.preventDefault();
-					break;
-				case 86://v
-					// DO nothing, let paste event be handles
 					break;
 			}
 		} else {
-			rng = selectron.range();
+			var rng = selectron.range();
 
 			if(rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
 				this.snapback.register();
@@ -103,10 +86,23 @@ module.exports = {
 				// the range contents are cleared if the a button was pressed
 			}
 
+			// By now we never have a non-collapsed range
 			switch(e.keyCode) {
+				case 33:
+				case 34:
+				case 35:
+				case 36:
+				case 37:
+				case 38:
+				case 39:
+				case 40:
+					// navigation keys... clear timeout (if any) and register undo (if any)
+					// position of selection will be a set on keyup
+					clearTimeout(this.timeout);
+					this.snapback.register();
+					return;
 				case 8: //backspace
 				case 46: // delete
-					// we will only get here if the range was collapsed
 					var block = $(rng.startContainer).closest(blockTags.join(','))[0];
 
 					var position = selectron.get(block);
@@ -143,7 +139,6 @@ module.exports = {
 			// only register an undo if user has not typed for 300 ms
 			clearTimeout(this.timeout);
 			this.timeout = setTimeout(function() {
-				this.timeout = null;
 				this.snapback.register();
 			}.bind(this), 300);
 		}
