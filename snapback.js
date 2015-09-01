@@ -1,12 +1,40 @@
+/**
+ * Snapback is a DOM undo and redo library. It uses
+ * a MutationObserver to observe changes to a DOM Element's sub tree.
+ * When at least one mutation has been stored in the mutations array,
+ * these mutations can be grouped together and saved as an undo.
+ * Snapback can then be used to traverse back and forth in the undo history.
+ *
+ * @module spytext/snapback 
+ */
+
+/**
+ * An Undo item contains several MutationRecords (records of changes to the DOM in chronological order)
+ * and the positions of the selection caret's before and after the mutations.
+ *
+ * @typedef {Object} Undo
+ * @property {Object} positions - Reference node to count `offset` from
+ * @property {Positions} positions.before - The position of the selection before the first mutation
+ * @property {Positions} positions.after - The position of the selection after the last mutation in the undo
+ * @property {MutationRecord[]} positions.mutations - An array of all the mutations for the undo
+ */
+
 var selectron = require('./selectron');
 
-var Snapback = function(element, config) {
+/**
+ * @constructor
+ * @alias module:spytext/snapback
+ * @param {Element} element - The element used as the root for the MutationObserver and root for selectron
+ **/
+var Snapback = function(element) {
 	var MO = typeof MutationObserver !== 'undefined' ? MutationObserver : (typeof WebKitMutationObserver !== 'undefined' ? WebKitMutationObserver : undefined);
 
 	if(!MO) return;
 
 	var _snapback = this;
 
+	// bind `this` to the instance snapback instance inside addMutation,
+	// see line 50
 	_.bindAll(_snapback, 'addMutation');
 
 	_.extend(_snapback, {
@@ -24,6 +52,11 @@ var Snapback = function(element, config) {
 };
 
 Snapback.prototype = {
+	/**
+	 * Adds a mutation to the mutation array
+	 *
+	 * @param	{MutationRecord} mutation - The mutation to the mutations array
+	 */
 	addMutation: function(mutation) {
 		switch(mutation.type) {
 			case 'characterData': 
@@ -48,6 +81,9 @@ Snapback.prototype = {
 		}
 	},
 
+	/**
+	 * Redo (if we are not already at the newest change)
+	 */
 	redo: function() {
 		if(this.enabled && this.undoIndex < this.undos.length - 1) {
 			this.undoRedo(this.undos[++this.undoIndex], false);
@@ -74,10 +110,16 @@ Snapback.prototype = {
 		}
 	},
 
+	/**
+	 * Save positions of current selection
+	 */
 	setPosition: function(position) {
 		return (this.position = position || selectron.get(this.element));
 	},
 
+	/**
+	 * Start observering mutations to the DOM
+	 */
 	enable: function() {
 		if(!this.enabled) {
 			this.observer.observe(this.element, this.config);
@@ -85,6 +127,9 @@ Snapback.prototype = {
 		}
 	},
 
+	/**
+	 * Stop observering mutations to the DOM
+	 */
 	disable: function() {
 		if(this.enabled) {
 			this.observer.disconnect();
@@ -92,12 +137,21 @@ Snapback.prototype = {
 		}
 	},
 
+	/**
+	 * Unfo (if we are not already at the oldest change)
+	 */
 	undo: function() {
 		if(this.enabled && this.undoIndex >= 0) {
 			this.undoRedo(this.undos[this.undoIndex--], true);
 		}
 	},
 
+	/**
+	 * Goes through a Undo items mutations and either does them
+	 * or undos them
+	 *
+	 * @param {Object} undo
+	 */
 	undoRedo: function(undo, isUndo) {
 		this.disable();
 
