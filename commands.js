@@ -537,15 +537,25 @@ function list(element, tag) {
 			$endList = $endBlock.closest(element.children);
 
 		if($startList.is(tag)) {
+			// $startList is already the correct list type
+			// set $list to refer to $startList
 			$list = $startList;
 
-			if($endList && $startList.is($endList))
-				// $endList is the same as $startList... do nothing
+			if($endList && $startList.is($endList)) {
+				// we have only selected one list that
+				// is already the correct list type, do nothing
+				console.log('stop!');
 				return;
+			}
 		} else {
+			// $startList is the wrong list type, create a new list
+			// and insert it after $startList
 			$list = $('<' + tag + '>').insertAfter($startList);
 
 			if($endList && $startList.is($endList) && ($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0)) {
+				// $endBlock is a listItem, $startList is the same as $endList and is the wrong list type
+				// and $endBlock either has following siblings or has a nested list. Thus, we need to create a new $list,
+				// place it after $list and append following siblings or nested lists children to it
 				$('<' + $endList[0].tagName + '>').insertAfter($list).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
 			}
 		}
@@ -566,7 +576,7 @@ function list(element, tag) {
 		if(child.tagName === 'LI') {
 			$listItem = $(child);
 
-			if(!$list.is(element.children)) {
+			if(!$list.is($listItem.closest(element.children))) {
 				(function recurse($listItem, $ref) {
 					var $children = $listItem.children("UL,OL").remove();
 
@@ -581,11 +591,9 @@ function list(element, tag) {
 				})($listItem, $list);
 			}
 		} else {
-			$listItem = $('<li>');
-			$list.append($listItem);
-			$listItem.append(child.childNodes);
+			$listItem = $('<li>').appendTo($list).append(child.childNodes);
 
-			if($(child).parent().is(':empty'))
+			if(!child.previousSibling && !child.nextSibling)
 				$(child).parent().remove();
 			else
 				$(child).remove();
@@ -595,16 +603,6 @@ function list(element, tag) {
 
 	$(':empty:not("BR")', element).remove();
 
-	var next = $list.next()[0];
-
-	if(next && next.tagName === $list[0].tagName) {
-		// merge new list with next element if it is a list
-		// of the same type
-		$list.append($list.next().children());
-		$list.next().remove();
-	}
-
-	
 	selectron.set({
 		start: {
 			ref: _.first(listItems),
