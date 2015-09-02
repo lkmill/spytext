@@ -19,7 +19,7 @@ var selectron = require('./selectron'),
  */
 function align(element, alignment) {
 	// get all partlyContained children of element
-	var containedChildren = selectron.contained(element, element.children, null, true);
+	var containedChildren = selectron.contained(element, element.children, true);
 
 	containedChildren.forEach(function(child) {
 		// do not set text-align property on lists
@@ -35,7 +35,7 @@ function align(element, alignment) {
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
-	var contained = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+	var contained = selectron.contained(element, { selector: blockTags.join(',') }, true).filter(function(node) {
 			// this is to filter out LI with nested lists where only text in the nested
 			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
 			//
@@ -132,7 +132,9 @@ function deleteEmptyTextNodes(element) {
 		return node && node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 	}
 
-	descendants(element, 3).forEach(function(textNode) {
+	descendants(element, {
+		nodeType: 3
+	}).forEach(function(textNode) {
 		if(isBlock(textNode.previousSibling) || isBlock(textNode.nextSibling)) {
 			// previous or next sibling is a block element
 
@@ -255,13 +257,20 @@ function deleteRangeContents(element, rng) {
  * @param	{Element} element - Element which descendants to look for empty text nodes
  */
 function indent(element){
-	var blocks = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+	var blocks = selectron.contained(element, { selector: blockTags.join(',') }, true).filter(function(node) {
 			// this filter will ensure all list items with nested lists are only selected if all
 			// descendant list items selected or the first list items in their list.
 			//
 			// this was mainly done to allow indenting ancestor list items if a selected list item is
 			// the first item in a nested list
-			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true) || selectron.containsEvery(descendants(node, function(node) { return node.nodeType === 1 && !node.previousSibling; }, null, true), true);
+			return node.nodeName !== 'LI' ||
+				$(node).children('UL,OL').length === 0 ||
+				selectron.containsSome(_.initial(node.childNodes), true) ||
+				selectron.containsEvery(descendants(node, {
+					nodeType: 1,
+					filter: function(node) { return !node.previousSibling; },
+					onlyDeepest: true
+				}), true);
 		}),
 		startBlock = _.first(blocks),
 		endBlock = _.last(blocks),
@@ -418,7 +427,7 @@ function format(element, tag){
 	if(!tag) return removeFormat(element);
 
 	var position = selectron.get(element),
-		containedTextNodes = selectron.contained(element, 3, null, true),
+		containedTextNodes = selectron.contained(element, { nodeType: 3 }, true),
 		rng = selectron.range();
 
 	if(rng.startOffset > 0) {
@@ -453,7 +462,7 @@ function format(element, tag){
 	$(containedTextNodes).wrap($wrapper);
 
 	// TODO: Tidy, ie <b>Hello <b>Again</b><b>. It continues.</b></b> >> <b>Hello Again. It continues.</b>
-	selectron.contained(element, element.children, null, true).forEach(function(contained) {
+	selectron.contained(element, element.children, true).forEach(function(contained) {
 		contained.normalize();
 	});
 
@@ -503,7 +512,7 @@ function link(element, attribute) {
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
-	var contained = selectron.contained(element, blockTags.join(','), null, true),
+	var contained = selectron.contained(element, { selector: blockTags.join(',') }, true),
 		listItems = [];
 	
 	contained = contained.filter(function(node) {
@@ -707,7 +716,7 @@ function newline(element) {
  * @param	{Element} element - Element which is used as root for selectron.
  */
 function outdent(element){
-	var blocks = selectron.contained(element, blockTags.join(','), null, true).filter(function(node) {
+	var blocks = selectron.contained(element, { selector: blockTags.join(',') }, true).filter(function(node) {
 			// this is to filter out LI with nested lists where only text in the nested
 			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
 			//
