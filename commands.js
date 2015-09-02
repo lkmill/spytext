@@ -873,7 +873,8 @@ function setBR(element) {
 	if(!element.firstChild || $(element.firstChild).is('UL,OL')) {
 		$(element).prepend('<BR>');
 	} else {
-		var $brs = $('BR:last-child').each(function(br, i) {
+		$('BR:last-child').each(function(i, br) {
+			// :last-child selectors will select nodes with following text nodes
 			if(br.nextSibling) return;
 
 			while(br.previousSibling && br.previousSibling.tagName === 'BR') {
