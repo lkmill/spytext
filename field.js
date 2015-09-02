@@ -113,15 +113,12 @@ module.exports = {
 			// call the command
 			commands[command].apply(null,  [ field.el ].concat(_.rest(arguments)));
 
-			// unfortunately, the called commands can take a little bit of time
-			// to execute. would be nice to implement some sort of "popcorn" algorithm...
-			// ie when it stops popping (the mutation observer stops getting mutation records)
-			// at a certain frequency then register the event. instead of just waiting an
-			// arbitrary 100 ms.
+			// unfortunately, we need to wrap the registation of a new Undo
+			// in a timeout
 			setTimeout(function(){
 				// register the called command as an undo
 				field.snapback.register();
-			},100);
+			});
 
 			// normalize any text nodes in the field's element
 			this.el.normalize();
