@@ -173,7 +173,7 @@ function deleteEmptyElements(element) {
 
 		// recurse up the DOM and delete all elements
 		// until a non-empty $el is found
-		while($el.is(':empty')) {
+		while(!$el.is(element) && $el.is(':empty')) {
 			$parent = $el.parent();
 			$el.remove();
 			$el = $parent;
