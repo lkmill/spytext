@@ -250,7 +250,22 @@ module.exports = {
 	},
 
 	normalize: function(element) {
-		this.set(this.get(element));
+		var rng = this.range();
+
+		if(!rng.collapsed && $(rng.endContainer).is(blockTags.join(','))) {
+			var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, 3)) || rng.endContainer.previousSibling;
+
+			this.set({
+				start: {
+					ref: rng.startContainer,
+					offset: rng.startOffset
+				},
+				end: {
+					ref: lastTextNode,
+					offset: lastTextNode.textContent.length,
+				}
+			});
+		}
 	},
 
 	/**
