@@ -59,7 +59,7 @@ function count(root, ref, countAll) {
 		while((node = tw.nextNode())) {
 			var nodeType = node.nodeType;
 
-			if(prev && (isBlock(node) || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
+			if(prev && (isBlock(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
 				off++;
 
 			if(node === ref) 
@@ -117,7 +117,7 @@ function restore(root, offset, countAll) {
 	while(offset > 0 && (node = tw.nextNode())) {
 		var nodetype = node.nodeType;
 
-		if(prev && (isBlock(node) || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
+		if(prev && (isBlock(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
 			offset--;
 
 		prev = node;
