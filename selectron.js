@@ -157,16 +157,15 @@ module.exports = {
 	 * @param	{boolean} [onlyDeepest] - How many levels of descendants should be collected. If `levels` is not set, all levels will be traversed
 	 * @return {Node[]}	Array contained all contained nodes
 	 */
-	contained: function(element, ufo, levels, partlyContained, onlyDeepest) {
+	contained: function(element, opts, partlyContained) {
 		var _selectron = this,
 			nodes = [];
 			
-		if(ufo instanceof NodeList)
-			// convert NodeList to Array
-			ufo = _.toArray(ufo);
+		if(opts instanceof NodeList || opts instanceof HTMLCollection)
+			opts = _.toArray(opts);
 			
 		// create array with all nodes to test if they are contained by the selection
-		var check = _.isArray(ufo)? ufo : descendants(element, ufo, levels, onlyDeepest);
+		var check = _.isArray(opts)? opts : descendants(element, opts);
 
 		// loop through all nodes to check
 		check.forEach(function(node) {
@@ -253,7 +252,7 @@ module.exports = {
 		var rng = this.range();
 
 		if(!rng.collapsed && $(rng.endContainer).is(blockTags.join(','))) {
-			var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, 3)) || rng.endContainer.previousSibling;
+			var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, { nodeType: 3 })) || rng.endContainer.previousSibling;
 
 			this.set({
 				start: {
@@ -327,7 +326,7 @@ module.exports = {
 	 * @param {Node} node - The node to select
 	 */
 	select: function(node) {
-		var textNodes = node.nodeType === 3 ? [ node ] : descendants(node, 3);
+		var textNodes = node.nodeType === 3 ? [ node ] : descendants(node, { nodeType: 3 });
 
 		if(textNodes.length === 0) {
 			this.set({ ref: node, offset: 0 });
