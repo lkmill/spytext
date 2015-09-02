@@ -873,14 +873,16 @@ function setBR(element) {
 	if(!element.firstChild || $(element.firstChild).is('UL,OL')) {
 		$(element).prepend('<BR>');
 	} else {
-		var $brs = $('BR:last-child'),
-			$prevBrs;
+		var $brs = $('BR:last-child').each(function(br, i) {
+			if(br.nextSibling) return;
 
-		while(($prevBars = $brs.prev('BR')).length > 0) {
-			$prevBars.remove();
-		}
+			while(br.previousSibling && br.previousSibling.tagName === 'BR') {
+				$(br.previousSibling).remove();
+			}
 
-		$brs.not(':first-child').remove();
+			if(br.previousSibling)
+				$(br).remove();
+		});
 	}
 }
 module.exports = {
