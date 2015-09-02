@@ -127,7 +127,7 @@ function block(element, tag) {
  * @static
  * @param	{Element} element - Element which descendants to look for empty text nodes
  */
-function clearTextNodes(element) {
+function deleteEmptyTextNodes(element) {
 	function isBlock(node) {
 		return node && node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 	}
@@ -158,6 +158,27 @@ function clearTextNodes(element) {
 	}
 
 	setBR(element);
+}
+
+/**
+ * Removes all empty element nodes
+ *
+ * @static
+ * @param	{Element} element - Element which descendants to look for empty text nodes
+ */
+function deleteEmptyElements(element) {
+	$(':empty:not(BR)', element).each(function() {
+		var $el = $(this),
+			$parent;
+
+		// recurse up the DOM and delete all elements
+		// until a non-empty $el is found
+		while($el.is(':empty')) {
+			$parent = $el.parent();
+			$el.remove();
+			$el = $parent;
+		}
+	});
 }
 
 /**
@@ -226,21 +247,9 @@ function deleteRangeContents(element, rng) {
 		$endBlock.remove();
 	}
 
+	deleteEmptyElements(element);
+
 	setBR($startBlock[0]);
-
-	// rng.deleteContents() will leave empty LI and UL. remove them (recursively)
-	$(':empty:not("BR")', element).each(function() {
-		var $el = $(this),
-			$parent;
-
-		// recurse up the DOM and delete all elements
-		// until a non-empty $el is found
-		while($el.is(':empty')) {
-			$parent = $el.parent();
-			$el.remove();
-			$el = $parent;
-		}
-	});
 
 	if($startBlock.text().length > 0) {
 		getSelection().collapseToStart();
@@ -658,8 +667,9 @@ function newline(element) {
 	var rng = selectron.range();
 	var $blockElement = $(rng.startContainer).closest(blockTags.join(','), element);
 
-	if($blockElement.is('LI') && $blockElement.text().length - $blockElement.children('UL,OL').text().length === 0) {
+	if($blockElement.is('LI') && ($blockElement.text().length - $blockElement.children('UL,OL').text().length === 0)) {
 		// we are in an empty list item (could have a nested list though)
+
 		if($blockElement.parent().is($(element).children())) {
 			// list items containing list is child of element... no levels to outdent
 			// so create a new 
@@ -692,6 +702,7 @@ function newline(element) {
 
 	// normalize any textnodes
 	$el[0].normalize();
+	$blockElement[0].normalize();
 
 	// ensure correct BR on both affected elements
 	setBR([ $el[0], $blockElement[0] ]);
@@ -847,10 +858,10 @@ function removeFormat(element) {
 }
 
 /**
- * Ensures empty block text
+ * Removes trailing <BR>s
  *
  * @static
- * @param	{Element} element - Only used to normalize text nodes
+ * @param	{Element} element - Element whos descendants need to be checked of extraneous BR tags
  */
 function setBR(element) {
 	if(_.isArray(element)) 
@@ -859,21 +870,25 @@ function setBR(element) {
 	if(element.firstChild && element.firstChild.tagName !== 'BR' && element.textContent.length === 0)
 		$(element).empty();
 
-	if(!element.firstChild || $(element.firstChild).is('UL,OL'))
+	if(!element.firstChild || $(element.firstChild).is('UL,OL')) {
 		$(element).prepend('<BR>');
-	else {
-		_.toArray(element.getElementsByTagName('BR')).forEach(function(br) {
-			if(br.previousSibling && !br.nextSibling)
-				$(br).remove();
-		});
+	} else {
+		var $brs = $('BR:last-child'),
+			$prevBrs;
+
+		while(($prevBars = $brs.prev('BR')).length > 0) {
+			$prevBars.remove();
+		}
+
+		$brs.not(':first-child').remove();
 	}
 }
-
 module.exports = {
 	align: align,
 	block: block,
-	clearTextNodes: clearTextNodes,
 	deleteRangeContents: deleteRangeContents,
+	deleteEmptyElements: deleteEmptyElements,
+	deleteEmptyTextNodes: deleteEmptyTextNodes,
 	format: format,
 	indent: indent,
 	join: join,

@@ -31,7 +31,7 @@ module.exports = {
 	initialize: function() {
 		this.$el.addClass('spytext-field').attr('contentEditable', 'true');
 
-		commands.clearTextNodes(this.el);
+		commands.deleteEmptyTextNodes(this.el);
 
 		this.originalValue = this.el.innerHTML;
 
