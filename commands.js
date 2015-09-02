@@ -136,28 +136,16 @@ function deleteEmptyTextNodes(element) {
 		if(isBlock(textNode.previousSibling) || isBlock(textNode.nextSibling)) {
 			// previous or next sibling is a block element
 
-			// trim any whitespaces away from textNode
-			textNode.textContent = textNode.textContent.trim();
-
 			if(textNode.textContent.match(/^\s*$/)) {
 				// textNode is empty or only contains whitespaces
-				$(textNode).remove();
+				textNode.parentNode.removeChild(textNode);
 			} else if(textNode.parentNode === element) {
 				// if textNode is a child of element, wrap it in <p> tag
+				textNode.textContent = textNode.textContent.trim();
 				$(textNode).wrap('<p>');
 			}
 		}
 	});
-
-	if(!element.firstChild) {
-		// if element is empty, insert <p> element with <BR>
-		$(element).append('<p><br /></p>');
-	} else {
-		// normalize all text nodes in element if not empty
-		element.normalize();
-	}
-
-	setBR(element);
 }
 
 /**
@@ -873,8 +861,7 @@ function setBR(element) {
 	if(!element.firstChild || $(element.firstChild).is('UL,OL')) {
 		$(element).prepend('<BR>');
 	} else {
-		$('BR:last-child').each(function(i, br) {
-			// :last-child selectors will select nodes with following text nodes
+		$('BR:last-child', element).each(function(i, br) {
 			if(br.nextSibling) return;
 
 			while(br.previousSibling && br.previousSibling.tagName === 'BR') {
