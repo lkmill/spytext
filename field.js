@@ -32,6 +32,8 @@ module.exports = {
 		this.$el.addClass('spytext-field').attr('contentEditable', 'true');
 
 		commands.deleteEmptyTextNodes(this.el);
+		commands.deleteEmptyElements(this.el);
+		commands.setBR(_.toArray(this.el.children));
 
 		this.originalValue = this.el.innerHTML;
 
@@ -70,6 +72,7 @@ module.exports = {
 				_field.snapback.register();
 			});
 			$(document).on('mouseup', function(e) {
+				selectron.normalize();
 				_field.snapback.getPositions();
 			});
 		});
