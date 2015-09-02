@@ -67,7 +67,8 @@ module.exports = {
 					this.snapback.undo();
 					break;
 				case 65://a
-					//selectron.select(this.el);
+					selectron.select(this.el);
+					this.snapback.getPositions();
 					break;
 			}
 		} else {
