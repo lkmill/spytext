@@ -173,11 +173,7 @@ function deleteRangeContents(element, rng) {
 
 	var $startContainer = $(rng.startContainer),
 		$startBlock = $startContainer.closest(blockTags.join(','), element),
-		$endBlock = $(rng.endContainer).closest(blockTags.join(','), element),
-		startPosition = {
-			ref: $startBlock[0],
-			offset: selectron.offset($startBlock[0], 'start')
-		};
+		$endBlock = $(rng.endContainer).closest(blockTags.join(','), element);
 
 	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
@@ -246,9 +242,13 @@ function deleteRangeContents(element, rng) {
 		}
 	});
 
-	// restore the selection to the position of the start caret before
-	// deleteRangeContents was called
-	selectron.set(startPosition);
+	if($startBlock.text().length > 0) {
+		getSelection().collapseToStart();
+	} else {
+		// this is needed for firefox to place caret correctly after all contents
+		// of element has been selected and then deleted
+		selectron.set({ ref: $startBlock[0] });
+	}
 }
 
 /**
