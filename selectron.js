@@ -284,7 +284,6 @@ module.exports = {
 		return $block.text().length === 0 || off === count($block[0]) - count($block.children('UL,OL')[0]);
 	},
 
-
 	/**
 	 * Get Positions of start and end caret of current selection
 	 *
@@ -313,13 +312,25 @@ module.exports = {
 	 * @param {Node} node - The node to select
 	 */
 	select: function(node) {
-		var children = node.offspring();
-		var first = children[0];
-		var last = children[children.length - 1];
-		this.set({
-			start: { ref: first, offset: 0, isAtStart: true },
-			end: { ref: last, offset: last.textContent.length, isAtStart: last.textContent.length === 0 }
-		});
+		var textNodes = node.nodeType === 3 ? [ node ] : descendants(node, 3);
+
+		if(textNodes.length === 0) {
+			this.set({ ref: node, offset: 0 });
+		} else {
+			var first = _.first(textNodes),
+				last = _.last(textNodes);
+
+			this.set({
+				start: {
+					ref: first,
+					offset: 0
+				},
+				end: {
+					ref: last,
+					offset: last.textContent.length,
+				}
+			});
+		}
 	},
 
 	/**
