@@ -159,21 +159,24 @@ module.exports = {
 	 */
 	contained: function(element, opts, partlyContained) {
 		var _selectron = this,
+			check,
 			nodes = [];
-			
-		if(opts instanceof NodeList || opts instanceof HTMLCollection)
-			opts = _.toArray(opts);
-			
-		// create array with all nodes to test if they are contained by the selection
-		var check = _.isArray(opts)? opts : descendants(element, opts);
 
-		// loop through all nodes to check
+		if(_.isArray(opts))
+			check = opts;
+		else if(opts instanceof NodeList || opts instanceof HTMLCollection || opts instanceof jQuery)
+			check = _.toArray(opts);
+		else
+			check = descendants(element, opts);
+			
+		// loop through all nodes and check if
+		// they are contained by the current selection
 		check.forEach(function(node) {
 			if(_selectron.contains(node, partlyContained))
-				// node is contained by selection, add it to `nodes`
 				nodes.push(node);
 		});
 
+		// return any contained nodes
 		return nodes;
 	},
 
