@@ -23,14 +23,13 @@ module.exports = function descendants(element, opts) {
 	opts = opts || {};
 
 	var filters = [],
-		nodeType = opts.nodeType,
+		nodeType = opts.selector ? 1 : opts.nodeType,
 		whatToShow;
 
 	switch(nodeType) {
 		case 1:
 			// only traverse Element nodes
 			whatToShow = NodeFilter.SHOW_ELEMENT;
-			
 			// ignore SCRIPT and STYLE tags.
 			filters.push(function(node) {
 				return ['SCRIPT', 'STYLE'].indexOf(node.tagName) === -1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
@@ -43,6 +42,7 @@ module.exports = function descendants(element, opts) {
 		default:
 			// No nodeType has been set, traverse all nodes
 			whatToShow = NodeFilter.SHOW_ALL;
+			// TODO hmmm do we need to filter out SCRIPT and STYLE tags here?
 			break;
 	}
 
@@ -70,9 +70,6 @@ module.exports = function descendants(element, opts) {
 		filters = filters.concat(opts.filter);
 
 	if(opts.selector) {
-		// only test Element nodes
-		nodeType = 1;
-		
 		// add selector filter
 		filters.push(function(node) {
 			return $(node).is(opts.selector);
