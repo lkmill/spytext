@@ -56,19 +56,12 @@ function count(root, ref, countAll) {
 	if(root !== ref) {
 		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false);
 
-		while((node = tw.nextNode())) {
-			var nodeType = node.nodeType;
-
-			if(prev && (isSection(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
+		while((node = tw.nextNode()) && node !== ref) {
+			if(countAll || isSection(node) || node.nodeName === 'BR')
 				off++;
-
-			if(node === ref) 
-				break;
 
 			if(node.nodeType === 3)
 				off = off + node.textContent.length;
-
-			prev = node;
 		}
 	}
 
@@ -115,9 +108,7 @@ function restore(root, offset, countAll) {
 		node;
 
 	while(offset > 0 && (node = tw.nextNode())) {
-		var nodetype = node.nodeType;
-
-		if(prev && (isSection(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
+		if(countAll || isSection(node) || node.nodeName === 'BR')
 			offset--;
 
 		prev = node;
@@ -189,7 +180,8 @@ module.exports = {
 	 */
 	contains: function(node, partlyContained) {
 		// default, unoverridable behaviour of Selection.containsNode() for textNodes
-		if(node.nodeType === 3) partlyContained = true;
+		// is to always test partlyContained = true
+		partlyContained = node.nodeType === 3 ? true : !!partlyContained;
 
 		var sel = s();
 
@@ -204,17 +196,17 @@ module.exports = {
 				element = element.parentNode;
 			}
 
-			if(element !== node && !$.contains(element, node))
-				return false;
-
+			if(element !== node && !$.contains(element, node)) {
+				return partlyContained && $.contains(node,element);
+			}
+			
 			var rangeStartOffset = offset(element, 'start', true),
 				rangeEndOffset = offset(element, 'end', true),
 				startOffset = count(element, node, true),
 				endOffset = node.nodeType === 1 ? startOffset + count(node, null, true) + 2 : startOffset + node.textContent.length;
 
 			return (startOffset >= rangeStartOffset && endOffset <= rangeEndOffset ||
-					partlyContained && ((rangeStartOffset >= startOffset && rangeStartOffset <= endOffset) || (rangeEndOffset >= startOffset && rangeEndOffset <= endOffset)));
-
+					(partlyContained && ((rangeStartOffset >= startOffset && rangeStartOffset <= endOffset) || (rangeEndOffset >= startOffset && rangeEndOffset <= endOffset))));
 		}
 	},
 
