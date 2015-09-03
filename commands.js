@@ -683,20 +683,19 @@ function newline(element) {
 	// includes everything that will be moved into the new block placed before the current
 	selectron.set({
 		start: {
-			ref: $section[0],
-			offset: 0,
-		},
-		end: {
 			ref: rng.startContainer,
 			offset: rng.startOffset
-		}
+		},
+		end: selectron.getLastPosition($section[0])
 	});
 	// extract the contents
 	var contents = selectron.range().extractContents();
 
+	deleteEmptyElements($section[0]);
+
 	// create a new block with the same tag as blockElement, insert it before blockElement and append
 	// the contents of the extracted range to it's end
-	var $el = $('<' + $section[0].tagName + '>').insertBefore($section).append(contents.childNodes);
+	var $el = $('<' + $section[0].tagName + '>').insertAfter($section).append(contents.childNodes);
 
 	// normalize any textnodes
 	$el[0].normalize();
@@ -706,7 +705,7 @@ function newline(element) {
 	setBR([ $el[0], $section[0] ]);
 
 	selectron.set({
-		ref: $section[0]
+		ref: $el[0]
 	});
 }
 

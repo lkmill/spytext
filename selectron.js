@@ -36,6 +36,22 @@ function isSection(node) {
 	//return node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 }
 
+function getLastPosition(node) {
+	var ref = node.lastChild;
+		
+	while(ref) {
+		if(ref.nodeType === 3)
+			break;
+
+		ref = ref.lastChild || ref.previousSibling;
+	}
+
+	return {
+		ref: ref || node,
+		offset: ref ? ref.textContent.length : 0
+	}
+}
+
 /**
  * Uses a TreeWalker to traverse and count the offset from `root` to `ref`
  *
@@ -50,8 +66,7 @@ function isSection(node) {
 function count(root, ref, countAll) {
 	var node,
 		off = 0,
-		tw,
-		prev;
+		tw;
 
 	if(root !== ref) {
 		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false);
@@ -336,6 +351,8 @@ module.exports = {
 			}
 		};
 	},
+
+	getLastPosition: getLastPosition,
 
 	/**
 	 * Sets the current selection to contain `node`
