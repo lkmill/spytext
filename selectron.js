@@ -246,19 +246,26 @@ module.exports = {
 	normalize: function(element) {
 		var rng = this.range();
 
-		if(!rng.collapsed && $(rng.endContainer).is(sectionTags.join(','))) {
-			var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, { nodeType: 3 })) || rng.endContainer.previousSibling;
+		if(!rng.collapsed) {
+			if($(rng.endContainer).is(sectionTags.join(','))) {
+				var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, { nodeType: 3 })) || rng.endContainer.previousSibling;
 
+				this.set({
+					start: {
+						ref: rng.startContainer,
+						offset: rng.startOffset
+					},
+					end: {
+						ref: lastTextNode,
+						offset: lastTextNode.textContent.length,
+					}
+				});
+			}
+		} else {
 			this.set({
-				start: {
-					ref: rng.startContainer,
-					offset: rng.startOffset
-				},
-				end: {
-					ref: lastTextNode,
-					offset: lastTextNode.textContent.length,
-				}
-			});
+				ref: element,
+				offset: offset(element, 'start')
+			})
 		}
 	},
 
