@@ -30,10 +30,6 @@ module.exports = function descendants(element, opts) {
 		case 1:
 			// only traverse Element nodes
 			whatToShow = NodeFilter.SHOW_ELEMENT;
-			// ignore SCRIPT and STYLE tags.
-			filters.push(function(node) {
-				return ['SCRIPT', 'STYLE'].indexOf(node.tagName) === -1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-			});
 			break;
 		case 3:
 			// only traverse textNodes
