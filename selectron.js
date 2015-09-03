@@ -258,28 +258,30 @@ module.exports = {
 
 	},
 
-	normalize: function(element) {
-		var rng = this.range();
+	normalize: function() {
+		var rng = this.range(),
+			$container = $(rng.endContainer);
 
 		if(!rng.collapsed) {
-			if($(rng.endContainer).is(sectionTags.join(','))) {
-				var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, { nodeType: 3 })) || rng.endContainer.previousSibling;
+			if($container.is(sectionTags.join(','))) {
+				var ref = $container[0];
+
+				while(!ref.previousSibling)
+					ref = ref.parentNode;
 
 				this.set({
 					start: {
 						ref: rng.startContainer,
 						offset: rng.startOffset
 					},
-					end: {
-						ref: lastTextNode,
-						offset: lastTextNode.textContent.length,
-					}
+					end: getLastPosition(ref.previousSibling)
 				});
 			}
 		} else {
+			var section = $container.closest(sectionTags.join(','))[0];
 			this.set({
-				ref: element,
-				offset: offset(element, 'start')
+				ref: section,
+				offset: offset(section, 'start')
 			})
 		}
 	},
