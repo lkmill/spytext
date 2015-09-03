@@ -238,9 +238,9 @@ function deleteRangeContents(element, rng) {
 		$endSection.remove();
 	}
 
-	deleteEmptyElements(element);
-
 	setBR($startSection[0]);
+
+	deleteEmptyElements(element);
 
 	if($startSection.text().length > 0) {
 		getSelection().collapseToStart();
