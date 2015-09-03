@@ -23,7 +23,28 @@ module.exports = function descendants(element, opts) {
 	opts = opts || {};
 
 	var filters = [],
-		nodeType = opts.nodeType;
+		nodeType = opts.nodeType,
+		whatToShow;
+
+	switch(nodeType) {
+		case 1:
+			// only traverse Element nodes
+			whatToShow = NodeFilter.SHOW_ELEMENT;
+			
+			// ignore SCRIPT and STYLE tags.
+			filters.push(function(node) {
+				return ['SCRIPT', 'STYLE'].indexOf(node.tagName) === -1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+			});
+			break;
+		case 3:
+			// only traverse textNodes
+			whatToShow = NodeFilter.SHOW_TEXT;
+			break;
+		default:
+			// No nodeType has been set, traverse all nodes
+			whatToShow = NodeFilter.SHOW_ALL;
+			break;
+	}
 
 	if(opts.levels) {
 		// add default filter for ensuring we only traverse
@@ -34,15 +55,17 @@ module.exports = function descendants(element, opts) {
 			for(var i = 0; i < opts.levels; i++) {
 				node = node.parentNode;
 				if(node === element)
-					return true;
+					return NodeFilter.FILTER_ACCEPT;
 			}
-
+			
 			// return false if `levels` is set and we have
 			// made it through entire loop
-			return false;
+			return NodeFilter.FILTER_REJECT;
 		});
 	}
 
+	// NOTE filter order is of importance, due to difference in REJECT and SKIP
+	// NodeFilters...
 	if(opts.filter)
 		filters = filters.concat(opts.filter);
 
@@ -56,32 +79,30 @@ module.exports = function descendants(element, opts) {
 		});
 	}
 
-	switch(nodeType) {
-		case 1:
-			// only traverse Element nodes
-			whatToShow = NodeFilter.SHOW_ELEMENT;
-			
-			// ignore SCRIPT and STYLE tags.
-			filters.push(function(node) {
-				return ['SCRIPT', 'STYLE'].indexOf(node.tagName) === -1;
-			});
-			break;
-		case 3:
-			// only traverse textNodes
-			whatToShow = NodeFilter.SHOW_TEXT;
-			break;
-		default:
-			// No nodeType has been set, traverse all nodes
-			whatToShow = NodeFilter.SHOW_ALL;
-			break;
-	}
+	var filter = null;
 
-	var filter;
 	if(filters.length > 0) {
 		filter = function(node) {
-			return filters.every(function(fnc) {
-				return fnc(node);
-			}) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+			// since we will always return the first non-acceptable
+			// filter (FILTER_REJECT or FILTER_SKIP), we need
+			// must ensure filter functions that might REJECT a node
+			// needs to be placed before any filters that might only SKIP...
+			return filters.reduce(function(result, fnc) {
+				if(result !== NodeFilter.FILTER_ACCEPT)
+					// we have already gotten a failing filter, skip any more processing
+					// and return previous result!
+					return result;
+
+				// fetch result of next filter
+				var newResult = fnc(node);
+
+				if(_.isBoolean(newResult))
+					// filter result is a boolean, translate to ACCEPT or SKIP filter
+					return newResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+				
+				// we now assume the result is a NodeFilter. return it.
+				return newResult;
+			}, NodeFilter.FILTER_ACCEPT);
 		};
 
 		// IE fix... IE will try to call filter property directly,
