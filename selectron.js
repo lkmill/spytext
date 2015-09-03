@@ -292,13 +292,28 @@ module.exports = {
 	 *
 	 * @return {boolean}
 	 */
-	isAtEnd: function() {
-		var rng = this.range();
+	isAtEndOfSection: function(section) {
+		var $section = $(section || this.range().endContainer).closest(sectionTags.join(','));
 
-		var $section = $(rng.startContainer).closest(sectionTags.join(','));
-		var off = offset($section[0], 'start');
+		if($section.text().length === 0)
+			return true;
 
-		return $section.text().length === 0 || off === count($section[0]) - count($section.children('UL,OL')[0]);
+		var off = offset($section[0], 'end'),
+			$nestedList = $section.children('UL,OL'),
+			result = $nestedList.length > 0 ? count($section[0], $nestedList[0]) : count($section[0]);
+
+		return  off === result;
+	},
+
+	/**
+	 * Tests whether the caret is currently at the end of a section
+	 *
+	 * @return {boolean}
+	 */
+	isAtStartOfSection: function(section) {
+		var $section = $(section || this.range().startContainer).closest(sectionTags.join(','));
+
+		return offset($section[0], 'start') === 0;
 	},
 
 	/**

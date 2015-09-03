@@ -106,24 +106,15 @@ module.exports = {
 				case 46: // delete
 					var section = $(rng.startContainer).closest(sectionTags.join(','))[0];
 
-					var position = selectron.get(section);
-					
 					// join lines if backspace and start of section, or delete and end of section
-					if(e.keyCode === 8 && position.start.offset === 0) {
+					if(e.keyCode === 8 && selectron.isAtStartOfSection(section)) {
 						// backspace at the start of a section, join with previous
-
 						e.preventDefault();
 						this.command('joinPrev', section);
-					} else if(e.keyCode === 46) {
-						// 46 === delete
-						var nestedList = $(section).children('UL,OL');
-
-						if(nestedList.length === 0 && position.start.offset === position.start.ref.textContent.length ||
-								nestedList.length === 1 && position.start.offset === position.start.ref.textContent.length - nestedList.text().length) {
-							// delete and at the end of section, join with next
-							e.preventDefault();
-							this.command('joinNext', section);
-						}
+					} else if(e.keyCode === 46 && selectron.isAtEndOfSection(section)) {
+						// delete and at the end of section, join with next
+						e.preventDefault();
+						this.command('joinNext', section);
 					}
 					break;
 				case 13:
