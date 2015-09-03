@@ -110,7 +110,7 @@ module.exports = function descendants(element, opts) {
 		if((!opts.levels || opts.levels > 1) && opts.onlyDeepest) {
 			// we are traversing more than one level, and only want the deepest nodes
 			// to be returned so remove all ancestor nodes to `node` from `nodes`
-			nodes = _.without.apply(null, [ nodes ].concat($(node).ancestors(selector, element).toArray()));
+			nodes = _.without.apply(null, [ nodes ].concat($(node).ancestors(opts.selector, element).toArray()));
 		}
 		nodes.push(node);
 	}
