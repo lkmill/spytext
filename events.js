@@ -7,7 +7,7 @@
 var selectron = require('./selectron');
 var commands = require('./commands');
 
-var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
+var sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
 module.exports = {
 	/**
@@ -104,25 +104,25 @@ module.exports = {
 					return;
 				case 8: //backspace
 				case 46: // delete
-					var block = $(rng.startContainer).closest(blockTags.join(','))[0];
+					var section = $(rng.startContainer).closest(sectionTags.join(','))[0];
 
-					var position = selectron.get(block);
+					var position = selectron.get(section);
 					
-					// join lines if backspace and start of block, or delete and end of block
+					// join lines if backspace and start of section, or delete and end of section
 					if(e.keyCode === 8 && position.start.offset === 0) {
-						// backspace at the start of a block, join with previous
+						// backspace at the start of a section, join with previous
 
 						e.preventDefault();
-						this.command('joinPrev', block);
+						this.command('joinPrev', section);
 					} else if(e.keyCode === 46) {
 						// 46 === delete
-						var nestedList = $(block).children('UL,OL');
+						var nestedList = $(section).children('UL,OL');
 
 						if(nestedList.length === 0 && position.start.offset === position.start.ref.textContent.length ||
 								nestedList.length === 1 && position.start.offset === position.start.ref.textContent.length - nestedList.text().length) {
-							// delete and at the end of block, join with next
+							// delete and at the end of section, join with next
 							e.preventDefault();
-							this.command('joinNext', block);
+							this.command('joinNext', section);
 						}
 					}
 					break;

@@ -6,7 +6,7 @@
 
 var selectron = require('./selectron'),
 	descendants = require('./descendants'),
-	blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
+	sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
 
 /**
@@ -23,19 +23,20 @@ function align(element, alignment) {
 
 	containedChildren.forEach(function(child) {
 		// do not set text-align property on lists
-		if(!$(child).is('ul, ol')) $(child).css('text-align', alignment);
+		if(!$(child).is('ul,ol')) $(child).css('text-align', alignment);
 	});
 }
 
 /**
- * Changes all contained elements with `blockTags` tagName to tag `tag`.
+ * Changes all (partly) contained sections in the current selection to (block
+ * level) elements of tagName `tag`.
  *
  * @static
  * @param	{Element} element - Reference element to be used for selectron to fetch elements contained in selection
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
-	var contained = selectron.contained(element, { selector: blockTags.join(',') }, true).filter(function(node) {
+	var contained = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(function(node) {
 			// this is to filter out LI with nested lists where only text in the nested
 			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
 			//
@@ -44,35 +45,35 @@ function block(element, tag) {
 			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
 		}),
 		newBlocks = [],
-		$startBlock = $(_.first(contained)),
-		$endBlock = $(_.last(contained)),
-		startOffset = selectron.offset($startBlock[0], 'start'),
-		endOffset = selectron.offset($endBlock[0], 'end'),
+		$startSection = $(_.first(contained)),
+		$endSection = $(_.last(contained)),
+		startOffset = selectron.offset($startSection[0], 'start'),
+		endOffset = selectron.offset($endSection[0], 'end'),
 		$ref;
 
 	// $ref is the DOM element which we place our new
 	// blocks before. if it is undefined, new blocks will
 	// be appended to 'element'.
 	
-	if($endBlock.is('LI')) {
-		// if endblock is in a list, we have to do some crazyness
+	if($endSection.is('LI')) {
+		// if endSection is a list item, we have to do some crazyness
 		
 		// begin by getting a reference to the ancestor lists
-		// NOTE: $startList might not be a list. if $startBlock is not
-		// a list, the $startList will be $startBlock (since all block
+		// NOTE: $startList might not be a list. if $startSection is not
+		// a list item, the $startList will be $startSection (since all block
 		// elements except LI are children of 'element'
-		var $startList = $startBlock.closest(element.children),
-			$endList = $endBlock.closest(element.children);
+		var $startList = $startSection.closest(element.children),
+			$endList = $endSection.closest(element.children);
 
 		if(!$startList.is($endList)) {
 			// if $startList and $endList are not the same
 			// we place all new blocks before $endList
 			$ref = $endList;
-		} else if($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0) {
-			// if endBlock has following siblings or has a nested list,
+		} else if($endSection[0].nextSibling || $endSection.children('UL,OL').length > 0) {
+			// if endSection has following siblings or has a nested list,
 			// create a new list and place it after startList.
 			// place all new blocks before this new list
-			$ref = $('<' + $endList[0].tagName + '>').insertAfter($startList).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
+			$ref = $('<' + $endList[0].tagName + '>').insertAfter($startList).append($endSection.children('UL,OL').children()).append($endSection.nextAll());
 		} else {
 			// $startList is $endList and last selected LI is last child and has no 
 			// nested list. simply place all new blocks after $startList/endList, ie
@@ -80,9 +81,9 @@ function block(element, tag) {
 			$ref = $endList.next();
 		}
 	} else {
-		// $endBlock is not a list, simply place
-		// new elements after $endBlocks next sibling
-		$ref = $endBlock.next();
+		// $endSection is not a list, simply place
+		// new elements after $endSection next sibling
+		$ref = $endSection.next();
 	}
 
 	contained.forEach(function(child,i){
@@ -183,70 +184,70 @@ function deleteRangeContents(element, rng) {
 	rng = rng || selectron.range();
 
 	var $startContainer = $(rng.startContainer),
-		$startBlock = $startContainer.closest(blockTags.join(','), element),
-		$endBlock = $(rng.endContainer).closest(blockTags.join(','), element);
+		$startSection = $startContainer.closest(sectionTags.join(','), element),
+		$endSection = $(rng.endContainer).closest(sectionTags.join(','), element);
 
 	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
 
-	if(!$startBlock.is($endBlock)) {
-		// if $startBlock is not $endBlock, we need to clean up any mess that
-		// deleteContents has left and then append all childNodes of $endBlock to $startBlock
+	if(!$startSection.is($endSection)) {
+		// if $startSection is not $endSection, we need to clean up any mess that
+		// deleteContents has left and then append all childNodes of $endSection to $startSection
 
-		if($endBlock.is('LI')) {
-			// $endBlock is a list item... we might need to clear up a mess
+		if($endSection.is('LI')) {
+			// $endSection is a list item... we might need to clear up a mess
 		
-			// $list will be the list to which we move any nested lists of $endBlock
-			// to and any of $endBlock's next siblings
+			// $list will be the list to which we move any nested lists of $endSection
+			// to and any of $endSection's next siblings
 			var $list, 
-				$nestedList = $endBlock.children('UL,OL');
+				$nestedList = $endSection.children('UL,OL');
 
-			if($startBlock.is('LI')) {
-				// $startBlock is a listItem,
+			if($startSection.is('LI')) {
+				// $startSection is a listItem,
 
-				// move listItems to $startBlock's parent list)
-				$list = $startBlock.parent();
+				// move listItems to $startSection's parent list)
+				$list = $startSection.parent();
 
-				// append potential $nestedList to $startBlock
-				$startBlock.append($nestedList);
+				// append potential $nestedList to $startSection
+				$startSection.append($nestedList);
 			} else {
-				// $startBlock is not a listItem which means all $endBlock's previous listItems
-				// have been selected. Move listItems to $endBlocks outermost containing list
-				$list = $endBlock.closest(element.children);
+				// $startSection is not a listItem which means all $endSection's previous listItems
+				// have been selected. Move listItems to $endSection outermost containing list
+				$list = $endSection.closest(element.children);
 
 				// append all $nestedList's children to $list
 				$list.append($nestedList.children());
 			}
 
-			if(!$list.is($endBlock.parent()) && $endBlock[0].nextSibling) {
-				// append all next siblings to $endBlock, but only
-				// if $list is not $endBlock's parent (because then target
+			if(!$list.is($endSection.parent()) && $endSection[0].nextSibling) {
+				// append all next siblings to $endSection, but only
+				// if $list is not $endSection's parent (because then target
 				// and source will be same)
-				$list.append($endBlock.nextAll());
+				$list.append($endSection.nextAll());
 			}
 		} 
 
-		// Move all childNodes from $endBlock to $startBlock by inserting them
-		// after $startContainer (should now be a at the end of $startBlock).
-		// $startContainer is used instead of appending to $startBlock in case a nested list
-		// has been appended to $startBlock, otherwise the childNodes would be
+		// Move all childNodes from $endSection to $startSection by inserting them
+		// after $startContainer (should now be a at the end of $startSection).
+		// $startContainer is used instead of appending to $startSection in case a nested list
+		// has been appended to $startSection, otherwise the childNodes would be
 		// incorrectly placed after this nested list.
-		$startContainer.after($endBlock[0].childNodes);
+		$startContainer.after($endSection[0].childNodes);
 
-		// remove the empty $endBlock
-		$endBlock.remove();
+		// remove the empty $endSection
+		$endSection.remove();
 	}
 
 	deleteEmptyElements(element);
 
-	setBR($startBlock[0]);
+	setBR($startSection[0]);
 
-	if($startBlock.text().length > 0) {
+	if($startSection.text().length > 0) {
 		getSelection().collapseToStart();
 	} else {
 		// this is needed for firefox to place caret correctly after all contents
 		// of element has been selected and then deleted
-		selectron.set({ ref: $startBlock[0] });
+		selectron.set({ ref: $startSection[0] });
 	}
 }
 
@@ -257,7 +258,7 @@ function deleteRangeContents(element, rng) {
  * @param	{Element} element - Element which descendants to look for empty text nodes
  */
 function indent(element){
-	var blocks = selectron.contained(element, { selector: blockTags.join(',') }, true).filter(function(node) {
+	var sections = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(function(node) {
 			// this filter will ensure all list items with nested lists are only selected if all
 			// descendant list items selected or the first list items in their list.
 			//
@@ -272,13 +273,13 @@ function indent(element){
 					onlyDeepest: true
 				}), true);
 		}),
-		startBlock = _.first(blocks),
-		endBlock = _.last(blocks),
-		startOffset = selectron.offset(startBlock, 'start'),
-		endOffset = selectron.offset(endBlock, 'end');
+		startSection = _.first(sections),
+		endSection = _.last(sections),
+		startOffset = selectron.offset(startSection, 'start'),
+		endOffset = selectron.offset(endSection, 'end');
 
-	blocks.forEach(function(el) {
-		// only run the command of 'LI' blocks
+	sections.forEach(function(el) {
+		// only run the command of 'LI' sections
 		if(!$(el).is('LI')) return;
 
 		var $prev = $(el).prev();
@@ -303,59 +304,59 @@ function indent(element){
 	// restore the selection
 	selectron.set({
 		start: {
-			ref: startBlock,
+			ref: startSection,
 			offset: startOffset
 		},
 		end: {
-			ref: endBlock,
+			ref: endSection,
 			offset: endOffset
 		},
 	});
 }
 
 /**
- * Join `block` with the previous block. Uses a treeWalker to determine
- * what the previous block will be
+ * Join `section` with the previous section. Uses a treeWalker to determine
+ * what the previous section will be
  *
  * @static
  * @param	{Element} element - Element which is used as root for the TreeWalker
- * @param	{Element} block - Element which should be join the the previous block
+ * @param	{Element} section - Element which should be join the the previous section
  */
-function joinPrev(element, block) {
+function joinPrev(element, section) {
 	var treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
-	treeWalker.currentNode = block;
+	treeWalker.currentNode = section;
 
 	var prev = treeWalker.previousNode();
-	while(prev && blockTags.indexOf(prev.tagName) === -1) { 
+	while(prev && sectionTags.indexOf(prev.tagName) === -1) { 
 		prev = treeWalker.previousNode();
 	}
 
 	// prev should only be null or undefined if backspace is called at beginning of field
 	if(prev)
-		return join(element, prev, block);
+		return join(element, prev, section);
 }
 
 /**
- * Join `block` with the next block. Uses a treeWalker to determine
- * which the next block is
+ * Join `section` with the next section. Uses a treeWalker to determine
+ * which the next section is
  *
  * @static
  * @param	{Element} element - Element which is used as root for the TreeWalker
- * @param	{Element} block - Element which should be join the next block
+ * @param	{Element} section - Element which should be join the next section
  */
-function joinNext(element, block) {
+function joinNext(element, section) {
 	var treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
-	treeWalker.currentNode = block;
+	treeWalker.currentNode = section;
 
 	// delete
 	var next = treeWalker.nextNode();
-	while(next && blockTags.indexOf(next.tagName) === -1) { 
+	while(next && sectionTags.indexOf(next.tagName) === -1) { 
 		next = treeWalker.nextNode();
 	}
 
 	// next should only be null or undefined if delete is called at beginning of field
 	if(next)
-		return join(element, block, next);
+		return join(element, section, next);
 }
 
 /**
@@ -512,7 +513,7 @@ function link(element, attribute) {
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
-	var contained = selectron.contained(element, { selector: blockTags.join(',') }, true),
+	var contained = selectron.contained(element, { selector: sectionTags.join(',') }, true),
 		listItems = [];
 	
 	contained = contained.filter(function(node) {
@@ -524,26 +525,26 @@ function list(element, tag) {
 		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
 	});
 
-	var $startBlock = $(_.first(contained)),
-		$endBlock = $(_.last(contained)),
-		startOffset = selectron.offset($startBlock[0], 'start'),
-		endOffset = selectron.offset($endBlock[0], 'end'),
+	var $startSection = $(_.first(contained)),
+		$endSection = $(_.last(contained)),
+		startOffset = selectron.offset($startSection[0], 'start'),
+		endOffset = selectron.offset($endSection[0], 'end'),
 		$list;
 
 	// $list is a reference to the list all new
 	// list items should be appended to. Essentially,
 	// after the next block of conditionals
-	// we should be able to append all contained blockElements
+	// we should be able to append all contained sections
 	// to $list and not have to wrorry about remaining lists
 	
-	if($startBlock.is('LI')) {
+	if($startSection.is('LI')) {
 		// $startList and $endList should reference lists furthest up the DOM, ie children of 
 		// the fields element
-		var $startList = $startBlock.closest(element.children),
+		var $startList = $startSection.closest(element.children),
 			$endList;
 
-		if($endBlock.is('LI'))
-			$endList = $endBlock.closest(element.children);
+		if($endSection.is('LI'))
+			$endList = $endSection.closest(element.children);
 
 		if($startList.is(tag)) {
 			// $startList is already the correct list type
@@ -560,26 +561,26 @@ function list(element, tag) {
 			// and insert it after $startList
 			$list = $('<' + tag + '>').insertAfter($startList);
 
-			if($endList && $startList.is($endList) && ($endBlock[0].nextSibling || $endBlock.children('UL,OL').length > 0)) {
-				// $endBlock is a listItem, $startList is the same as $endList and is
-				// the wrong list type AND $endBlock either has following siblings or
+			if($endList && $startList.is($endList) && ($endSection[0].nextSibling || $endSection.children('UL,OL').length > 0)) {
+				// $endSection is a listItem, $startList is the same as $endList and is
+				// the wrong list type AND $endSection either has following siblings or
 				// has a nested list. Thus, we need to create a new list, place it
-				// after $list and append siblings and nested lists of $endBlock to it
+				// after $list and append siblings and nested lists of $endSection to it
 				//
-				// the important part here is that $endBlock has either next siblings or nested lists. if it did not,
+				// the important part here is that $endSection has either next siblings or nested lists. if it did not,
 				// $endList would be empty at the end of the call to list and thus removed automatically
-				$('<' + $endList[0].tagName + '>').insertAfter($list).append($endBlock.children('UL,OL').children()).append($endBlock.nextAll());
+				$('<' + $endList[0].tagName + '>').insertAfter($list).append($endSection.children('UL,OL').children()).append($endSection.nextAll());
 			}
 		}
 	} else {
-		// if $startBlock is not a list we need to create a new
+		// if $startSection is not a list we need to create a new
 		// list that we can append all new list items to.
-		// insert this new list before $startBlock
+		// insert this new list before $startSection
 		//
-		// if $endBlock is also a list, all blocks inbetween $startBlock
-		// and $endBlock will be selected, thus moved into $list and $list
-		// will eventually become previousSibling to $endBlock
-		$list = $('<' + tag + '>').insertBefore($startBlock);
+		// if $endSection is also a list, all sections inbetween $startSection
+		// and $endSection will be selected, thus moved into $list and $list
+		// will eventually become previousSibling to $endSection
+		$list = $('<' + tag + '>').insertBefore($startSection);
 	}
 
 	contained.forEach(function(child,i){
@@ -654,7 +655,7 @@ function list(element, tag) {
 }
 
 /**
- * Creates a new block (same type as the type of block the caret is currently in.)
+ * Creates a new section (same type as the type of section the caret is currently in.)
  *
  * @static
  * @param	{Element} element - Element which is used as root for selectron.
@@ -662,12 +663,12 @@ function list(element, tag) {
  */
 function newline(element) {
 	var rng = selectron.range();
-	var $blockElement = $(rng.startContainer).closest(blockTags.join(','), element);
+	var $section = $(rng.startContainer).closest(sectionTags.join(','), element);
 
-	if($blockElement.is('LI') && ($blockElement.text().length - $blockElement.children('UL,OL').text().length === 0)) {
+	if($section.is('LI') && ($section.text().length - $section.children('UL,OL').text().length === 0)) {
 		// we are in an empty list item (could have a nested list though)
 
-		if($blockElement.parent().is($(element).children())) {
+		if($section.parent().is($(element).children())) {
 			// list items containing list is child of element... no levels to outdent
 			// so create a new 
 			block(element, 'P');
@@ -682,7 +683,7 @@ function newline(element) {
 	// includes everything that will be moved into the new block placed before the current
 	selectron.set({
 		start: {
-			ref: $blockElement[0],
+			ref: $section[0],
 			offset: 0,
 		},
 		end: {
@@ -695,17 +696,17 @@ function newline(element) {
 
 	// create a new block with the same tag as blockElement, insert it before blockElement and append
 	// the contents of the extracted range to it's end
-	var $el = $('<' + $blockElement[0].tagName + '>').insertBefore($blockElement).append(contents.childNodes);
+	var $el = $('<' + $section[0].tagName + '>').insertBefore($section).append(contents.childNodes);
 
 	// normalize any textnodes
 	$el[0].normalize();
-	$blockElement[0].normalize();
+	$section[0].normalize();
 
 	// ensure correct BR on both affected elements
-	setBR([ $el[0], $blockElement[0] ]);
+	setBR([ $el[0], $section[0] ]);
 
 	selectron.set({
-		ref: $blockElement[0]
+		ref: $section[0]
 	});
 }
 
@@ -716,7 +717,7 @@ function newline(element) {
  * @param	{Element} element - Element which is used as root for selectron.
  */
 function outdent(element){
-	var blocks = selectron.contained(element, { selector: blockTags.join(',') }, true).filter(function(node) {
+	var sections = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(function(node) {
 			// this is to filter out LI with nested lists where only text in the nested
 			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
 			//
@@ -724,11 +725,11 @@ function outdent(element){
 			// nodes in the LI containing the nested list. The LI containing 
 			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
 		}),
-		startOffset = selectron.offset(_.first(blocks), 'start'),
-		endOffset = selectron.offset(_.last(blocks), 'end');
+		startOffset = selectron.offset(_.first(sections), 'start'),
+		endOffset = selectron.offset(_.last(sections), 'end');
 
 	// we outdent in the reverse order from indent
-	blocks.reverse().forEach(function(li, i) {
+	sections.reverse().forEach(function(li, i) {
 		if(!$(li).is('LI') || $(li).parent().is($(element).children())) {
 			// do nothing if not a list item, or if list item
 			// is already top level (level 1), ie if it's parent is a child
@@ -759,11 +760,11 @@ function outdent(element){
 
 	selectron.set({
 		start: {
-			ref: _.last(blocks),
+			ref: _.last(sections),
 			offset: startOffset
 		},
 		end: {
-			ref: _.first(blocks),
+			ref: _.first(sections),
 			offset: endOffset
 		},
 	});
@@ -788,38 +789,39 @@ function paste(element, dataTransfer) {
 	}
 
 	if(textBlocks.length > 0) {
-		var blockElement = $(rng.startContainer).closest(blockTags.join(','), element)[0];
+		var section = $(rng.startContainer).closest(sectionTags.join(','), element)[0];
 
-		// Select everything from the caret to the end of blockElement and
+		// Select everything from the caret to the end of section and
 		// extract the contents. this is so we can to append the first text block
-		// to the current block, and insert the extracted contents after the
+		// to the current section (where the extracted content will have been), and insert the extracted contents after the
 		// last text block. if we are only pasting one text block, we could
-		// have simply split the current node and inserted the contents inbetween
+		// have simply split the current node and inserted the contents inbetween,
+		// but i decided for a tiny performance loss vs no code duplication
 		selectron.set({
 			start: { ref: rng.startContainer, offset: rng.startOffset },
-			end: { ref: blockElement, offset: blockElement.textContent.length }
+			end: { ref: section, offset: section.textContent.length }
 		});
 		var contents = selectron.range().extractContents();
 
 		
-		var ref = blockElement.nextSibling,// will be used to place new blocks into the DOM
-			parent = blockElement.parentNode,// if no next sibling, save reference to parent
+		var ref = section.nextSibling,// will be used to place new sections into the DOM
+			parent = section.parentNode,// if no next sibling, save reference to parent
 			textNode,
 			$el;
 
 		for(var i = 0; i < textBlocks.length; i++) {
 			textNode = document.createTextNode(textBlocks[i]);
 			if(i === 0) {
-				if(blockElement.lastChild.nodeName === 'BR')
+				if(section.lastChild.nodeName === 'BR')
 					// remove the last item if it is a line break
-					$(blockElement.lastChild).remove();
+					$(section.lastChild).remove();
 
 				// since this is the first text Block,
-				// simply append the textNode to the blockElement
-				$(blockElement).append(textNode);
+				// simply append the textNode to the section
+				$(section).append(textNode);
 			} else {
-				// create a new block 
-				$el = $('<' + blockElement.tagName + '>').append(textNode);
+				// create a new section 
+				$el = $('<' + section.tagName + '>').append(textNode);
 
 				if(ref)
 					// insert before the ref
@@ -830,9 +832,9 @@ function paste(element, dataTransfer) {
 			}
 		}
 		// append any contents extracted from the range prevously to the
-		// last inserted new block, or blockElement if only
+		// last inserted new section, or section if only
 		// one text block was pasted
-		($el || $(blockElement)).append(contents.childNodes);
+		($el || $(section)).append(contents.childNodes);
 
 		// set the range to end of last inserted textnode
 		selectron.set({
