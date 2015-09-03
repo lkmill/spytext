@@ -72,7 +72,7 @@ module.exports = {
 				_field.snapback.register();
 			});
 			$(document).on('mouseup', function(e) {
-				selectron.normalize();
+				selectron.normalize(_field.el);
 				_field.snapback.getPositions();
 			});
 		});
