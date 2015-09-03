@@ -75,6 +75,11 @@ module.exports = {
 			var rng = selectron.range();
 
 			if(rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
+				// the range is not collapsed, IE the user has selected some text AND
+				// a manipulation button has been pressed. We delete the range contents, but
+				// only preventDefault if backspace or delete.
+				// not sure if we really need to register snapback... should already
+				// have been sorted on mouseup events when user made the selection
 				this.snapback.register();
 				this.command('deleteRangeContents',rng);
 
@@ -82,9 +87,6 @@ module.exports = {
 					// if backspace or delete only delete the range contents. do nothing more
 					return e.preventDefault();
 				}
-				// if not backspace or delete we let the rest of the logic happen. if
-				// the selection was not collapsed we want for example a to be inserted after
-				// the range contents are cleared if the a button was pressed
 			}
 
 			// By now we never have a non-collapsed range
