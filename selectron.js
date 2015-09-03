@@ -22,17 +22,17 @@
  * @property {Position} end - Position of end caret
  */
 
-var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
+var sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
 /**
- * Tests whether `node` is a block element, ie if it is of nodeType 1
- * and its tagName is in `blockTags`.
+ * Tests whether `node` is a section element, ie if it is of nodeType 1
+ * and its tagName is in `sectionTags`.
  *
- * @param	{Node} node - The node to check if it is a block element
+ * @param	{Node} node - The node to check if it is a section element
  * @return {boolean}
  */
-function isBlock(node) {
-	return node.nodeType === 1 && blockTags.indexOf(node.tagName) !== -1;
+function isSection(node) {
+	return node.nodeType === 1 && sectionTags.indexOf(node.tagName) !== -1;
 	//return node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 }
 
@@ -59,7 +59,7 @@ function count(root, ref, countAll) {
 		while((node = tw.nextNode())) {
 			var nodeType = node.nodeType;
 
-			if(prev && (isBlock(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
+			if(prev && (isSection(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
 				off++;
 
 			if(node === ref) 
@@ -117,7 +117,7 @@ function restore(root, offset, countAll) {
 	while(offset > 0 && (node = tw.nextNode())) {
 		var nodetype = node.nodeType;
 
-		if(prev && (isBlock(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
+		if(prev && (isSection(node) || node.nodeName === 'BR' || countAll && !(nodeType === 1 && prev === node.parentNode || prev === node.previousSibling)))
 			offset--;
 
 		prev = node;
@@ -251,7 +251,7 @@ module.exports = {
 	normalize: function(element) {
 		var rng = this.range();
 
-		if(!rng.collapsed && $(rng.endContainer).is(blockTags.join(','))) {
+		if(!rng.collapsed && $(rng.endContainer).is(sectionTags.join(','))) {
 			var lastTextNode = _.last(descendants(rng.endContainer.previousSibling, { nodeType: 3 })) || rng.endContainer.previousSibling;
 
 			this.set({
@@ -285,17 +285,17 @@ module.exports = {
 	},
 
 	/**
-	 * Tests whether the caret is currently at the end of a block
+	 * Tests whether the caret is currently at the end of a section
 	 *
 	 * @return {boolean}
 	 */
 	isAtEnd: function() {
 		var rng = this.range();
 
-		var $block = $(rng.startContainer).closest(blockTags.join(','));
-		var off = offset($block[0], 'start');
+		var $section = $(rng.startContainer).closest(sectionTags.join(','));
+		var off = offset($section[0], 'start');
 
-		return $block.text().length === 0 || off === count($block[0]) - count($block.children('UL,OL')[0]);
+		return $section.text().length === 0 || off === count($section[0]) - count($section.children('UL,OL')[0]);
 	},
 
 	/**
