@@ -143,7 +143,8 @@ function restore(root, offset, countAll) {
 			offset--;
 		}
 
-		ref = node;
+		if(!$(node).is('UL,OL'))
+			ref = node;
 
 		if(node.nodeType === 3) {
 			if(offset > node.textContent.length)
@@ -299,7 +300,7 @@ module.exports = {
 			this.set({
 				ref: section,
 				offset: offset(section, 'start')
-			})
+			});
 		}
 	},
 
