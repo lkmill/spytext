@@ -51,9 +51,10 @@ function getLastPosition(node) {
 		offset: ref ? ref.textContent.length : 0
 	}
 }
+
 function filter(node) {
-	return (node.nodeName !== 'BR' || node.nextSibling) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-};
+	return (node.nodeName !== 'BR' || node.nextSibling && !$(node.nextSibling).is('UL,OL')) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+}
 
 filter.acceptNode = filter;
 
@@ -325,7 +326,16 @@ module.exports = {
 	 * @return {boolean}
 	 */
 	isAtEndOfSection: function(section) {
-		var $section = $(section || this.range().endContainer).closest(sectionTags.join(','));
+		var endContainer = this.range().endContainer,
+			$section;
+		if(section) {
+			if(section !== endContainer && !$.contains(section,endContainer))
+				return false;
+
+			$section = $(section);
+		} else {
+			$section = $(endContainer).closest(sectionTags.join(','));
+		}
 
 		if($section.text().length === 0)
 			return true;
