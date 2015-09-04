@@ -338,9 +338,6 @@ module.exports = {
 			$section = $(endContainer).closest(sectionTags.join(','));
 		}
 
-		if($section.text().length === 0)
-			return true;
-
 		var off = offset($section[0], 'end'),
 			$nestedList = $section.children('UL,OL'),
 			result = $nestedList.length > 0 ? count($section[0], $nestedList[0]) : count($section[0]);
