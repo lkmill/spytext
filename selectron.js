@@ -51,6 +51,11 @@ function getLastPosition(node) {
 		offset: ref ? ref.textContent.length : 0
 	}
 }
+function filter(node) {
+	return (node.nodeName !== 'BR' || node.nextSibling) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+};
+
+filter.acceptNode = filter;
 
 /**
  * Uses a TreeWalker to traverse and count the offset from `root` to `ref`
@@ -69,12 +74,15 @@ function count(root, ref, countAll) {
 		tw;
 
 	if(root !== ref) {
-		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false);
+		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, countAll ? null : filter, false);
 
-		while((node = tw.nextNode()) && node !== ref) {
+		while((node = tw.nextNode())) {
 			if(countAll || isSection(node) || node.nodeName === 'BR')
 				off++;
 
+			if(node === ref)
+				break;
+	
 			if(node.nodeType === 3)
 				off = off + node.textContent.length;
 		}
@@ -93,14 +101,18 @@ function count(root, ref, countAll) {
  * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all elements
  * @return {number}	The total offset of the caret relative to `element`
  * @see count	
- * @throws {TypeError} Throws an error if `element` is undefined
  */
 function offset(element, caret, countAll) {
-	if(!element) throw new TypeError('element needs to be defined');
-
 	var rng = s().getRangeAt(0),
 		ref = rng[(caret || 'start') + 'Container'],
 		off = rng[(caret || 'start') + 'Offset'];
+
+	element = element || $(ref).closest(sectionTags.join(','))[0];
+
+	if(ref.nodeType === 1 && off > 0) {
+		ref = ref.childNodes[off - 1];
+		off = ref.textContent.length;
+	}
 
 	return count(element, ref, countAll) + off;
 }
@@ -118,15 +130,19 @@ function offset(element, caret, countAll) {
  * @return {Position}
  */
 function restore(root, offset, countAll) {
-	var tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null, false),
-		prev,
-		node;
+	var tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, countAll ? null : filter, false),
+		node,
+		ref = root;
 
-	while(offset > 0 && (node = tw.nextNode())) {
-		if(countAll || isSection(node) || node.nodeName === 'BR')
+	while(node = tw.nextNode()) {
+		if(countAll || isSection(node) || node.nodeName === 'BR') {
+			if(offset === 0)
+				break;
+
 			offset--;
+		}
 
-		prev = node;
+		ref = node;
 
 		if(node.nodeType === 3) {
 			if(offset > node.textContent.length)
@@ -137,7 +153,7 @@ function restore(root, offset, countAll) {
 	}
 
 	return {
-		ref: prev || root,
+		ref: ref,
 		offset: offset
 	};
 }
@@ -218,7 +234,7 @@ module.exports = {
 			var rangeStartOffset = offset(element, 'start', true),
 				rangeEndOffset = offset(element, 'end', true),
 				startOffset = count(element, node, true),
-				endOffset = node.nodeType === 1 ? startOffset + count(node, null, true) + 2 : startOffset + node.textContent.length;
+				endOffset = node.nodeType === 1 ? startOffset + count(node, null, true) + 1 : startOffset + node.textContent.length;
 
 			return (startOffset >= rangeStartOffset && endOffset <= rangeEndOffset ||
 					(partlyContained && ((rangeStartOffset >= startOffset && rangeStartOffset <= endOffset) || (rangeEndOffset >= startOffset && rangeEndOffset <= endOffset))));
@@ -395,16 +411,22 @@ module.exports = {
 			};
 		}
 
-		position.start.offset = position.start.offset || 0;
-
-		var start = position.start.offset === 0 ? position.start : restore(position.start.ref, position.start.offset);
-
-		var end = position.end ? restore(position.end.ref, position.end.offset) : start,
+		var start = restore(position.start.ref, position.start.offset || 0),
+			end = position.end ? restore(position.end.ref, position.end.offset || 0) : start,
 			rng = document.createRange(),
 			sel = s();
 
-		rng.setStart(start.ref, start.offset);
-		rng.setEnd(end.ref, end.offset);
+		if(start.ref.nodeName === 'BR') {
+			rng.setStartAfter(start.ref);
+		} else {
+			rng.setStart(start.ref, start.offset);
+		}
+
+		if(end.ref.nodeName === 'BR') {
+			rng.setEndAfter(end.ref);
+		} else {
+			rng.setEnd(end.ref, end.offset);
+		}
 
 		sel.removeAllRanges();
 		sel.addRange(rng);
