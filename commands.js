@@ -193,6 +193,8 @@ function deleteRangeContents(element, rng) {
 	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
 
+	var position = selectron.getLastPosition($startSection[0]);
+
 	if(!$startSection.is($endSection)) {
 		// if $startSection is not $endSection, we need to clean up any mess that
 		// deleteContents has left and then append all childNodes of $endSection to $startSection
@@ -245,13 +247,7 @@ function deleteRangeContents(element, rng) {
 
 	deleteEmptyElements(element);
 
-	if($startSection.text().length > 0) {
-		getSelection().collapseToStart();
-	} else {
-		// this is needed for firefox to place caret correctly after all contents
-		// of element has been selected and then deleted
-		selectron.set({ ref: $startSection[0] });
-	}
+	selectron.set(position);
 }
 
 /**
