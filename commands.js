@@ -8,6 +8,17 @@ var selectron = require('./selectron'),
 	descendants = require('./descendants'),
 	sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
+function listItemFilter(node) {
+	// this is to filter out LI with nested lists where only text in the nested
+	// list is selected, not text in the actual LI tag siblings to the nested <ul>)
+	//
+	// this is to fix error that occurs if you have selected LI from nested list, but not any text
+	// nodes in the LI containing the nested list. The LI containing 
+	return node.nodeName !== 'LI' ||
+		$(node).children('UL,OL').length === 0 ||
+		selectron.containsSome(_.initial(node.childNodes), true) ||
+		selectron.isAtEndOfSection(node);
+}
 
 /**
  * Uses inline CSS styles to set text-align property for
@@ -36,14 +47,7 @@ function align(element, alignment) {
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
-	var contained = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(function(node) {
-			// this is to filter out LI with nested lists where only text in the nested
-			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
-			//
-			// this is to fix error that occurs if you have selected LI from nested list, but not any text
-			// nodes in the LI containing the nested list. The LI containing 
-			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
-		}),
+	var contained = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(listItemFilter),
 		newBlocks = [],
 		$startSection = $(_.first(contained)),
 		$endSection = $(_.last(contained)),
@@ -137,14 +141,13 @@ function deleteEmptyTextNodes(element) {
 		nodeType: 3
 	}).forEach(function(textNode) {
 		if(isBlock(textNode.previousSibling) || isBlock(textNode.nextSibling)) {
-			// previous or next sibling is a block element
+			textNode.textContent = textNode.textContent.trim();
 
 			if(textNode.textContent.match(/^\s*$/)) {
 				// textNode is empty or only contains whitespaces
 				textNode.parentNode.removeChild(textNode);
 			} else if(textNode.parentNode === element) {
 				// if textNode is a child of element, wrap it in <p> tag
-				textNode.textContent = textNode.textContent.trim();
 				$(textNode).wrap('<p>');
 			}
 		}
@@ -259,14 +262,7 @@ function deleteRangeContents(element, rng) {
  */
 function indent(element){
 	var sections = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(function(node) {
-			// this filter will ensure all list items with nested lists are only selected if all
-			// descendant list items selected or the first list items in their list.
-			//
-			// this was mainly done to allow indenting ancestor list items if a selected list item is
-			// the first item in a nested list
-			return node.nodeName !== 'LI' ||
-				$(node).children('UL,OL').length === 0 ||
-				selectron.containsSome(_.initial(node.childNodes), true) ||
+			return listItemFilter(node) ||
 				selectron.containsEvery(descendants(node, {
 					nodeType: 1,
 					filter: function(node) { return !node.previousSibling; },
@@ -513,18 +509,9 @@ function link(element, attribute) {
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
-	var contained = selectron.contained(element, { selector: sectionTags.join(',') }, true),
+	var contained = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(listItemFilter),
 		listItems = [];
 	
-	contained = contained.filter(function(node) {
-		// this is to filter out LI with nested lists where only text in the nested
-		// list is selected, not text in the actual LI tag siblings to the nested <ul>)
-		//
-		// this is to fix error that occurs if you have selected LI from nested list, but not any text
-		// nodes in the LI containing the nested list. The LI containing 
-		return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
-	});
-
 	var $startSection = $(_.first(contained)),
 		$endSection = $(_.last(contained)),
 		startOffset = selectron.offset($startSection[0], 'start'),
@@ -716,14 +703,7 @@ function newline(element) {
  * @param	{Element} element - Element which is used as root for selectron.
  */
 function outdent(element){
-	var sections = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(function(node) {
-			// this is to filter out LI with nested lists where only text in the nested
-			// list is selected, not text in the actual LI tag siblings to the nested <ul>)
-			//
-			// this is to fix error that occurs if you have selected LI from nested list, but not any text
-			// nodes in the LI containing the nested list. The LI containing 
-			return node.nodeName !== 'LI' || $(node).children('UL,OL').length === 0 || selectron.containsSome(_.initial(node.childNodes), true);
-		}),
+	var sections = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(listItemFilter),
 		startOffset = selectron.offset(_.first(sections), 'start'),
 		endOffset = selectron.offset(_.last(sections), 'end');
 
