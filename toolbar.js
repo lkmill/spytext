@@ -116,7 +116,7 @@ module.exports = {
 
 			tag = tag.toUpperCase();
 
-			$(this).toggleClass('active', containedTextNodes.every(function(node) {
+			$(this).toggleClass('active', containedTextNodes.length > 0 && containedTextNodes.every(function(node) {
 				var ancestorTags = $(node).ancestors(null, _toolbar.field.el).toArray().map(mapToNodeName);
 				return ancestorTags.indexOf(tag) > -1;
 			}));
