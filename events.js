@@ -46,7 +46,7 @@ module.exports = {
 			return num >= min && num <= max;
 		}
 
-		if (e.ctrlKey) {
+		if (e.ctrlKey || e.metaKey) {
 			// prevent all ctrl key bindings
 			// NOTE paste events are handled directly
 			switch(e.keyCode) {
@@ -66,7 +66,11 @@ module.exports = {
 					break;
 				case 90://z
 					e.preventDefault();
-					this.snapback.undo();
+					if(e.shiftKey) {
+						this.snapback.redo();
+					} else {
+						this.snapback.undo();
+					}
 					break;
 				case 65://a
 					e.preventDefault();
