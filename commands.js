@@ -193,7 +193,10 @@ function deleteRangeContents(element, rng) {
 	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
 
-	var position = selectron.getLastPosition($startSection[0]);
+	var position = {
+		ref: $startSection[0],
+		offset: selectron.count($startSection[0])
+	};
 
 	if(!$startSection.is($endSection)) {
 		// if $startSection is not $endSection, we need to clean up any mess that
