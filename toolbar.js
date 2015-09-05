@@ -10,7 +10,9 @@ module.exports = {
 	 * @augments Backbone.View
 	 */
 	events: {
-		'click button': 'command',
+		'click button[data-command]': 'command',
+		'click button[data-undo]': 'undo',
+		'click button[data-redo]': 'redo',
 		mousedown: function(e) {
 			// this is needed to prevent toolbar from stealing focus
 			e.preventDefault();
@@ -26,6 +28,14 @@ module.exports = {
 	toggle: function(field) {
 		this.field = field;
 		this.$el.toggleClass('active', !!field);
+	},
+
+	undo: function() {
+		this.field.snapback.undo();
+	},
+
+	redo: function() {
+		this.field.snapback.redo();
 	},
 
 	/**
