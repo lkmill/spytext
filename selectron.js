@@ -193,8 +193,10 @@ module.exports = {
 			check = opts;
 		else if(opts instanceof NodeList || opts instanceof HTMLCollection || opts instanceof jQuery)
 			check = _.toArray(opts);
-		else
+		else {
+			if(opts.sections) opts = { selector: sectionTags.join(',') };
 			check = descendants(element, opts);
+		}
 			
 		// loop through all nodes and check if
 		// they are contained by the current selection
@@ -290,19 +292,21 @@ module.exports = {
 				while(!ref.previousSibling)
 					ref = ref.parentNode;
 
+				section = $(rng.startContainer).closest(sectionTags.join(','))[0];
+
 				this.set({
 					start: {
-						ref: rng.startContainer,
-						offset: rng.startOffset
+						ref: section,
+						offset: offset(section, 'start')
 					},
 					end: getLastPosition(ref.previousSibling)
 				});
 			}
 		} else {
-			var section = $container.closest(sectionTags.join(','))[0];
+			section = $container.closest(sectionTags.join(','))[0];
 			this.set({
 				ref: section,
-				offset: offset(section, 'start')
+				offset: offset(section, 'end')
 			});
 		}
 	},
