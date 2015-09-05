@@ -167,6 +167,8 @@ Snapback.prototype = {
 	 * Undo (if we are not already at the oldest change)
 	 */
 	undo: function() {
+		this.register();
+
 		if(this.enabled && this.undoIndex >= 0) {
 			this.undoRedo(this.undos[this.undoIndex--], true);
 		}
@@ -183,11 +185,6 @@ Snapback.prototype = {
 	undoRedo: function(undo, isUndo) {
 		this.disable();
 
-		if(this.mutations.length > 0) {
-			// register a new undo if we have unregistered mutations in the stack
-			this.register();
-		}
-		
 		// reverse the mutation collection if we are doing undone (we want to execute the mutations
 		// in the opposite order to undo them
 		var mutations = isUndo ? undo.mutations.slice(0).reverse() : undo.mutations,
