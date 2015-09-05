@@ -431,12 +431,16 @@ module.exports = {
 		if(start.ref.nodeName === 'BR') {
 			rng.setStartAfter(start.ref);
 		} else {
+			if(start.ref.nodeType === 1 && start.offset > start.ref.childNodes.length || start.ref.nodeType !== 1 && start.offset > start.ref.textContent.length)
+				return;
 			rng.setStart(start.ref, start.offset);
 		}
 
 		if(end.ref.nodeName === 'BR') {
 			rng.setEndAfter(end.ref);
 		} else {
+			if(end.ref.nodeType === 1 && end.offset > end.ref.childNodes.length || end.ref.nodeType !== 1 && end.offset > end.ref.textContent.length)
+				return;
 			rng.setEnd(end.ref, end.offset);
 		}
 
