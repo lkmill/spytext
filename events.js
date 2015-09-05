@@ -48,12 +48,12 @@ module.exports = {
 
 		if (e.ctrlKey) {
 			// prevent all ctrl key bindings
-			e.preventDefault();
 			// NOTE paste events are handled directly
 			switch(e.keyCode) {
 				case 66://b
 				case 73://i
 				case 85://u
+					e.preventDefault();
 					var arr = [];
 					arr[66] = 'strong';
 					arr[73] = 'em';
@@ -61,12 +61,15 @@ module.exports = {
 					this.command('format', arr[e.keyCode]);
 					break;
 				case 89://y
+					e.preventDefault();
 					this.snapback.redo();
 					break;
 				case 90://z
+					e.preventDefault();
 					this.snapback.undo();
 					break;
 				case 65://a
+					e.preventDefault();
 					selectron.select(this.el);
 					this.snapback.getPositions();
 					break;
