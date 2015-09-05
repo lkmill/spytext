@@ -29,6 +29,7 @@ module.exports = {
 				// navigation keys... set new (initial) position in snapback
 				// clear timeout (if any) and register undo (if any) will already have been done in keydown
 				this.snapback.getPositions();
+				this.toolbar.setActiveStyles();
 				break;
 		}
 	},
@@ -63,6 +64,7 @@ module.exports = {
 				case 89://y
 					e.preventDefault();
 					this.snapback.redo();
+					this.toolbar.setActiveStyles();
 					break;
 				case 90://z
 					e.preventDefault();
@@ -71,11 +73,13 @@ module.exports = {
 					} else {
 						this.snapback.undo();
 					}
+					this.toolbar.setActiveStyles();
 					break;
 				case 65://a
 					e.preventDefault();
 					selectron.select(this.el);
 					this.snapback.getPositions();
+					this.toolbar.setActiveStyles();
 					break;
 			}
 		} else {

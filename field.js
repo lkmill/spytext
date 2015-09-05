@@ -72,6 +72,7 @@ module.exports = {
 				_field.snapback.register();
 			});
 			$(document).on('mouseup', function(e) {
+				_field.toolbar.setActiveStyles();
 				selectron.normalize(_field.el);
 				_field.snapback.getPositions();
 			});
@@ -116,15 +117,16 @@ module.exports = {
 			// call the command
 			commands[command].apply(null,  [ field.el ].concat(_.rest(arguments)));
 
+			// normalize any text nodes in the field's element
+			field.el.normalize();
+
 			// unfortunately, we need to wrap the registation of a new Undo
 			// in a timeout
 			setTimeout(function(){
 				// register the called command as an undo
 				field.snapback.register();
+				field.toolbar.setActiveStyles();
 			});
-
-			// normalize any text nodes in the field's element
-			this.el.normalize();
 		}
 	},
 };
