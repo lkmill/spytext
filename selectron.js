@@ -105,8 +105,8 @@ function count(root, ref, countAll) {
  */
 function offset(element, caret, countAll) {
 	var rng = s().getRangeAt(0),
-		ref = rng[(caret || 'start') + 'Container'],
-		off = rng[(caret || 'start') + 'Offset'];
+		ref = rng[(caret || 'end') + 'Container'],
+		off = rng[(caret || 'end') + 'Offset'];
 
 	element = element || $(ref).closest(sectionTags.join(','))[0];
 
