@@ -49,11 +49,11 @@ function getLastPosition(node) {
 	return {
 		ref: ref || node,
 		offset: ref ? ref.textContent.length : 0
-	}
+	};
 }
 
 function filter(node) {
-	return (node.nodeName !== 'BR' || node.nextSibling && !$(node.nextSibling).is('UL,OL')) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+	return (!$(node).is('UL,OL') && (node.nodeName !== 'BR' || node.nextSibling && !$(node.nextSibling).is('UL,OL'))) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
 }
 
 filter.acceptNode = filter;
@@ -72,21 +72,21 @@ filter.acceptNode = filter;
 function count(root, ref, countAll) {
 	var node,
 		off = 0,
-		tw;
-
-	if(root !== ref) {
 		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, countAll ? null : filter, false);
 
-		while((node = tw.nextNode())) {
-			if(countAll || isSection(node) || node.nodeName === 'BR')
-				off++;
+	if(ref)
+		tw.currentNode = ref;
 
-			if(node === ref)
-				break;
-	
-			if(node.nodeType === 3)
-				off = off + node.textContent.length;
-		}
+	node = tw.currentNode;
+
+	while(node) {
+		if(node !== root && (countAll || isSection(node) || node.nodeName === 'BR'))
+			off++;
+
+		if(node !== ref && node.nodeType === 3)
+			off = off + node.textContent.length;
+
+		node = ref ? tw.previousNode() : tw.nextNode();
 	}
 
 	return off;
@@ -131,26 +131,29 @@ function offset(element, caret, countAll) {
  * @return {Position}
  */
 function restore(root, offset, countAll) {
-	var tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, countAll ? null : filter, false),
-		node,
+	var node,
 		ref = root;
 
-	while(node = tw.nextNode()) {
-		if(countAll || isSection(node) || node.nodeName === 'BR') {
-			if(offset === 0)
-				break;
+	// IE fix. IE does not allow treeWalkers to be created on textNodes
+	if(root.nodeType === 1) {
+		tw = document.createTreeWalker(root, NodeFilter.SHOW_ALL, countAll ? null : filter, false);
 
-			offset--;
-		}
+		while((node = tw.nextNode())) {
+			if(countAll || isSection(node) || node.nodeName === 'BR') {
+				if(offset === 0)
+					break;
 
-		if(!$(node).is('UL,OL'))
+				offset--;
+			}
+
 			ref = node;
 
-		if(node.nodeType === 3) {
-			if(offset > node.textContent.length)
-				offset = offset - node.textContent.length;
-			else
-				break;
+			if(node.nodeType === 3) {
+				if(offset > node.textContent.length)
+					offset = offset - node.textContent.length;
+				else
+					break;
+			}
 		}
 	}
 
@@ -329,6 +332,7 @@ module.exports = {
 	isAtEndOfSection: function(section) {
 		var endContainer = this.range().endContainer,
 			$section;
+
 		if(section) {
 			if(section !== endContainer && !$.contains(section,endContainer))
 				return false;
@@ -342,7 +346,7 @@ module.exports = {
 			$nestedList = $section.children('UL,OL'),
 			result = $nestedList.length > 0 ? count($section[0], $nestedList[0]) : count($section[0]);
 
-		return  off === result;
+		return off === result;
 	},
 
 	/**

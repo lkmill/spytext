@@ -265,8 +265,9 @@ function indent(element){
 					onlyDeepest: true
 				}), true);
 		}),
-		startSection = _.first(sections),
-		endSection = _.last(sections),
+		rng = selectron.range(),
+		startSection = $(rng.startContainer).closest(sectionTags.join(','))[0],
+		endSection = $(rng.endContainer).closest(sectionTags.join(','))[0],
 		startOffset = selectron.offset(startSection, 'start'),
 		endOffset = selectron.offset(endSection, 'end');
 
@@ -366,7 +367,8 @@ function join(element, node1, node2) {
 	if(node1.lastChild && node1.lastChild.tagName === 'BR') $(node1.lastChild).remove();
 	if(node2.lastChild && node2.lastChild.tagName === 'BR') $(node2.lastChild).remove();
 
-	var $nestedList;
+	var $nestedList,
+		position;
 
 	if(($nestedList = $(node1).children('UL,OL')).length === 1) {
 		// `node1` has a nested list, and `node2` should
@@ -376,7 +378,12 @@ function join(element, node1, node2) {
 
 		// update length to only be length of text in `node1` excluding length of
 		// text in nested list, so selectron sets the position correctly
-		length = length - $nestedList.text().length;
+		//length = length - $nestedList.text().length;
+
+		position = {
+			ref: node1,
+			offset: selectron.count(node1, $nestedList[0])
+		};
 
 		$nestedList.before(node2.childNodes);
 	} else if(!$(node1).is('LI') && ($nestedList = $(node2).children('UL,OL')).length === 1) {
@@ -391,6 +398,8 @@ function join(element, node1, node2) {
 		$nestedList.remove();
 	}
 
+	position = position || selectron.getLastPosition(node1);
+
 	// append any childNodes of `node2` to `node1` (this will already be done if `node1` had a nested list
 	$(node1).append(node2.childNodes);
 
@@ -403,10 +412,7 @@ function join(element, node1, node2) {
 		// `node2` has at least one sibling, only remove `node2`
 		$(node2).remove();
 
-	selectron.set({
-		ref: node1,
-		offset: length
-	});
+	selectron.set(position);
 }
 
 /**
@@ -671,6 +677,7 @@ function newline(element) {
 		},
 		end: selectron.getLastPosition($section[0])
 	});
+
 	// extract the contents
 	var contents = selectron.range().extractContents();
 
@@ -700,8 +707,11 @@ function newline(element) {
  */
 function outdent(element){
 	var sections = selectron.contained(element, { selector: sectionTags.join(',') }, true).filter(listItemFilter),
-		startOffset = selectron.offset(_.first(sections), 'start'),
-		endOffset = selectron.offset(_.last(sections), 'end');
+		rng = selectron.range(),
+		startSection = $(rng.startContainer).closest(sectionTags.join(','))[0],
+		endSection = $(rng.endContainer).closest(sectionTags.join(','))[0],
+		startOffset = selectron.offset(startSection, 'start'),
+		endOffset = selectron.offset(endSection, 'end');
 
 	// we outdent in the reverse order from indent
 	sections.reverse().forEach(function(li, i) {
@@ -735,11 +745,11 @@ function outdent(element){
 
 	selectron.set({
 		start: {
-			ref: _.last(sections),
+			ref: startSection,
 			offset: startOffset
 		},
 		end: {
-			ref: _.first(sections),
+			ref: endSection,
 			offset: endOffset
 		},
 	});
