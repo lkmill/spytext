@@ -145,6 +145,7 @@ module.exports = {
 			clearTimeout(this.timeout);
 			this.timeout = setTimeout(function() {
 				this.snapback.register();
+				this.toolbar.setActiveStyles();
 			}.bind(this), 300);
 		}
 	},
