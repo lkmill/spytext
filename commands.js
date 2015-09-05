@@ -398,11 +398,15 @@ function join(element, node1, node2) {
 		$nestedList.remove();
 	}
 
-	position = position || selectron.getLastPosition(node1);
+	position = position || {
+		ref: node1,
+		offset: selectron.count(node1)
+	};
 
 	// append any childNodes of `node2` to `node1` (this will already be done if `node1` had a nested list
 	$(node1).append(node2.childNodes);
 
+	node1.normalize();
 	setBR(node1);
 
 	if(!node2.nextSibling && !node2.previousSibling)
