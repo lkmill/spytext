@@ -91,7 +91,7 @@ function block(element, tag) {
 	}
 
 	contained.forEach(function(child,i){
-		var $newBlock = $('<' + tag + '>');
+		var $newBlock = $('<' + tag + '>').attr('style', $(child).attr('style'));
 
 		// place the newBlock before the reference,
 		// or append it to element
@@ -692,7 +692,7 @@ function newline(element) {
 
 	// create a new block with the same tag as blockElement, insert it before blockElement and append
 	// the contents of the extracted range to it's end
-	var $el = $('<' + $section[0].tagName + '>').insertAfter($section).append(contents.childNodes);
+	var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section).append(contents.childNodes);
 
 	// normalize any textnodes
 	$el[0].normalize();
