@@ -31,28 +31,26 @@ unordered lists and undo/redo (in the seperate module snapback).
 
 ## Spytext is Tiny
 
-Though 
-          | Unminified  | Minified  | Compressed
-----------|-------------|-----------|-------------
-jQuery		| Doesn't count| Doesn't count |
-Spytext     | 33.1kb      | 19.5kb    |
-Snapback  | 6.69kb      | 2.94kb    |
-Selectron | 6.27kb      | 3kb       |
-Total:    | 46.06kb     | 35.44kb   |
+          | Minified  | Compressed
+----------|-----------|-----------
+Spytext   | 21kb      | 6.56kb    
 
-
-### Comparison to Other RTE's
 
 ## Compatability
 
-CAUTION: This chart is not up to chart. Testing will not be done until refactoring is complete.
-
-        | Quirky    | Full Without Undo | Full      |
---------|-----------|-------------------|-----------|
-Chrome  |         9 | 16                | 18        |
-IE      |       N/A | 9                 | N/A       |
-Firefox |         1 | 3.6               | 14        |
-Safari  | Unknown   | Unknown           | 6         |
-Opera   | Unknown   | Unknown           | 15        |
+        | Quirky    | Without Undo | Full      |
+--------|-----------|--------------|-----------|
+Chrome  |         9 | 16           | 18        |
+IE      |       N/A | 9            | N/A       |
+Firefox |         1 | 3.6          | 14        |
+Safari  | Unknown   | Unknown      | 6         |
+Opera   | Unknown   | Unknown      | 15        |
 
 
+## Known Issues
+
+Calling newline in a section that contains BR's might produce weird results. Especially
+if there are trailing BR's.
+
+Calling newline at end of list item with nested list and first list item in nested list
+is empty also does weird things.
