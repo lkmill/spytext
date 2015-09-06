@@ -121,7 +121,7 @@ Snapback.prototype = {
 	 *
 	 * @return {Positions}
 	 */
-	getPositions: function(position) {
+	storePositions: function(position) {
 		return (this.position = position || selectron.get(this.element));
 	},
 
@@ -141,7 +141,7 @@ Snapback.prototype = {
 			this.undos.push({
 				positions: {
 					before: this.position,
-					after: this.getPositions()
+					after: this.storePositions()
 				},
 				mutations: this.mutations
 			});
@@ -220,6 +220,7 @@ Snapback.prototype = {
 			}
 		});
 
+		this.storePositions(position);
 		selectron.set(position);
 
 		// reenable
