@@ -195,7 +195,7 @@ function deleteRangeContents(element, rng) {
 
 	var position = {
 		ref: $startSection[0],
-		offset: selectron.count($startSection[0])
+		offset: selectron.offset($startSection[0], 'start')
 	};
 
 	if(!$startSection.is($endSection)) {
@@ -246,9 +246,11 @@ function deleteRangeContents(element, rng) {
 		$endSection.remove();
 	}
 
-	setBR($startSection[0]);
+	$startSection[0].normalize();
 
 	deleteEmptyElements(element);
+
+	setBR($startSection[0]);
 
 	selectron.set(position);
 }
