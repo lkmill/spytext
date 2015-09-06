@@ -116,10 +116,11 @@ module.exports = {
 
 			tag = tag.toUpperCase();
 
-			$(this).toggleClass('active', containedTextNodes.length > 0 && containedTextNodes.every(function(node) {
-				var ancestorTags = $(node).ancestors(null, _toolbar.field.el).toArray().map(mapToNodeName);
-				return ancestorTags.indexOf(tag) > -1;
-			}));
+			var rng = selectron.range();
+
+			$(this).toggleClass('active', (containedTextNodes.length > 0 && containedTextNodes.every(function(node) {
+				return $(node).ancestors(null, _toolbar.field.el).is(tag);
+			})) || rng.collapsed && ($(rng.startContainer).is(tag) || $(rng.startContainer).ancestors(null, _toolbar.field.el).is(tag)));
 		});
 
 		this.$('button[data-undo]').prop('disabled', this.field.snapback.undoIndex === -1);
