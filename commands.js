@@ -430,50 +430,92 @@ function join(element, node1, node2) {
  * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
 function format(element, tag){
+	function unwrap(el) {
+		$(tag, el).each(function() {
+			if(this.firstChild)
+				$(this.firstChild).unwrap();
+			else
+				$(this.remove());
+		});
+	}
+
 	if(!tag) return removeFormat(element);
 
-	var position = selectron.get(element),
-		containedTextNodes = selectron.contained(element, { nodeType: 3 }, true),
-		rng = selectron.range();
+	var rng = selectron.range(),
+		$wrapper = $('<' + tag + '>');
 
-	if(rng.startOffset > 0) {
-		// range is not at the start of first selected node, we need to split the text node
-		node = rng.startContainer;
+	if(!rng.collapsed) {
+		var position = selectron.get(element),
+			containedSections = selectron.contained(element, { sections: true }, true),
+			startSection = _.first(containedSections),
+			endSection = _.last(containedSections),
+			containedTextNodes = selectron.contained(element, { nodeType: 3 }, true),
+			containedTagElements = selectron.contained(element, { selector: tag });
+		
+		var startPos = {
+			ref: rng.startContainer,
+			offset: rng.startOffset
+		};
+		var endPos = {
+			ref: rng.endContainer,
+			offset: rng.endOffset
+		};
 
-		// select the innermost textNode
-		while(node && node.nodeType !== 3) node = node.firstChild;
+		var contents, $clone;
+		containedSections.slice(1,-1).forEach(function(section) {
+			unwrap(section);
+			childNodes = _.toArray(section.childNodes);
+			$clone = $wrapper.clone();
+			$(section).prepend($clone);
+			$clone.append(childNodes);
+		});
 
-		if(node)
-			// split the text node. we only want to style the second part of the split textNode,
-			// which means we need to replace the reference to node with the new node returned by
-			// splitText
-			containedTextNodes.splice(0, 1, node.splitText(rng.startOffset));
+		if(startSection !== endSection) {
+			selectron.set({
+				start: {
+					ref: endSection,
+					offset: 0
+				},
+				end: endPos
+			}, true);
+			$clone = $wrapper.clone();
+			contents = selectron.range().extractContents();
+			unwrap(contents);
+			$(endSection).prepend($clone);
+			$clone.append(contents.childNodes);
+
+			endSection.normalize();
+			deleteEmptyElements(endSection);
+			tidy(endSection);
+			endSection.normalize();
+
+			selectron.set({
+				start: startPos,
+				end: {
+					ref: startSection,
+					offset: startSection.childNodes.length
+				}
+			}, true);
+		}
+
+		contents = selectron.range().extractContents();
+		unwrap(contents);
+		$clone = $wrapper.clone();
+		rng.insertNode($clone[0]);
+		$clone.append(contents.childNodes);
+
+		startSection.normalize();
+		deleteEmptyElements(startSection);
+		tidy(startSection);
+		startSection.normalize();
+
+		// restore the selection
+		selectron.set(position);
+	} else {
+		rng.insertNode($wrapper[0]);
+		selectron.set({ ref: $wrapper[0] }, true);
 	}
-
-	if(rng.endOffset < rng.endContainer.textContent.length) {
-		// range is not at the end of last selected node, we need to split the text node
-		node = rng.endContainer;
-
-		// selected the innermost textNode
-		while(node.firstChild && node.nodeType !== 3) node = node.firstChild;
-
-		if(node)
-			// simply split the text node.we only want to style the first part of the split textNode,
-			// which will still be the node referenced by `node`
-			node.splitText(rng.endOffset);
-	}
-
-	var $wrapper = _.isString(tag) ? $('<' + tag + '></' + tag + '>') : $(tag).clone();
-
-	$(containedTextNodes).wrap($wrapper);
-
-	// TODO: Tidy, ie <b>Hello <b>Again</b><b>. It continues.</b></b> >> <b>Hello Again. It continues.</b>
-	selectron.contained(element, element.children, true).forEach(function(contained) {
-		contained.normalize();
-	});
-
-	// restore the selection
-	selectron.set(position);
+	
 }
 
 /**
@@ -675,24 +717,31 @@ function newline(element) {
 		return;
 	}
 
-	// Select everything from the start of blockElement to the caret. This
-	// includes everything that will be moved into the new block placed before the current
-	selectron.set({
-		start: {
-			ref: rng.startContainer,
-			offset: rng.startOffset
-		},
-		end: selectron.getLastPosition($section[0])
-	});
-
-	// extract the contents
-	var contents = selectron.range().extractContents();
-
-	deleteEmptyElements($section[0]);
-
 	// create a new block with the same tag as blockElement, insert it before blockElement and append
 	// the contents of the extracted range to it's end
-	var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section).append(contents.childNodes);
+	var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
+
+
+	if(!selectron.isAtEndOfSection()) {
+		// Select everything from the start of blockElement to the caret. This
+		// includes everything that will be moved into the new block placed before the current
+		selectron.set({
+			start: {
+				ref: rng.startContainer,
+				offset: rng.startOffset
+			},
+			end: {
+				ref: $section[0],
+				offset: $section[0].childNodes.length
+			}
+		}, true);
+
+		// extract the contents
+		var contents = selectron.range().extractContents();
+
+		deleteEmptyElements($section[0]);
+		$el.append(contents.childNodes);
+	}
 
 	// normalize any textnodes
 	$el[0].normalize();
@@ -843,9 +892,105 @@ function paste(element, dataTransfer) {
  * @static
  * @param	{Element} element - Only used to normalize text nodes
  */
-function removeFormat(element) {
-	document.execCommand('removeFormat');
-	element.normalize();
+function removeFormat(element, tag) {
+	function unwrap(el) {
+		$(tag, el).each(function() {
+			if(this.firstChild)
+				$(this.firstChild).unwrap();
+			else
+				$(this.remove());
+		});
+	}
+
+	if(!tag) {
+		document.execCommand('removeFormat');
+		element.normalize();
+	} else {
+		var rng = selectron.range();
+
+		if(!rng.collapsed) {
+			var position = selectron.get(element),
+				containedSections = selectron.contained(element, { sections: true }, true),
+				startSection = _.first(containedSections),
+				endSection = _.last(containedSections);
+			
+			var startPos = {
+				ref: rng.startContainer,
+				offset: rng.startOffset
+			};
+			var endPos = {
+				ref: rng.endContainer,
+				offset: rng.endOffset
+			};
+
+			var contents, $clone;
+
+			containedSections.slice(1,-1).forEach(unwrap);
+
+			if(startSection !== endSection) {
+				selectron.set({
+					start: {
+						ref: endSection,
+						offset: 0
+					},
+					end: endPos
+				}, true);
+				contents = selectron.range().extractContents();
+				unwrap(contents);
+				$(endSection).prepend(contents.childNodes);
+
+				endSection.normalize();
+				deleteEmptyElements(endSection);
+				tidy(endSection);
+				endSection.normalize();
+
+				selectron.set({
+					start: startPos,
+					end: {
+						ref: startSection,
+						offset: startSection.childNodes.length
+					}
+				}, true);
+			}
+
+			contents = selectron.range().extractContents();
+			unwrap(contents);
+			if(startSection !== endSection)
+				$(startSection).append(contents.childNodes);
+			else {
+				selectron.set(startPos);
+				rng = selectron.range();
+				ref = rng.endContainer;
+				var $tag = $(ref).closest(tag, element);
+				if($tag.length === 1) {
+					selectron.set({
+						start: {
+							ref: ref,
+							offset: rng.endOffset
+						},
+						end: {
+							ref: $tag[0],
+							offset: $tag[0].childNodes.length
+						}
+					}, true);
+					var newContents = selectron.range().extractContents();
+					unwrap(newContents);
+					$('<' + tag + '>').insertAfter($tag).append(newContents.childNodes);
+					ref = $tag[0];
+				}
+				$(ref).after(contents.childNodes);
+			}
+
+			startSection.normalize();
+			deleteEmptyElements(startSection);
+			tidy(startSection);
+			startSection.normalize();
+
+			// restore the selection
+			selectron.set(position);
+		}
+	}
+	
 }
 
 /**
@@ -876,6 +1021,38 @@ function setBR(element) {
 		});
 	}
 }
+
+function tidy(element) {
+	// deleteEmptyElements should be called first so we do not have to worrry about empty elements
+	$('STRONG,U,EM,STRIKE', element).each(function() {
+		if(!this.parentNode) return;
+
+		$(this.tagName, this).each(function() {
+			if(this.firstChild)
+				$(this.firstChild).unwrap();
+		});
+
+		var next = this.nextSibling;
+		if(next && next.nodeType === 1) {
+			if(next.tagName === this.tagName) {
+				$(this).append(next.childNodes);
+				$(next).remove();
+			} else {
+				var ref = next;
+				while(ref.firstChild && ref.firstChild === ref.lastChild) {
+					ref = ref.firstChild;
+					if(ref.tagName === this.tagName) {
+						$(this.firstChild).unwrap();
+						$(this).append(next.childNodes);
+						$(next).remove();
+						break;
+					}
+				}
+			}
+		}
+	});
+}
+
 module.exports = {
 	align: align,
 	block: block,
