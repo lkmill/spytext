@@ -20,7 +20,6 @@ module.exports = {
 
 		if(e.charCode > 0 && e.charCode !== 13) {
 			// Shift+Enter is pressed... let browsers handle it natively. NOTE: Safari does not insert BR on Shift+Enter
-			console.log('preventing default');
 
 			e.preventDefault();
 			var rng = selectron.range(),
