@@ -420,15 +420,18 @@ module.exports = {
 	 *
 	 * @param {Position|Positions} position - If a Position, a collapsed range will be set with start and end caret set to `position`
 	 */
-	set: function(position) {
+	set: function(position, force) {
 		if(position.ref) {
 			position = {
 				start: position
 			};
 		}
+		position.start.offset = position.start.offset || 0;
+		if(position.end)
+			position.end.offset = position.end.offset || 0;
 
-		var start = restore(position.start.ref, position.start.offset || 0),
-			end = position.end ? restore(position.end.ref, position.end.offset || 0) : start,
+		var start = force ? position.start : restore(position.start.ref, position.start.offset),
+			end = position.end ? force ? position.end : restore(position.end.ref, position.end.offset) : start,
 			rng = document.createRange(),
 			sel = s();
 
