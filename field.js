@@ -61,9 +61,9 @@ module.exports = {
 		_field.toolbar.toggle(_field);
 
 		// i think the timeout is because of the range not being initialized
-		// so snapback.getPositions/selectron produces an error
+		// so snapback.storePositions/selectron produces an error
 		setTimeout(function() {
-			_field.snapback.getPositions();
+			_field.snapback.storePositions();
 
 			// this is to capture events when mousedown on 
 			// fields element but mouseup outside
@@ -72,9 +72,9 @@ module.exports = {
 				_field.snapback.register();
 			});
 			$(document).on('mouseup', function(e) {
-				_field.toolbar.setActiveStyles();
 				selectron.normalize(_field.el);
-				_field.snapback.getPositions();
+				_field.toolbar.setActiveStyles();
+				_field.snapback.storePositions();
 			});
 		});
 	},

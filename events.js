@@ -14,6 +14,34 @@ module.exports = {
 	 * The keyup event listeners only listens to navigation keys.
 	 * After a navigation key has been pressed, update the position in snapback
 	 */
+	keypress: function(e) {
+		//The keypress event is fired when a key is pressed down and that key normally produces a character value (use input instead).
+		// Firefox will fire keypress for some other keys as well, but they will have charCode === 0.
+
+		if(e.charCode > 0 && e.charCode !== 13) {
+			// Shift+Enter is pressed... let browsers handle it natively. NOTE: Safari does not insert BR on Shift+Enter
+			console.log('preventing default');
+
+			e.preventDefault();
+			var rng = selectron.range(),
+				offset = rng.startOffset,
+				container = rng.startContainer,
+				c = String.fromCharCode(e.charCode);
+
+			if(container.nodeType === 3) {
+				container.textContent = container.textContent.slice(0,offset) + c + container.textContent.slice(offset);
+				offset++;
+			} else {
+				container = document.createTextNode(c);
+				rng.insertNode(container);
+				offset = 1;
+			}
+			selectron.set({
+				ref: container,
+				offset: offset
+			});
+		}
+	},
 	keyup: function(e) {
 		// TODO make sure we cover all different kinds of navigation keys, such as
 		// home and end
@@ -28,7 +56,8 @@ module.exports = {
 			case 40:
 				// navigation keys... set new (initial) position in snapback
 				// clear timeout (if any) and register undo (if any) will already have been done in keydown
-				this.snapback.getPositions();
+				selectron.normalize(this.el);
+				this.snapback.storePositions();
 				this.toolbar.setActiveStyles();
 				break;
 		}
@@ -78,7 +107,7 @@ module.exports = {
 				case 65://a
 					e.preventDefault();
 					selectron.select(this.el);
-					this.snapback.getPositions();
+					this.snapback.storePositions();
 					this.toolbar.setActiveStyles();
 					break;
 			}
