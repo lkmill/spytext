@@ -29,12 +29,9 @@ function listItemFilter(node) {
  * @return {string} alignment
  */
 function align(element, alignment) {
-	// get all partlyContained children of element
-	var containedChildren = selectron.contained(element.children, true);
-
-	containedChildren.forEach(function(child) {
+	selectron.contained.blocks.forEach(function(child) {
 		// do not set text-align property on lists
-		if(!$(child).is('ul,ol')) $(child).css('text-align', alignment);
+		$(child).css('text-align', alignment);
 	});
 }
 
@@ -47,10 +44,10 @@ function align(element, alignment) {
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
-	var contained = selectron.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter),
+	var containedSections = selectron.contained.sections.filter(listItemFilter),
 		newBlocks = [],
-		$startSection = $(_.first(contained)),
-		$endSection = $(_.last(contained)),
+		$startSection = $(_.first(containedSections)),
+		$endSection = $(_.last(containedSections)),
 		startOffset = selectron.offset($startSection[0], 'start'),
 		endOffset = selectron.offset($endSection[0], 'end'),
 		$ref;
@@ -90,7 +87,7 @@ function block(element, tag) {
 		$ref = $endSection.next();
 	}
 
-	contained.forEach(function(child,i){
+	containedSections.forEach(function(child,i){
 		var $newBlock = $('<' + tag + '>').attr('style', $(child).attr('style'));
 
 		// place the newBlock before the reference,
@@ -262,7 +259,7 @@ function deleteRangeContents(element, rng) {
  * @param	{Element} element - Element which descendants to look for empty text nodes
  */
 function indent(element){
-	var sections = selectron.contained({ selector: sectionTags.join(',') }, true).filter(function(node) {
+	var listItems = selectron.contained.listItems.filter(function(node) {
 			return listItemFilter(node) ||
 				selectron.containsEvery(descendants(node, {
 					nodeType: 1,
@@ -270,16 +267,9 @@ function indent(element){
 					onlyDeepest: true
 				}), true);
 		}),
-		rng = selectron.range(),
-		startSection = $(rng.startContainer).closest(sectionTags.join(','))[0],
-		endSection = $(rng.endContainer).closest(sectionTags.join(','))[0],
-		startOffset = selectron.offset(startSection, 'start'),
-		endOffset = selectron.offset(endSection, 'end');
+		positions = selectron.get();
 
-	sections.forEach(function(el) {
-		// only run the command of 'LI' sections
-		if(!$(el).is('LI')) return;
-
+	listItems.forEach(function(el) {
 		var $prev = $(el).prev();
 
 		if($prev.length === 1) {
@@ -300,16 +290,7 @@ function indent(element){
 	});
 
 	// restore the selection
-	selectron.set({
-		start: {
-			ref: startSection,
-			offset: startOffset
-		},
-		end: {
-			ref: endSection,
-			offset: endOffset
-		},
-	});
+	selectron.set(positions);
 }
 
 /**
@@ -447,12 +428,10 @@ function format(element, tag){
 		$wrapper = $('<' + tag + '>');
 
 	if(!rng.collapsed) {
-		var position = selectron.get(element),
-			containedSections = selectron.contained({ sections: true }, true),
+		var position = selectron.get(),
+			containedSections = selectron.contained.sections,
 			startSection = _.first(containedSections),
-			endSection = _.last(containedSections),
-			containedTextNodes = selectron.contained({ nodeType: 3 }, true),
-			containedTagElements = selectron.contained({ selector: tag });
+			endSection = _.last(containedSections);
 		
 		var startPos = {
 			ref: rng.startContainer,
@@ -515,9 +494,8 @@ function format(element, tag){
 		selectron.set(position);
 	} else {
 		rng.insertNode($wrapper[0]);
-		selectron.set({ ref: $wrapper[0] }, true);
+		selectron.set({ ref: $wrapper[0] });
 	}
-	
 }
 
 /**
@@ -562,11 +540,11 @@ function link(element, attribute) {
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
-	var contained = selectron.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter),
+	var sections = selectron.contained.sections.filter(listItemFilter),
 		listItems = [];
 	
-	var $startSection = $(_.first(contained)),
-		$endSection = $(_.last(contained)),
+	var $startSection = $(_.first(sections)),
+		$endSection = $(_.last(sections)),
 		startOffset = selectron.offset($startSection[0], 'start'),
 		endOffset = selectron.offset($endSection[0], 'end'),
 		$list;
@@ -623,7 +601,7 @@ function list(element, tag) {
 		$list = $('<' + tag + '>').insertBefore($startSection);
 	}
 
-	contained.forEach(function(child,i){
+	sections.forEach(function(child,i){
 		var $listItem;
 
 		if(child.tagName === 'LI') {
@@ -723,7 +701,6 @@ function newline(element) {
 	// the contents of the extracted range to it's end
 	var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
 
-
 	if(!selectron.isAtEndOfSection()) {
 		// Select everything from the start of blockElement to the caret. This
 		// includes everything that will be moved into the new block placed before the current
@@ -764,7 +741,7 @@ function newline(element) {
  * @param	{Element} element - Element which is used as root for selectron.
  */
 function outdent(element){
-	var sections = selectron.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter),
+	var listItems = selectron.contained.listItems.filter(listItemFilter),
 		rng = selectron.range(),
 		startSection = $(rng.startContainer).closest(sectionTags.join(','))[0],
 		endSection = $(rng.endContainer).closest(sectionTags.join(','))[0],
@@ -772,7 +749,7 @@ function outdent(element){
 		endOffset = selectron.offset(endSection, 'end');
 
 	// we outdent in the reverse order from indent
-	sections.reverse().forEach(function(li, i) {
+	listItems.reverse().forEach(function(li, i) {
 		if(!$(li).is('LI') || $(li).parent().is($(element).children())) {
 			// do nothing if not a list item, or if list item
 			// is already top level (level 1), ie if it's parent is a child
@@ -912,9 +889,9 @@ function removeFormat(element, tag) {
 
 		if(!rng.collapsed) {
 			var position = selectron.get(element),
-				containedSections = selectron.contained({ sections: true }, true),
-				startSection = _.first(containedSections),
-				endSection = _.last(containedSections);
+				sections = selectron.contained.sections,
+				startSection = _.first(sections),
+				endSection = _.last(sections);
 			
 			var startPos = {
 				ref: rng.startContainer,
@@ -927,7 +904,7 @@ function removeFormat(element, tag) {
 
 			var contents, $clone;
 
-			containedSections.slice(1,-1).forEach(unwrap);
+			sections.slice(1,-1).forEach(unwrap);
 
 			if(startSection !== endSection) {
 				selectron.set({
