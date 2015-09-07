@@ -377,6 +377,9 @@ module.exports = {
 	get: function(element, countAll) {
 		element = element || this._element || document.body;
 
+		if(element === this._element && this._positions)
+			return this._positions;
+
 		return {
 			start: {
 				ref: element,
@@ -458,7 +461,47 @@ module.exports = {
 		sel.addRange(rng);
 	},
 
+	setContained: function() {
+		var _selectron = this;
+		
+		this.contained.sections = this.contained({ sections: true }, true);
+
+		this.contained.listItems = _.unique(this.contained.sections.filter(function(node) {
+			return node.nodeName === 'LI';
+		}));
+
+		this.contained.lists = _.unique(this.contained.listItems.map(function(node) {
+			return $(node).closest(_selectron._element.children)[0];
+		}));
+
+		this.contained.blocks = this.contained.sections.filter(function(node) {
+			return node.nodeName !== 'LI';
+		});
+
+		var commonAncestor = this.range().commonAncestorContainer;
+
+		if(commonAncestor.nodeType === 3) commonAncestor = commonAncestor.parentNode;
+
+		this.contained.textNodes = this.contained({ element: commonAncestor, nodeType: 3 }, true);
+	},
+
 	setElement: function(element) {
 		this._element = element;
+	},
+	
+	update: function() {
+		this.normalize();
+		this._positions = {
+			start: {
+				ref: this._element,
+				offset: offset(this._element, 'start')
+			},
+			end: {
+				ref: this._element,
+				offset: offset(this._element, 'end')
+			}
+		};
+
+		this.setContained();
 	}
 };
