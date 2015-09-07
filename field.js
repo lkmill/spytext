@@ -60,6 +60,7 @@ module.exports = {
 		// toggle the toolbar, passing the current field to it
 		_field.toolbar.toggle(_field);
 
+		selectron.setElement(_field.el);
 		// i think the timeout is because of the range not being initialized
 		// so snapback.storePositions/selectron produces an error
 		setTimeout(function() {

@@ -48,7 +48,7 @@ module.exports = {
 
 	setActiveStyles: function() {
 		var _toolbar = this;
-		var containedSections = selectron.contained(this.field.el, { sections: true }, true);
+		var containedSections = selectron.contained({ sections: true }, true);
 
 		var containedSectionTags = _.unique(containedSections.map(mapToNodeName));
 
@@ -107,7 +107,7 @@ module.exports = {
 
 		var commonAncestor = selectron.range().commonAncestorContainer;
 		if(commonAncestor.nodeType === 3) commonAncestor = commonAncestor.parentNode;
-		var containedTextNodes = selectron.contained(commonAncestor, { nodeType: 3 }, true);
+		var containedTextNodes = selectron.contained({ element: commonAncestor, nodeType: 3 }, true);
 
 		this.$('button[data-command="format"]').each(function() {
 			var tag = $(this).data('option');
