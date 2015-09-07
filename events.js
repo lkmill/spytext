@@ -55,6 +55,7 @@ module.exports = {
 			case 40:
 				// navigation keys... set new (initial) position in snapback
 				// clear timeout (if any) and register undo (if any) will already have been done in keydown
+				selectron.normalize();
 				selectron.update();
 				this.snapback.storePositions();
 				this.toolbar.setActiveStyles();
