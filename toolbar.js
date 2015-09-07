@@ -49,6 +49,8 @@ module.exports = {
 	},
 
 	setActiveStyles: function() {
+		if(!this.field) return this.toggle();
+
 		var _toolbar = this;
 
 		$('button[data-command]').each(function() {
