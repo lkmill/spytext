@@ -489,7 +489,29 @@ module.exports = {
 			this.update();
 	},
 
-	setActiveStyles: function() {
+	setElement: function(element) {
+		this._element = element;
+	},
+	
+	update: function(positions, updateContained, updateStyles) {
+		if(_.isObject(positions)) {
+			this._positions = positions.ref ? {
+				start: positions,
+				end: positions
+			} : positions;
+		} else if (positions !== false) {
+			delete this._positions;
+			this._positions = this.get();
+		}
+
+		if(updateContained !== false)
+			this.updateContained();
+
+		if(updateStyles !== false)
+			this.updateStyles();
+	},
+
+	updateStyles: function() {
 		var _selectron = this;
 
 		var formats = [ 'strong', 'u', 'em', 'strike' ];
@@ -525,7 +547,7 @@ module.exports = {
 		});
 	},
 
-	setContained: function() {
+	updateContained: function() {
 		var _selectron = this;
 		
 		this.contained.sections = this.contained({ sections: true }, true);
@@ -543,26 +565,5 @@ module.exports = {
 		var commonAncestor = this.range().commonAncestorContainer;
 
 		this.contained.textNodes = commonAncestor.nodeType === 3 ? [ commonAncestor ] : this.contained({ element: commonAncestor, nodeType: 3 }, true);
-	},
-
-	setElement: function(element) {
-		this._element = element;
-	},
-	
-	update: function(positions) {
-		this.normalize();
-		this._positions = positions || {
-			start: {
-				ref: this._element,
-				offset: offset(this._element, 'start')
-			},
-			end: {
-				ref: this._element,
-				offset: offset(this._element, 'end')
-			}
-		};
-
-		this.setContained();
-		this.setActiveStyles();
 	}
 };
