@@ -36,22 +36,6 @@ function isSection(node) {
 	//return node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
 }
 
-function getLastPosition(node) {
-	var ref = node.lastChild;
-		
-	while(ref) {
-		if(ref.nodeType === 3)
-			break;
-
-		ref = ref.lastChild || ref.previousSibling;
-	}
-
-	return {
-		ref: ref || node,
-		offset: ref ? ref.textContent.length : 0
-	};
-}
-
 function filter(node) {
 	return (!$(node).is('UL,OL') && (node.nodeName !== 'BR' || node.nextSibling && !$(node.nextSibling).is('UL,OL'))) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
 }
@@ -293,12 +277,13 @@ module.exports = {
 
 	normalize: function() {
 		var rng = this.range(),
-			$container = $(rng.endContainer);
+			section;
 
 		if(!rng.collapsed) {
-			if($container.is(sectionTags.join(','))) {
-				var ref = $container[0];
+			if($(rng.endContainer).is(sectionTags.join(','))) {
+				var ref = rng.endContainer;
 
+				// TODO this looks like it could potentially be dangerous
 				while(!ref.previousSibling)
 					ref = ref.parentNode;
 
@@ -306,17 +291,17 @@ module.exports = {
 
 				this.restore({
 					start: this.get('start', section),
-					end: getLastPosition(ref.previousSibling)
+					end: {
+						ref: ref.previousSibling,
+						offset: count(ref.previousSibling)
+					}
 				});
 			}
 		} else {
-			section = $container.closest(sectionTags.join(','))[0];
-
 			if(rng.endContainer.nodeType === 3 && rng.endOffset === 0) {
-				this.restore({
-					ref: section,
-					offset: offset(section, 'end')
-				});
+				section = $(rng.endContainer).closest(sectionTags.join(','))[0];
+
+				this.restore(this.get('end', section));
 			}
 		}
 	},
@@ -414,8 +399,6 @@ module.exports = {
 			offset: offset(element, caret, countAll)
 		};
 	},
-
-	getLastPosition: getLastPosition,
 
 	/**
 	 * Sets the current selection to contain `node`
