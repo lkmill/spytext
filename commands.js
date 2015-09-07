@@ -975,10 +975,9 @@ function setBR(element) {
 	if(_.isArray(element)) 
 		return element.forEach(setBR);
 	
-	if(element.firstChild && element.firstChild.tagName !== 'BR' && element.textContent.length === 0)
-		$(element).empty();
-
-	if(!element.firstChild || $(element.firstChild).is('UL,OL')) {
+	if(!element.firstChild ||
+		($(element.lastChild).is('UL,OL') && $(element).text().length - $(element.lastChild).text().length === 0 &&
+			$(element.lastChild).prevAll('br').length === 0 && $(element.lastChild).prevAll().find('br').length === 0)) {
 		$(element).prepend('<BR>');
 	} else {
 		$('BR:last-child', element).each(function(i, br) {
