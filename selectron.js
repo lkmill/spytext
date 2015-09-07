@@ -314,10 +314,12 @@ module.exports = {
 			}
 		} else {
 			section = $container.closest(sectionTags.join(','))[0];
-			this.restore({
-				ref: section,
-				offset: offset(section, 'end')
-			});
+			if(rng.endContainer.nodeType === 3 && rng.endOffset === 0) {
+				this.restore({
+					ref: section,
+					offset: offset(section, 'end')
+				});
+			}
 		}
 	},
 
@@ -487,6 +489,42 @@ module.exports = {
 			this.update();
 	},
 
+	setActiveStyles: function() {
+		var _selectron = this;
+
+		var formats = [ 'strong', 'u', 'em', 'strike' ];
+	
+		this.styles = {};
+
+		this.styles.alignment = this.contained.blocks.reduce(function(result, block) {
+			if(result === undefined) return result;
+
+			var newResult = getComputedStyle(block).textAlign;
+
+			if(newResult === 'start') newResult = 'left'; 
+
+			if(result === null) result = newResult;
+
+			return result === newResult ? newResult : undefined;
+		}, null);
+
+		this.styles.formats = [];
+
+		var textNodes = _selectron.contained.textNodes;
+
+		this.styles.blocks = _.unique(_selectron.contained.blocks.map(function(node) {
+			return node.nodeName;
+		}));
+
+		formats.forEach(function(tag) {
+			var rng = _selectron.range();
+			if((textNodes.length > 0 && textNodes.every(function(node) { return $(node).ancestors(null, _selectron.element).is(tag); })) ||
+				rng.collapsed && ($(rng.startContainer).is(tag) || $(rng.startContainer).ancestors(null, _selectron.element).is(tag)))
+
+				_selectron.styles.formats.push(tag);
+		});
+	},
+
 	setContained: function() {
 		var _selectron = this;
 		
@@ -496,7 +534,7 @@ module.exports = {
 			return node.nodeName === 'LI';
 		}));
 
-		this.contained.lists = this.contained($(this._element).children('UL,OL'));
+		this.contained.lists = this.contained($(this._element).children('UL,OL'), true);
 
 		this.contained.blocks = this.contained.sections.filter(function(node) {
 			return node.nodeName !== 'LI';
@@ -525,5 +563,6 @@ module.exports = {
 		};
 
 		this.setContained();
+		this.setActiveStyles();
 	}
 };

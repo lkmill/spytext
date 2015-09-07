@@ -35,6 +35,13 @@ function align(element, alignment) {
 	});
 }
 
+align.active = function(option, field) {
+	return !!selectron.styles.alignment && selectron.styles.alignment === option;
+};
+
+align.disabled = function() {
+	return selectron.contained.blocks.length === 0;
+};
 /**
  * Changes all (partly) contained sections in the current selection to (block
  * level) elements of tagName `tag`.
@@ -44,6 +51,8 @@ function align(element, alignment) {
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
+	if(block.active(tag)) return;
+
 	var sections = selectron.contained.sections.filter(listItemFilter),
 		newBlocks = [],
 		$startSection = $(_.first(sections)),
@@ -112,6 +121,10 @@ function block(element, tag) {
 	// set the selection
 	selectron.restore(positions, true);
 }
+
+block.active = function(tag) {
+	return selectron.styles.blocks.length === 1 && selectron.styles.blocks[0] === tag.toUpperCase();
+};
 
 /**
  * Removes all empty text nodes adjacent to block level elements
@@ -245,7 +258,9 @@ function deleteRangeContents(element, rng) {
  * @static
  * @param	{Element} element - Element which descendants to look for empty text nodes
  */
-function indent(element){
+function indent(element, isOutdent){
+	if(isOutdent) return outdent(element);
+
 	var listItems = selectron.contained.listItems.filter(function(node) {
 			return listItemFilter(node) ||
 				selectron.containsEvery(descendants(node, {
@@ -279,6 +294,10 @@ function indent(element){
 	// restore the selection
 	selectron.restore(positions, true);
 }
+
+indent.disabled = function() {
+	return selectron.contained.lists.length === 0;
+};
 
 /**
  * Join `section` with the previous section. Uses a treeWalker to determine
@@ -409,7 +428,7 @@ function format(element, tag){
 		});
 	}
 
-	if(!tag) return removeFormat(element);
+	if(format.active(tag)) return removeFormat(element, tag);
 
 	var rng = selectron.range(),
 		$wrapper = $('<' + tag + '>');
@@ -482,6 +501,10 @@ function format(element, tag){
 	}
 }
 
+format.active = function(option) {
+	return !!option && selectron.styles.formats.indexOf(option.toLowerCase()) > -1;
+};
+
 /**
  * Formats text by wrapping text nodes in elements with tagName `tag`.
  *
@@ -524,6 +547,8 @@ function link(element, attribute) {
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
+	if(list.active(tag)) return;
+
 	var sections = selectron.contained.sections.filter(listItemFilter),
 		listItems = [],
 		positions = selectron.get();
@@ -645,6 +670,10 @@ function list(element, tag) {
 
 	selectron.restore(positions, true);
 }
+
+list.active = function(option) {
+	return selectron.contained.lists.length === 1 && $(selectron.contained.lists).is(option);
+};
 
 /**
  * Creates a new section (same type as the type of section the caret is currently in.)
@@ -850,7 +879,7 @@ function removeFormat(element, tag) {
 
 		if(!rng.collapsed) {
 			var positions = selectron.get(element),
-				sections = selectron.contained.sections,
+				sections = selectron.contained.sections.filter(listItemFilter),
 				startSection = _.first(sections),
 				endSection = _.last(sections);
 			
