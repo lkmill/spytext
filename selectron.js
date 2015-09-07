@@ -305,15 +305,13 @@ module.exports = {
 				section = $(rng.startContainer).closest(sectionTags.join(','))[0];
 
 				this.restore({
-					start: {
-						ref: section,
-						offset: offset(section, 'start')
-					},
+					start: this.get('start', section),
 					end: getLastPosition(ref.previousSibling)
 				});
 			}
 		} else {
 			section = $container.closest(sectionTags.join(','))[0];
+
 			if(rng.endContainer.nodeType === 3 && rng.endOffset === 0) {
 				this.restore({
 					ref: section,
@@ -383,35 +381,37 @@ module.exports = {
 	 * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all steps
 	 * @return {Positions} ref element of both start and end Position will be `element`
 	 */
-	get: function(element, countAll) {
-		if(element === true) {
-			var rng = this.range();
+	get: function(caret, element, countAll) {
+		var rng = this.range();
+
+		if(!_.isString(caret)) {
+			var end = this.get('end', caret, element);
+
+			// we base start on end instead of vice versa
+			// because IE treats startOffset very weird sometimes
 			return {
-				start: {
-					ref: rng.startContainer,
-					offset: rng.startOffset
-				},
-				end: {
-					ref: rng.endContainer,
-					offset: rng.endOffset
-				}
+				end: end,
+				start: rng.collapsed ? end : this.get('start', caret, element)
+			};
+		} else if (caret !== 'start' && caret !== 'end') {
+			throw new Error('You have to pass "start" or "end" if you pass a string as the first parameter');
+		}
+
+		if(element === true) {
+			return {
+				ref: rng[ caret + 'Container' ],
+				offset: rng[ caret + 'Offset' ]
 			};
 		}
 
 		element = element || this._element || document.body;
 
 		if(element === this._element && this._positions)
-			return this._positions;
+			return this._positions[ caret ];
 
 		return {
-			start: {
-				ref: element,
-				offset: offset(element, 'start', countAll)
-			},
-			end: {
-				ref: element,
-				offset: offset(element, 'end', countAll)
-			}
+			ref: element,
+			offset: offset(element, caret, countAll)
 		};
 	},
 
