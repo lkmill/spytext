@@ -73,7 +73,7 @@ module.exports = {
 				_field.snapback.register();
 			});
 			$(document).on('mouseup', function(e) {
-				selectron.normalize(_field.el);
+				selectron.update();
 				_field.toolbar.setActiveStyles();
 				_field.snapback.storePositions();
 			});
@@ -105,9 +105,6 @@ module.exports = {
 	 */
 	command: function(command) {
 		var field = this;
-
-		// normalize selectron
-		selectron.normalize(this.el);
 
 		// register mutations (if any) as undo before calling command
 		// so that the command becomes it's own undo without merging
