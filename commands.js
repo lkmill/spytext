@@ -417,7 +417,7 @@ function format(element, tag){
 	if(!rng.collapsed) {
 		var positions = selectron.get(),
 			absolutePositions = selectron.get(true),
-			sections = selectron.contained.sections,
+			sections = selectron.contained.sections.filter(listItemFilter),
 			startSection = _.first(sections),
 			endSection = _.last(sections),
 			contents,
@@ -426,6 +426,10 @@ function format(element, tag){
 		sections.slice(1,-1).forEach(function(section) {
 			unwrap(section);
 			childNodes = _.toArray(section.childNodes);
+
+			if($(_.last(childNodes)).is('UL,OL'))
+				childNodes = _.initial(childNodes);
+
 			$clone = $wrapper.clone();
 			$(section).prepend($clone);
 			$clone.append(childNodes);
