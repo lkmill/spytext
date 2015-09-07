@@ -248,9 +248,9 @@ function deleteRangeContents(element, rng) {
 
 	$startSection[0].normalize();
 
-	deleteEmptyElements(element);
-
 	setBR($startSection[0]);
+
+	deleteEmptyElements(element);
 
 	selectron.set(position);
 }
