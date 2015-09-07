@@ -137,7 +137,9 @@ Snapback.prototype = {
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
 
-			selectron.update();
+			if(_.last(this.mutations).type === 'characterData') {
+				selectron.update(true, false, false);
+			}
 
 			// push a new Undo object to the undo stack
 			this.undos.push({
