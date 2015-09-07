@@ -76,6 +76,7 @@ module.exports = {
 			});
 			$(document).on('mouseup', function(e) {
 				setTimeout(function() {
+					selectron.normalize();
 					selectron.update();
 					_field.toolbar.setActiveStyles();
 					_field.snapback.storePositions();
