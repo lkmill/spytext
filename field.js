@@ -29,6 +29,7 @@ module.exports = {
 	 * @augments Backbone.View
 	 */
 	initialize: function() {
+		var _view = this;
 		this.$el.addClass('spytext-field').attr('contentEditable', 'true');
 
 		commands.deleteEmptyTextNodes(this.el);
@@ -61,6 +62,7 @@ module.exports = {
 		_field.toolbar.toggle(_field);
 
 		selectron.setElement(_field.el);
+
 		// i think the timeout is because of the range not being initialized
 		// so snapback.storePositions/selectron produces an error
 		setTimeout(function() {
@@ -73,9 +75,11 @@ module.exports = {
 				_field.snapback.register();
 			});
 			$(document).on('mouseup', function(e) {
-				selectron.update();
-				_field.toolbar.setActiveStyles();
-				_field.snapback.storePositions();
+				setTimeout(function() {
+					selectron.update();
+					_field.toolbar.setActiveStyles();
+					_field.snapback.storePositions();
+				});
 			});
 		});
 	},

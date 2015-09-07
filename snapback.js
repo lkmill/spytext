@@ -122,7 +122,7 @@ Snapback.prototype = {
 	 * @return {Positions}
 	 */
 	storePositions: function(position) {
-		return (this.position = position || selectron.get(this.element));
+		return (this.position = (position || selectron.get()));
 	},
 
 	/**
@@ -136,6 +136,8 @@ Snapback.prototype = {
 				// has undo'd and a new undo branch/tree is needed
 				this.undos = this.undos.slice(0, this.undoIndex + 1);
 			}
+
+			selectron.update();
 
 			// push a new Undo object to the undo stack
 			this.undos.push({
