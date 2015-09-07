@@ -237,7 +237,10 @@ function deleteRangeContents(element, rng) {
 		// $startContainer is used instead of appending to $startSection in case a nested list
 		// has been appended to $startSection, otherwise the childNodes would be
 		// incorrectly placed after this nested list.
-		$startContainer.after($endSection[0].childNodes);
+		if($startContainer[0].nodeType === 1)
+			$startContainer.prepend($endSection[0].childNodes);
+		else
+			$startContainer.after($endSection[0].childNodes);
 
 		// remove the empty $endSection
 		$endSection.remove();
