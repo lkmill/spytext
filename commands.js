@@ -415,21 +415,14 @@ function format(element, tag){
 		$wrapper = $('<' + tag + '>');
 
 	if(!rng.collapsed) {
-		var position = selectron.get(),
+		var positions = selectron.get(),
+			absolutePositions = selectron.get(true),
 			sections = selectron.contained.sections,
 			startSection = _.first(sections),
-			endSection = _.last(sections);
-		
-		var startPos = {
-			ref: rng.startContainer,
-			offset: rng.startOffset
-		};
-		var endPos = {
-			ref: rng.endContainer,
-			offset: rng.endOffset
-		};
+			endSection = _.last(sections),
+			contents,
+			$clone;
 
-		var contents, $clone;
 		sections.slice(1,-1).forEach(function(section) {
 			unwrap(section);
 			childNodes = _.toArray(section.childNodes);
@@ -444,7 +437,7 @@ function format(element, tag){
 					ref: endSection,
 					offset: 0
 				},
-				end: endPos
+				end: absolutePositions.end
 			});
 			$clone = $wrapper.clone();
 			contents = selectron.range().extractContents();
@@ -458,7 +451,7 @@ function format(element, tag){
 			endSection.normalize();
 
 			selectron.set({
-				start: startPos,
+				start: absolutePositions.start,
 				end: {
 					ref: startSection,
 					offset: startSection.childNodes.length
@@ -478,7 +471,7 @@ function format(element, tag){
 		startSection.normalize();
 
 		// restore the selection
-		selectron.restore(position, true);
+		selectron.restore(positions, true);
 	} else {
 		rng.insertNode($wrapper[0]);
 		selectron.set({ ref: $wrapper[0] }, true);
