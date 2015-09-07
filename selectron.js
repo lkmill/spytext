@@ -184,10 +184,13 @@ module.exports = {
 	 * @param	{boolean} [onlyDeepest] - How many levels of descendants should be collected. If `levels` is not set, all levels will be traversed
 	 * @return {Node[]}	Array contained all contained nodes
 	 */
-	contained: function(element, opts, partlyContained) {
+	contained: function(opts, partlyContained) {
+		opts = opts || {};
+
 		var _selectron = this,
 			check,
-			nodes = [];
+			nodes = [],
+			element = opts.element || this._element || document.body;
 
 		if(_.isArray(opts))
 			check = opts;
@@ -372,7 +375,7 @@ module.exports = {
 	 * @return {Positions} ref element of both start and end Position will be `element`
 	 */
 	get: function(element, countAll) {
-		element = element || document.body;
+		element = element || this._element || document.body;
 
 		return {
 			start: {
@@ -453,5 +456,9 @@ module.exports = {
 
 		sel.removeAllRanges();
 		sel.addRange(rng);
+	},
+
+	setElement: function(element) {
+		this._element = element;
 	}
 };
