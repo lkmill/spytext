@@ -461,18 +461,24 @@ module.exports = {
 	},
 
 	set: function(positions, update) {
+		var start, end;
+
 		if(positions.ref) {
-			positions = {
-				start: positions,
-				end: positions
-			};
+			start = end = positions;
+		} else {
+			start = positions.start;
+			end = positions.end || positions.start;
 		}
 
+		if((start.ref.nodeType === 1 && start.offset > start.ref.childNodes.length || start.ref.nodeType !== 1 && start.offset > start.ref.textContent.length) ||
+				(end.ref.nodeType === 1 && end.offset > end.ref.childNodes.length || end.ref.nodeType !== 1 && end.offset > end.ref.textContent.length))
+			return;
+		
 		var rng = document.createRange(),
 			sel = s();
 
-		rng.setStart(positions.start.ref, positions.start.offset || 0);
-		rng.setEnd(positions.end.ref, positions.end.offset || 0);
+		rng.setStart(start.ref, start.offset || 0);
+		rng.setEnd(end.ref, end.offset || 0);
 
 		sel.removeAllRanges();
 		sel.addRange(rng);
