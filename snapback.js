@@ -221,7 +221,7 @@ Snapback.prototype = {
 		});
 
 		this.storePositions(position);
-		selectron.set(position);
+		selectron.restore(position, true);
 
 		// reenable
 		this.enable();
