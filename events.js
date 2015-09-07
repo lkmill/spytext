@@ -106,6 +106,7 @@ module.exports = {
 				case 65://a
 					e.preventDefault();
 					selectron.select(this.el);
+					selectron.update();
 					this.snapback.storePositions();
 					this.toolbar.setActiveStyles();
 					break;
