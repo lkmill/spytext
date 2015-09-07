@@ -435,14 +435,19 @@ module.exports = {
 	restore: function(positions, update) {
 		if(positions.ref) {
 			positions = {
-				start: positions
+				start: positions,
+				end: positions
 			};
-		}
+		} else
+			positions.end = positions.end || positions.start;
 
 		var start = uncount(positions.start.ref, positions.start.offset),
-			end = positions.end ? uncount(positions.end.ref, positions.end.offset) : start;
+			end = positions.end !== positions.start ? uncount(positions.end.ref, positions.end.offset) : start;
 
-		this.set({ start: start, end: end }, update);
+		this.set({ start: start, end: end });
+		
+		if(update)
+			this.update(positions);
 	},
 
 	set: function(positions, update) {
