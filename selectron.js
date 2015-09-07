@@ -130,7 +130,9 @@ function offset(element, caret, countAll) {
  * @param	{boolean} [countAll] - Boolean parameter to determine whether to count all elements
  * @return {Position}
  */
-function restore(root, offset, countAll) {
+function uncount(root, offset, countAll) {
+	offset = offset || 0;
+
 	var node,
 		ref = root;
 
@@ -157,6 +159,11 @@ function restore(root, offset, countAll) {
 		}
 	}
 
+	if(ref.nodeName === 'BR') {
+		offset = _.toArray(ref.parentNode.childNodes).indexOf(ref) + 1;
+		ref = ref.parentNode;
+	}
+
 	return {
 		ref: ref,
 		offset: offset
@@ -168,7 +175,7 @@ var descendants = require('./descendants');
 var s = window.getSelection;
 
 module.exports = {
-	restore: restore,
+	uncount: uncount,
 
 	count: count,
 
@@ -297,7 +304,7 @@ module.exports = {
 
 				section = $(rng.startContainer).closest(sectionTags.join(','))[0];
 
-				this.set({
+				this.restore({
 					start: {
 						ref: section,
 						offset: offset(section, 'start')
@@ -307,7 +314,7 @@ module.exports = {
 			}
 		} else {
 			section = $container.closest(sectionTags.join(','))[0];
-			this.set({
+			this.restore({
 				ref: section,
 				offset: offset(section, 'end')
 			});
@@ -375,6 +382,20 @@ module.exports = {
 	 * @return {Positions} ref element of both start and end Position will be `element`
 	 */
 	get: function(element, countAll) {
+		if(element === true) {
+			var rng = this.range();
+			return {
+				start: {
+					ref: rng.startContainer,
+					offset: rng.startOffset
+				},
+				end: {
+					ref: rng.endContainer,
+					offset: rng.endOffset
+				}
+			};
+		}
+
 		element = element || this._element || document.body;
 
 		if(element === this._element && this._positions)
@@ -426,39 +447,38 @@ module.exports = {
 	 *
 	 * @param {Position|Positions} position - If a Position, a collapsed range will be set with start and end caret set to `position`
 	 */
-	set: function(position, force) {
-		if(position.ref) {
-			position = {
-				start: position
+	restore: function(positions, update) {
+		if(positions.ref) {
+			positions = {
+				start: positions
 			};
 		}
-		position.start.offset = position.start.offset || 0;
-		if(position.end)
-			position.end.offset = position.end.offset || 0;
 
-		var start = force ? position.start : restore(position.start.ref, position.start.offset),
-			end = position.end ? force ? position.end : restore(position.end.ref, position.end.offset) : start,
-			rng = document.createRange(),
+		var start = uncount(positions.start.ref, positions.start.offset),
+			end = positions.end ? uncount(positions.end.ref, positions.end.offset) : start;
+
+		this.set({ start: start, end: end }, update);
+	},
+
+	set: function(positions, update) {
+		if(positions.ref) {
+			positions = {
+				start: positions,
+				end: positions
+			};
+		}
+
+		var rng = document.createRange(),
 			sel = s();
 
-		if(start.ref.nodeName === 'BR') {
-			rng.setStartAfter(start.ref);
-		} else {
-			if(start.ref.nodeType === 1 && start.offset > start.ref.childNodes.length || start.ref.nodeType !== 1 && start.offset > start.ref.textContent.length)
-				return;
-			rng.setStart(start.ref, start.offset);
-		}
-
-		if(end.ref.nodeName === 'BR') {
-			rng.setEndAfter(end.ref);
-		} else {
-			if(end.ref.nodeType === 1 && end.offset > end.ref.childNodes.length || end.ref.nodeType !== 1 && end.offset > end.ref.textContent.length)
-				return;
-			rng.setEnd(end.ref, end.offset);
-		}
+		rng.setStart(positions.start.ref, positions.start.offset || 0);
+		rng.setEnd(positions.end.ref, positions.end.offset || 0);
 
 		sel.removeAllRanges();
 		sel.addRange(rng);
+
+		if(update)
+			this.update();
 	},
 
 	setContained: function() {
@@ -470,9 +490,7 @@ module.exports = {
 			return node.nodeName === 'LI';
 		}));
 
-		this.contained.lists = _.unique(this.contained.listItems.map(function(node) {
-			return $(node).closest(_selectron._element.children)[0];
-		}));
+		this.contained.lists = this.contained($(this._element).children('UL,OL'));
 
 		this.contained.blocks = this.contained.sections.filter(function(node) {
 			return node.nodeName !== 'LI';
@@ -480,18 +498,16 @@ module.exports = {
 
 		var commonAncestor = this.range().commonAncestorContainer;
 
-		if(commonAncestor.nodeType === 3) commonAncestor = commonAncestor.parentNode;
-
-		this.contained.textNodes = this.contained({ element: commonAncestor, nodeType: 3 }, true);
+		this.contained.textNodes = commonAncestor.nodeType === 3 ? [ commonAncestor ] : this.contained({ element: commonAncestor, nodeType: 3 }, true);
 	},
 
 	setElement: function(element) {
 		this._element = element;
 	},
 	
-	update: function() {
+	update: function(positions) {
 		this.normalize();
-		this._positions = {
+		this._positions = positions || {
 			start: {
 				ref: this._element,
 				offset: offset(this._element, 'start')
