@@ -533,8 +533,6 @@ function list(element, tag) {
 	
 	var $startSection = $(_.first(sections)),
 		$endSection = $(_.last(sections)),
-		startOffset = selectron.offset($startSection[0], 'start'),
-		endOffset = selectron.offset($endSection[0], 'end'),
 		$list;
 
 	// $list is a reference to the list all new
