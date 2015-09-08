@@ -188,12 +188,11 @@ function deleteRangeContents(element, rng) {
 
 	var $startContainer = $(rng.startContainer),
 		$startSection = $(_.first(selectron.contained.sections)),
-		$endSection = $(_.last(selectron.contained.sections));
+		$endSection = $(_.last(selectron.contained.sections)),
+		position = selectron.get('start');
 
 	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
-
-	var position = selectron.get().start;
 
 	if(!$startSection.is($endSection)) {
 		// if $startSection is not $endSection, we need to clean up any mess that
