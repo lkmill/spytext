@@ -705,7 +705,8 @@ function newline(element) {
 
 	// create a new block with the same tag as blockElement, insert it before blockElement and append
 	// the contents of the extracted range to it's end
-	var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
+	//var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
+	var $el = $('<' + (!$section.is('LI') && selectron.isAtEndOfSection() ? 'p' : $section[0].tagName) + '>').attr('style', $section.attr('style')).insertAfter($section);
 
 	if($section.children().is('UL,OL') || !selectron.isAtEndOfSection()) {
 		// Select everything from the start of blockElement to the caret. This
@@ -909,7 +910,7 @@ function removeFormat(element, tag) {
 				endSection.normalize();
 
 				selectron.set({
-					start: absolutePositions.end,
+					start: absolutePositions.start,
 					end: {
 						ref: startSection,
 						offset: $(_.last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
@@ -921,7 +922,7 @@ function removeFormat(element, tag) {
 			unwrap(contents);
 			if(startSection !== endSection)
 				if($(_.last(startSection.childNodes)).is('UL,OL')) 
-					$(_.last(startSection.childNodes)).before(contents.childNodes)
+					$(_.last(startSection.childNodes)).before(contents.childNodes);
 				else
 					$(startSection).append(contents.childNodes);
 			else {
