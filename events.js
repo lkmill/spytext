@@ -18,25 +18,23 @@ module.exports = {
 		//The keypress event is fired when a key is pressed down and that key normally produces a character value (use input instead).
 		// Firefox will fire keypress for some other keys as well, but they will have charCode === 0.
 
-		if(e.charCode > 0 && e.charCode !== 13) {
-			// Shift+Enter is pressed... let browsers handle it natively. NOTE: Safari does not insert BR on Shift+Enter
+		var rng = selectron.range(),
+			container = rng.startContainer;
 
+		if(e.charCode > 0 && e.charCode !== 13 && container.nodeType === 1) {
+
+			//	offset = rng.startOffset,
+			//	container.textContent = container.textContent.slice(0,offset) + c + container.textContent.slice(offset);
+			//	offset++;
 			e.preventDefault();
-			var rng = selectron.range(),
-				offset = rng.startOffset,
-				container = rng.startContainer,
-				c = String.fromCharCode(e.charCode);
+			var c = String.fromCharCode(e.charCode);
+				textNode = document.createTextNode(c);
 
-			if(container.nodeType === 3) {
-				container.textContent = container.textContent.slice(0,offset) + c + container.textContent.slice(offset);
-				offset++;
-			} else {
-				container = document.createTextNode(c);
-				rng.insertNode(container);
-				offset = 1;
-			}
+			rng.insertNode(textNode);
+			offset = 1;
+
 			selectron.set({
-				ref: container,
+				ref: textNode,
 				offset: offset
 			});
 		}
