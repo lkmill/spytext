@@ -480,7 +480,7 @@ function format(element, tag){
 				start: absolutePositions.start,
 				end: {
 					ref: startSection,
-					offset: startSection.childNodes.length
+					offset: $(_.last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
 				}
 			});
 		}
@@ -882,19 +882,11 @@ function removeFormat(element, tag) {
 
 		if(!rng.collapsed) {
 			var positions = selectron.get(element),
+				absolutePositions = selectron.get(true),
 				sections = selectron.contained.sections.filter(listItemFilter),
 				startSection = _.first(sections),
 				endSection = _.last(sections);
 			
-			var startPos = {
-				ref: rng.startContainer,
-				offset: rng.startOffset
-			};
-			var endPos = {
-				ref: rng.endContainer,
-				offset: rng.endOffset
-			};
-
 			var contents, $clone;
 
 			sections.slice(1,-1).forEach(unwrap);
@@ -905,7 +897,7 @@ function removeFormat(element, tag) {
 						ref: endSection,
 						offset: 0
 					},
-					end: endPos
+					end: absolutePositions.end
 				});
 				contents = selectron.range().extractContents();
 				unwrap(contents);
@@ -917,10 +909,10 @@ function removeFormat(element, tag) {
 				endSection.normalize();
 
 				selectron.set({
-					start: startPos,
+					start: absolutePositions.end,
 					end: {
 						ref: startSection,
-						offset: startSection.childNodes.length
+						offset: $(_.last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
 					}
 				});
 			}
@@ -928,9 +920,12 @@ function removeFormat(element, tag) {
 			contents = selectron.range().extractContents();
 			unwrap(contents);
 			if(startSection !== endSection)
-				$(startSection).append(contents.childNodes);
+				if($(_.last(startSection.childNodes)).is('UL,OL')) 
+					$(_.last(startSection.childNodes)).before(contents.childNodes)
+				else
+					$(startSection).append(contents.childNodes);
 			else {
-				selectron.set(startPos);
+				selectron.set(absolutePositions.start);
 				rng = selectron.range();
 				ref = rng.endContainer;
 				var $tag = $(ref).closest(tag, element);
