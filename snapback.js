@@ -207,19 +207,16 @@ Snapback.prototype = {
 					break;
 				case 'childList':
 					// set up correctly what nodes to be added and removed
-					var addNodes = isUndo ? mutation.removedNodes : mutation.addedNodes,
-						removeNodes = isUndo ? mutation.addedNodes : mutation.removedNodes;
+					var addNodes = isUndo ? mutation.removedNodes : mutation.addedNodes;
 
-					_.toArray(addNodes).forEach(function(node) {
-						if (mutation.nextSibling) {
-							$(mutation.nextSibling).before(node);
-						} else {
-							$(mutation.target).append(node);
-						}
-					});
+					if (mutation.nextSibling) {
+						$(mutation.nextSibling).before(addNodes);
+					} else {
+						$(mutation.target).append(addNodes);
+					}
 
 					// remove all nodes to be removed
-					$(removeNodes).remove();
+					$(isUndo ? mutation.addedNodes : mutation.removedNodes).remove();
 					break;
 			}
 		});
