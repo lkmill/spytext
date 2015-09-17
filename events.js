@@ -21,31 +21,37 @@ module.exports = {
 		var rng = selectron.range(),
 			container = rng.startContainer;
 
-		if(e.charCode > 0 && e.charCode !== 13 && container.nodeType === 1) {
+		if(e.charCode > 0) {
+			if(e.charCode !== 13 || container.nodeType === 1) {
 
-			//	offset = rng.startOffset,
-			//	container.textContent = container.textContent.slice(0,offset) + c + container.textContent.slice(offset);
-			//	offset++;
-			e.preventDefault();
-			var c = String.fromCharCode(e.charCode);
-				textNode = document.createTextNode(c);
+				//	offset = rng.startOffset,
+				//	container.textContent = container.textContent.slice(0,offset) + c + container.textContent.slice(offset);
+				//	offset++;
+				e.preventDefault();
+				var c = String.fromCharCode(e.charCode);
+					textNode = document.createTextNode(c);
 
-			rng.insertNode(textNode);
-			offset = 1;
+				rng.insertNode(textNode);
+				offset = 1;
 
-			selectron.set({
-				ref: textNode,
-				offset: offset
-			});
+				selectron.set({
+					ref: textNode,
+					offset: offset
+				});
+			}
+			$(this.el).trigger('change');
+			selectron.update();
 		}
-	selectron.update();
 	},
+
 	keyup: function(e) {
 		// TODO make sure we cover all different kinds of navigation keys, such as
 		// home and end
 		switch(e.keyCode) {
 			case 8: //backspace
 				selectron.update(true, false, false);
+			case 46:
+				$(this.el).trigger('change');
 				break;
 			case 33:
 			case 34:
