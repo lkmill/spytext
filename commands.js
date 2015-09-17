@@ -801,6 +801,7 @@ function paste(element, dataTransfer) {
 		rng = selectron.range();
 	}
 
+
 	if(textBlocks.length > 0) {
 		var section = $(rng.startContainer).closest(sectionTags.join(','), element)[0];
 
@@ -811,11 +812,11 @@ function paste(element, dataTransfer) {
 		// have simply split the current node and inserted the contents inbetween,
 		// but i decided for a tiny performance loss vs no code duplication
 		selectron.set({
-			start: { ref: rng.startContainer, offset: rng.startOffset },
-			end: { ref: section, offset: section.textContent.length }
+			start: selectron.get('start', true),
+			end: { ref: section, offset: section.childNodes.length }
 		});
-		var contents = selectron.range().extractContents();
 
+		var contents = selectron.range().extractContents();
 		
 		var ref = section.nextSibling,// will be used to place new sections into the DOM
 			parent = section.parentNode,// if no next sibling, save reference to parent

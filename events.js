@@ -38,11 +38,15 @@ module.exports = {
 				offset: offset
 			});
 		}
+	selectron.update();
 	},
 	keyup: function(e) {
 		// TODO make sure we cover all different kinds of navigation keys, such as
 		// home and end
 		switch(e.keyCode) {
+			case 8: //backspace
+				selectron.update(true, false, false);
+				break;
 			case 33:
 			case 34:
 			case 35:
@@ -78,6 +82,10 @@ module.exports = {
 			// prevent all ctrl key bindings
 			// NOTE paste events are handled directly
 			switch(e.keyCode) {
+				case 8: //backspace
+				case 46: // delete
+					e.preventDefault();
+					break;
 				case 66://b
 				case 73://i
 				case 85://u
@@ -104,7 +112,7 @@ module.exports = {
 					break;
 				case 65://a
 					e.preventDefault();
-					selectron.select(this.el);
+					selectron.select(this.el.children.length === 1 ? this.el.firstChild : this.el);
 					selectron.update();
 					this.snapback.storePositions();
 					this.toolbar.setActiveStyles();
