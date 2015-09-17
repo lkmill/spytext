@@ -33,7 +33,7 @@ unordered lists and undo/redo (in the seperate module snapback).
 
           | Minified  | Compressed
 ----------|-----------|-----------
-Spytext   | 21kb      | 6.56kb    
+Spytext   | 24.4kb    | 7.51kb    
 
 
 ## Compatability
@@ -54,3 +54,5 @@ if there are trailing BR's.
 
 Calling newline at end of list item with nested list and first list item in nested list
 is empty also does weird things.
+
+selectron.normalize prohibits using shift+arrow to select empty BR's.
