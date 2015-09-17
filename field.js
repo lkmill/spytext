@@ -34,6 +34,9 @@ module.exports = {
 
 		commands.deleteEmptyTextNodes(this.el);
 		commands.deleteEmptyElements(this.el);
+		if($(this.el).is(':empty')) {
+			$(this.el).append('<p>');
+		}
 		commands.setBR(_.toArray(this.el.children));
 
 		this.originalValue = this.el.innerHTML;
