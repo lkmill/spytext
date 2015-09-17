@@ -826,7 +826,7 @@ function paste(element, dataTransfer) {
 		for(var i = 0; i < textBlocks.length; i++) {
 			textNode = document.createTextNode(textBlocks[i]);
 			if(i === 0) {
-				if(section.lastChild.nodeName === 'BR')
+				if(section.lastChild && section.lastChild.nodeName === 'BR')
 					// remove the last item if it is a line break
 					$(section.lastChild).remove();
 
