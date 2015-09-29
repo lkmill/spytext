@@ -8,13 +8,15 @@ var Snapback = require('./snapback');
 
 var selectron = require('./selectron');
 var commands = require('./commands');
+	
+var app = require('ridge');
 
 /**
  * @readonly
  */
 var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
-module.exports = {
+module.exports = require('ridge/view').extend({
 	/**
 	 * @lends SpytextField.prototype
 	 */
@@ -41,12 +43,12 @@ module.exports = {
 
 		this.originalValue = this.el.innerHTML;
 
-		if(!this.app.spytextToolbar) {
-			this.app.spytextToolbar = new this.app.views.SpytextToolbar();
-			$(document.body).append(this.app.spytextToolbar.el);
+		if(!app.spytextToolbar) {
+			app.spytextToolbar = new app.views.SpytextToolbar();
+			$(document.body).append(app.spytextToolbar.el);
 		}
 
-		this.toolbar = this.app.spytextToolbar;
+		this.toolbar = app.spytextToolbar;
 
 		this.snapback = new Snapback(this.el);
 	},
@@ -126,6 +128,7 @@ module.exports = {
 			// normalize any text nodes in the field's element
 			field.el.normalize();
 
+			$(field.el).trigger('change');
 			// unfortunately, we need to wrap the registation of a new Undo
 			// in a timeout
 			setTimeout(function(){
@@ -135,5 +138,4 @@ module.exports = {
 			});
 		}
 	},
-};
-
+});

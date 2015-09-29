@@ -11,7 +11,7 @@ function mapToNodeName(node) {
 var commands = require('./commands');
 var selectron = require('./selectron');
 
-module.exports = {
+module.exports = require('ridge/view').extend({
 	/**
 	 * @lends SpytextToolbar.prototype
 	 * @augments Backbone.View
@@ -102,5 +102,4 @@ module.exports = {
 			
 		this.field.command(command, option);
 	}
-
-};
+});
