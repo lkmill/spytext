@@ -528,10 +528,12 @@ module.exports = {
 
 		formats.forEach(function(tag) {
 			var rng = _selectron.range();
-			if((textNodes.length > 0 && textNodes.every(function(node) { return $(node).ancestors(null, _selectron.element).is(tag); })) ||
-				rng.collapsed && ($(rng.startContainer).is(tag) || $(rng.startContainer).ancestors(null, _selectron.element).is(tag)))
+			if((textNodes.length > 0 && textNodes.every(function(node) {
+				return $(node).ancestors(null, _selectron.element).is(tag); 
+			})) || rng.collapsed && ($(rng.startContainer).is(tag) || $(rng.startContainer).ancestors(null, _selectron.element).is(tag))) {
 
 				_selectron.styles.formats.push(tag);
+			}
 		});
 	},
 
