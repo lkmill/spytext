@@ -22,12 +22,9 @@ module.exports = {
 			container = rng.startContainer;
 
 		if(e.charCode > 0) {
-			if(e.charCode !== 13 || container.nodeType === 1) {
-
-				//	offset = rng.startOffset,
-				//	container.textContent = container.textContent.slice(0,offset) + c + container.textContent.slice(offset);
-				//	offset++;
+			if(e.charCode !== 13 && container.nodeType === 1) {
 				e.preventDefault();
+
 				var c = String.fromCharCode(e.charCode);
 					textNode = document.createTextNode(c);
 
