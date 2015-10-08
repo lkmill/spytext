@@ -178,7 +178,7 @@ module.exports = {
 						// tested browser seems to do correct behaviour for Shift-Enter, namely
 						// insert a <BR>
 						e.preventDefault();
-						commands.newline(this.el);
+						commands.newSection(this.el);
 					}
 					break;
 			}
