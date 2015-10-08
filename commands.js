@@ -684,7 +684,7 @@ list.active = function(option) {
  * @param	{Element} element - Element which is used as root for selectron.
  * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
-function newline(element) {
+function newSection(element) {
 	var rng = selectron.range();
 	var $section = $(rng.startContainer).closest(sectionTags.join(','), element);
 
@@ -1033,7 +1033,7 @@ module.exports = {
 	joinNext: joinNext,
 	link: link,
 	list: list,
-	newline: newline,
+	newSection: newSection,
 	outdent: outdent,
 	paste: paste,
 	removeFormat: removeFormat,
