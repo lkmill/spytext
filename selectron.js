@@ -280,7 +280,9 @@ module.exports = {
 			section;
 
 		if(!rng.collapsed) {
-			if($(rng.endContainer).is(sectionTags.join(','))) {
+			// prevent selection to include next section tags when selecting
+			// to the end of a section
+			if($(rng.endContainer).is(sectionTags.join(',')) && rng.endOffset === 0) {
 				var ref = rng.endContainer;
 
 				// TODO this looks like it could potentially be dangerous
@@ -298,6 +300,7 @@ module.exports = {
 				});
 			}
 		} else {
+			// ensure similar behaviour in all browers when using arrows or using mouse to move caret.
 			if(rng.endContainer.nodeType === 3 && rng.endOffset === 0) {
 				section = $(rng.endContainer).closest(sectionTags.join(','))[0];
 
