@@ -49,10 +49,8 @@ Opera   | Unknown   | Unknown      | 15        |
 
 ## Known Issues
 
-Calling newline in a section that contains BR's might produce weird results. Especially
-if there are trailing BR's.
-
-Calling newline at end of list item with nested list and first list item in nested list
-is empty also does weird things.
-
-selectron.normalize prohibits using shift+arrow to select empty BR's.
++ Calling newSection in a section that contains BR's might produce weird
+	results. Especially if there are trailing BR's.
++ Calling newline at end of list item with nested list and first list item in
+	nested list is empty also does weird things.
++ selectron.normalize prohibits using shift+arrow to select empty BR's.
