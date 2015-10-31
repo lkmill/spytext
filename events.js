@@ -36,7 +36,7 @@ module.exports = {
 					offset: offset
 				});
 			}
-			$(this.el).trigger('change');
+			$(this.el).trigger('input');
 			selectron.update();
 		}
 	},
@@ -48,7 +48,7 @@ module.exports = {
 			case 8: //backspace
 				selectron.update(true, false, false);
 			case 46:
-				$(this.el).trigger('change');
+				$(this.el).trigger('input');
 				break;
 			case 33:
 			case 34:
