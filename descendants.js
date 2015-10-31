@@ -4,7 +4,6 @@
  * @module spytext/descendants 
  */
 
-require('jquery-ancestors');
 /**
  * Uses TreeWalker to traverse `element`s DOM subtree and collect all descendants
  * that match different filters
@@ -110,7 +109,7 @@ module.exports = function descendants(element, opts) {
 		if((!opts.levels || opts.levels > 1) && opts.onlyDeepest) {
 			// we are traversing more than one level, and only want the deepest nodes
 			// to be returned so remove all ancestor nodes to `node` from `nodes`
-			nodes = _.without.apply(null, [ nodes ].concat($(node).ancestors(opts.selector, element).toArray()));
+			nodes = _.without.apply(null, [ nodes ].concat($(node).parentsUntil(element, opts.selector).toArray()));
 		}
 		nodes.push(node);
 	}
