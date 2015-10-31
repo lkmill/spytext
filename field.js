@@ -108,6 +108,12 @@ module.exports = require('ridge/view').extend({
 		$(document).off('mousedown');
 	},
 
+	render: function() {
+		if(!this.el.firstChild) {
+			this.$el.append('<p><br></p>');
+		}
+	},
+
 	/**
 	 * Calls a command from module:spytext/commands
 	 *
