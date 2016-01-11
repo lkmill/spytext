@@ -5,12 +5,11 @@
  */
 
 var Snapback = require('./snapback');
+var SpytextToolbar = require('./toolbar');
 
 var selectron = require('./selectron');
 var commands = require('./commands');
 	
-var app = require('ridge');
-
 /**
  * @readonly
  */
@@ -43,12 +42,9 @@ module.exports = require('ridge/view').extend({
 
 		this.originalValue = this.el.innerHTML;
 
-		if(!app.spytextToolbar) {
-			app.spytextToolbar = new app.views.SpytextToolbar();
-			$(document.body).append(app.spytextToolbar.el);
-		}
+		this.toolbar = new SpytextToolbar();
 
-		this.toolbar = app.spytextToolbar;
+		$(document.body).append(this.toolbar.el);
 
 		this.snapback = new Snapback(this.el);
 	},
