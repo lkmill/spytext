@@ -525,7 +525,7 @@ module.exports = {
 
 		var textNodes = _selectron.contained.textNodes;
 
-		this.styles.blocks = _.unique(_selectron.contained.blocks.map(function(node) {
+		this.styles.blocks = _.uniq(_selectron.contained.blocks.map(function(node) {
 			return node.nodeName;
 		}));
 
@@ -545,7 +545,7 @@ module.exports = {
 		
 		this.contained.sections = this.contained({ sections: true }, true);
 
-		this.contained.listItems = _.unique(this.contained.sections.filter(function(node) {
+		this.contained.listItems = _.uniq(this.contained.sections.filter(function(node) {
 			return node.nodeName === 'LI';
 		}));
 

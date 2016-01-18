@@ -125,7 +125,7 @@ module.exports = require('ridge/view').extend({
 
 		if(commands[command]) {
 			// call the command
-			commands[command].apply(null,  [ field.el ].concat(_.rest(arguments)));
+			commands[command].apply(null,  [ field.el ].concat(_.tail(arguments)));
 
 			// normalize any text nodes in the field's element
 			field.el.normalize();
