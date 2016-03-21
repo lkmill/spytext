@@ -4,10 +4,10 @@
  * @module spytext/field 
  */
 
-var Snapback = require('./snapback');
+var Snapback = require('snapback');
 var SpytextToolbar = require('./toolbar');
 
-var selectron = require('./selectron');
+var selektr = require('selektr');
 var commands = require('./commands');
 	
 /**
@@ -46,7 +46,22 @@ module.exports = require('ridge/view').extend({
 
 		$(document.body).append(this.toolbar.el);
 
-		this.snapback = new Snapback(this.el);
+		this.snapback = new Snapback(this.el, {
+			/**
+			 * Saves and returns the positions of the current selection
+			 *
+			 * @return {Positions}
+			 */
+			store: function(data) {
+				return (this.data = (data || selektr.get()));
+			},
+
+			restore: function(data) {
+				this.store(data);
+
+				selektr.restore(data, true);
+			},
+		});
 	},
 
 	/**
@@ -62,12 +77,12 @@ module.exports = require('ridge/view').extend({
 		// toggle the toolbar, passing the current field to it
 		_field.toolbar.toggle(_field);
 
-		selectron.setElement(_field.el);
+		selektr.setElement(_field.el);
 
 		// i think the timeout is because of the range not being initialized
-		// so snapback.storePositions/selectron produces an error
+		// so snapback.storePositions/selektr produces an error
 		setTimeout(function() {
-			_field.snapback.storePositions();
+			_field.snapback.store();
 
 			// this is to capture events when mousedown on 
 			// fields element but mouseup outside
@@ -77,10 +92,10 @@ module.exports = require('ridge/view').extend({
 			});
 			$(document).on('mouseup', function(e) {
 				setTimeout(function() {
-					selectron.normalize();
-					selectron.update();
+					selektr.normalize();
+					selektr.update();
 					_field.toolbar.setActiveStyles();
-					_field.snapback.storePositions();
+					_field.snapback.store();
 				});
 			});
 		});

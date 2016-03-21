@@ -4,7 +4,7 @@
  * @module spytext/events
  */
 
-var selectron = require('./selectron');
+var selektr = require('selektr');
 var commands = require('./commands');
 
 var sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
@@ -18,7 +18,7 @@ module.exports = {
 		//The keypress event is fired when a key is pressed down and that key normally produces a character value (use input instead).
 		// Firefox will fire keypress for some other keys as well, but they will have charCode === 0.
 
-		var rng = selectron.range(),
+		var rng = selektr.range(),
 			container = rng.startContainer;
 
 		if(e.charCode > 0) {
@@ -31,13 +31,13 @@ module.exports = {
 				rng.insertNode(textNode);
 				offset = 1;
 
-				selectron.set({
+				selektr.set({
 					ref: textNode,
 					offset: offset
 				});
 			}
 			$(this.el).trigger('input');
-			selectron.update();
+			selektr.update();
 		}
 	},
 
@@ -46,8 +46,9 @@ module.exports = {
 		// home and end
 		switch(e.keyCode) {
 			case 8: //backspace
-				selectron.update(true, false, false);
-			case 46:
+				// cannot remember why this is needed for backspace but not delete
+				selektr.update(true, false, false);
+			case 46:// delete
 				$(this.el).trigger('input');
 				break;
 			case 33:
@@ -60,9 +61,9 @@ module.exports = {
 			case 40:
 				// navigation keys... set new (initial) position in snapback
 				// clear timeout (if any) and register undo (if any) will already have been done in keydown
-				selectron.normalize();
-				selectron.update();
-				this.snapback.storePositions();
+				selektr.normalize();
+				selektr.update();
+				this.snapback.store();
 				this.toolbar.setActiveStyles();
 				break;
 		}
@@ -106,6 +107,11 @@ module.exports = {
 					break;
 				case 90://z
 					e.preventDefault();
+					// make sure selektr has updated after last key stroke.
+					// ie if next line is omitted the stored selektr position
+					// might be wrong if the user very quickly presses undo
+					// after typing
+					selektr.update(true, false, false);
 					if(e.shiftKey) {
 						this.snapback.redo();
 					} else {
@@ -115,14 +121,14 @@ module.exports = {
 					break;
 				case 65://a
 					e.preventDefault();
-					selectron.select(this.el.children.length === 1 ? this.el.firstChild : this.el);
-					selectron.update();
-					this.snapback.storePositions();
+					selektr.select(this.el.children.length === 1 ? this.el.firstChild : this.el);
+					selektr.update();
+					this.snapback.store();
 					this.toolbar.setActiveStyles();
 					break;
 			}
 		} else {
-			var rng = selectron.range();
+			var rng = selektr.range();
 
 			if(rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
 				// the range is not collapsed, IE the user has selected some text AND
@@ -159,11 +165,11 @@ module.exports = {
 					var section = $(rng.startContainer).closest(sectionTags.join(','))[0];
 
 					// join lines if backspace and start of section, or delete and end of section
-					if(e.keyCode === 8 && selectron.isAtStartOfSection(section)) {
+					if(e.keyCode === 8 && selektr.isAtStartOfSection(section)) {
 						// backspace at the start of a section, join with previous
 						e.preventDefault();
 						this.command('joinPrev', section);
-					} else if(e.keyCode === 46 && selectron.isAtEndOfSection(section)) {
+					} else if(e.keyCode === 46 && selektr.isAtEndOfSection(section)) {
 						// delete and at the end of section, join with next
 						e.preventDefault();
 						this.command('joinNext', section);
@@ -183,6 +189,9 @@ module.exports = {
 			// only register an undo if user has not typed for 300 ms
 			clearTimeout(this.timeout);
 			this.timeout = setTimeout(function() {
+				// this is needed as a result of removing selektr update from inside snapback:register. could probably put this somewhere better.
+				// putting it in keyUp makes it screw up sometimes for backspace.
+				selektr.update(true, false, false);
 				this.snapback.register();
 				this.toolbar.setActiveStyles();
 			}.bind(this), 300);

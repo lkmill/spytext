@@ -4,8 +4,8 @@
  * @module spytext/commands 
  */
 
-var selectron = require('./selectron'),
-	descendants = require('./descendants'),
+var selektr = require('selektr'),
+	descendants = require('descendants'),
 	sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
 function listItemFilter(node) {
@@ -16,8 +16,8 @@ function listItemFilter(node) {
 	// nodes in the LI containing the nested list. The LI containing 
 	return node.nodeName !== 'LI' ||
 		$(node).children('UL,OL').length === 0 ||
-		selectron.containsSome(_.initial(node.childNodes), true) ||
-		selectron.isAtEndOfSection(node);
+		selektr.containsSome(_.initial(node.childNodes), true) ||
+		selektr.isAtEndOfSection(node);
 }
 
 /**
@@ -25,39 +25,39 @@ function listItemFilter(node) {
  * all blocks contained in current selection
  *
  * @static
- * @param	{Element} element - Reference element to be used for selectron to fetch elements contained in selection
+ * @param	{Element} element - Reference element to be used for selektr to fetch elements contained in selection
  * @return {string} alignment
  */
 function align(element, alignment) {
-	selectron.contained.blocks.forEach(function(child) {
+	selektr.contained.blocks.forEach(function(child) {
 		// do not set text-align property on lists
 		$(child).css('text-align', alignment);
 	});
 }
 
 align.active = function(option, field) {
-	return !!selectron.styles.alignment && selectron.styles.alignment === option;
+	return !!selektr.styles.alignment && selektr.styles.alignment === option;
 };
 
 align.disabled = function() {
-	return selectron.contained.blocks.length === 0;
+	return selektr.contained.blocks.length === 0;
 };
 /**
  * Changes all (partly) contained sections in the current selection to (block
  * level) elements of tagName `tag`.
  *
  * @static
- * @param	{Element} element - Reference element to be used for selectron to fetch elements contained in selection
+ * @param	{Element} element - Reference element to be used for selektr to fetch elements contained in selection
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
 	if(block.active(tag)) return;
 
-	var sections = selectron.contained.sections.filter(listItemFilter),
+	var sections = selektr.contained.sections.filter(listItemFilter),
 		newBlocks = [],
 		$startSection = $(_.first(sections)),
 		$endSection = $(_.last(sections)),
-		positions = selectron.get(),
+		positions = selektr.get(),
 		$ref;
 
 	// $ref is the DOM element which we place our new
@@ -119,11 +119,11 @@ function block(element, tag) {
 	$(':empty:not("BR")', element).remove();
 	
 	// set the selection
-	selectron.restore(positions, true);
+	selektr.restore(positions, true);
 }
 
 block.active = function(tag) {
-	return selectron.styles.blocks.length === 1 && selectron.styles.blocks[0] === tag.toUpperCase();
+	return selektr.styles.blocks.length === 1 && selektr.styles.blocks[0] === tag.toUpperCase();
 };
 
 /**
@@ -184,12 +184,12 @@ function deleteEmptyElements(element) {
  */
 function deleteRangeContents(element, rng) {
 	// fetch range if rng is not set
-	rng = rng || selectron.range();
+	rng = rng || selektr.range();
 
 	var $startContainer = $(rng.startContainer),
-		$startSection = $(_.first(selectron.contained.sections)),
-		$endSection = $(_.last(selectron.contained.sections)),
-		position = selectron.get('start');
+		$startSection = $(_.first(selektr.contained.sections)),
+		$endSection = $(_.last(selektr.contained.sections)),
+		position = selektr.get('start');
 
 	// use native deleteContents to remove the contents of the selection,
 	rng.deleteContents();
@@ -251,7 +251,7 @@ function deleteRangeContents(element, rng) {
 
 	deleteEmptyElements(element);
 
-	selectron.restore(position, true);
+	selektr.restore(position, true);
 }
 
 /**
@@ -263,15 +263,15 @@ function deleteRangeContents(element, rng) {
 function indent(element, isOutdent){
 	if(isOutdent) return outdent(element);
 
-	var listItems = selectron.contained.listItems.filter(function(node) {
+	var listItems = selektr.contained.listItems.filter(function(node) {
 			return listItemFilter(node) ||
-				selectron.containsEvery(descendants(node, {
+				selektr.containsEvery(descendants(node, {
 					nodeType: 1,
 					filter: function(node) { return !node.previousSibling; },
 					onlyDeepest: true
 				}), true);
 		}),
-		positions = selectron.get();
+		positions = selektr.get();
 
 	listItems.forEach(function(el) {
 		var $prev = $(el).prev();
@@ -294,11 +294,11 @@ function indent(element, isOutdent){
 	});
 
 	// restore the selection
-	selectron.restore(positions, true);
+	selektr.restore(positions, true);
 }
 
 indent.disabled = function() {
-	return selectron.contained.lists.length === 0;
+	return selektr.contained.lists.length === 0;
 };
 
 /**
@@ -371,12 +371,12 @@ function join(element, node1, node2) {
 		// `node2` children before the nested list in `node1`.
 
 		// update length to only be length of text in `node1` excluding length of
-		// text in nested list, so selectron sets the position correctly
+		// text in nested list, so selektr sets the position correctly
 		//length = length - $nestedList.text().length;
 
 		position = {
 			ref: node1,
-			offset: selectron.count(node1, $nestedList[0])
+			offset: selektr.count(node1, $nestedList[0])
 		};
 
 		$nestedList.before(node2.childNodes);
@@ -394,7 +394,7 @@ function join(element, node1, node2) {
 
 	position = position || {
 		ref: node1,
-		offset: selectron.count(node1)
+		offset: selektr.count(node1)
 	};
 
 	// append any childNodes of `node2` to `node1` (this will already be done if `node1` had a nested list
@@ -410,14 +410,14 @@ function join(element, node1, node2) {
 		// `node2` has at least one sibling, only remove `node2`
 		$(node2).remove();
 
-	selectron.restore(position, true);
+	selektr.restore(position, true);
 }
 
 /**
  * Formats text by wrapping text nodes in elements with tagName `tag`.
  *
  * @static
- * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{Element} element - Element which is used as root for selektr.
  * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
 function format(element, tag){
@@ -432,13 +432,13 @@ function format(element, tag){
 
 	if(format.active(tag)) return removeFormat(element, tag);
 
-	var rng = selectron.range(),
+	var rng = selektr.range(),
 		$wrapper = $('<' + tag + '>');
 
 	if(!rng.collapsed) {
-		var positions = selectron.get(),
-			absolutePositions = selectron.get(true),
-			sections = selectron.contained.sections.filter(listItemFilter),
+		var positions = selektr.get(),
+			absolutePositions = selektr.get(true),
+			sections = selektr.contained.sections.filter(listItemFilter),
 			startSection = _.first(sections),
 			endSection = _.last(sections),
 			contents,
@@ -457,7 +457,7 @@ function format(element, tag){
 		});
 
 		if(startSection !== endSection) {
-			selectron.set({
+			selektr.set({
 				start: {
 					ref: endSection,
 					offset: 0
@@ -465,7 +465,7 @@ function format(element, tag){
 				end: absolutePositions.end
 			});
 			$clone = $wrapper.clone();
-			contents = selectron.range().extractContents();
+			contents = selektr.range().extractContents();
 			unwrap(contents);
 			$(endSection).prepend($clone);
 			$clone.append(contents.childNodes);
@@ -475,7 +475,7 @@ function format(element, tag){
 			tidy(endSection);
 			endSection.normalize();
 
-			selectron.set({
+			selektr.set({
 				start: absolutePositions.start,
 				end: {
 					ref: startSection,
@@ -484,7 +484,7 @@ function format(element, tag){
 			});
 		}
 
-		contents = selectron.range().extractContents();
+		contents = selektr.range().extractContents();
 		unwrap(contents);
 		$clone = $wrapper.clone();
 		rng.insertNode($clone[0]);
@@ -496,22 +496,22 @@ function format(element, tag){
 		startSection.normalize();
 
 		// restore the selection
-		selectron.restore(positions, true);
+		selektr.restore(positions, true);
 	} else {
 		rng.insertNode($wrapper[0]);
-		selectron.set({ ref: $wrapper[0] }, true);
+		selektr.set({ ref: $wrapper[0] }, true);
 	}
 }
 
 format.active = function(option) {
-	return !!option && selectron.styles.formats.indexOf(option.toLowerCase()) > -1;
+	return !!option && selektr.styles.formats.indexOf(option.toLowerCase()) > -1;
 };
 
 /**
  * Formats text by wrapping text nodes in elements with tagName `tag`.
  *
  * @static
- * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{Element} element - Element which is used as root for selektr.
  * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
 function link(element, attribute) {
@@ -545,15 +545,15 @@ function link(element, attribute) {
  * Turns block elements into list items
  *
  * @static
- * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{Element} element - Element which is used as root for selektr.
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
 	if(list.active(tag)) return;
 
-	var sections = selectron.contained.sections.filter(listItemFilter),
+	var sections = selektr.contained.sections.filter(listItemFilter),
 		listItems = [],
-		positions = selectron.get();
+		positions = selektr.get();
 	
 	var $startSection = $(_.first(sections)),
 		$endSection = $(_.last(sections)),
@@ -670,22 +670,22 @@ function list(element, tag) {
 	// remove empty elements
 	$(':empty:not("BR")', element).remove();
 
-	selectron.restore(positions, true);
+	selektr.restore(positions, true);
 }
 
 list.active = function(option) {
-	return selectron.contained.lists.length === 1 && $(selectron.contained.lists).is(option);
+	return selektr.contained.lists.length === 1 && $(selektr.contained.lists).is(option);
 };
 
 /**
  * Creates a new section (same type as the type of section the caret is currently in.)
  *
  * @static
- * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{Element} element - Element which is used as root for selektr.
  * @param	{string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
 function newSection(element) {
-	var rng = selectron.range();
+	var rng = selektr.range();
 	var $section = $(rng.startContainer).closest(sectionTags.join(','), element);
 
 	if($section.is('LI') && ($section.text().length - $section.children('UL,OL').text().length === 0)) {
@@ -705,12 +705,12 @@ function newSection(element) {
 	// create a new block with the same tag as blockElement, insert it before blockElement and append
 	// the contents of the extracted range to it's end
 	//var $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
-	var $el = $('<' + (!$section.is('LI') && selectron.isAtEndOfSection() ? 'p' : $section[0].tagName) + '>').attr('style', $section.attr('style')).insertAfter($section);
+	var $el = $('<' + (!$section.is('LI') && selektr.isAtEndOfSection() ? 'p' : $section[0].tagName) + '>').attr('style', $section.attr('style')).insertAfter($section);
 
-	if($section.children().is('UL,OL') || !selectron.isAtEndOfSection()) {
+	if($section.children().is('UL,OL') || !selektr.isAtEndOfSection()) {
 		// Select everything from the start of blockElement to the caret. This
 		// includes everything that will be moved into the new block placed before the current
-		selectron.set({
+		selektr.set({
 			start: {
 				ref: rng.startContainer,
 				offset: rng.startOffset
@@ -722,7 +722,7 @@ function newSection(element) {
 		});
 
 		// extract the contents
-		var contents = selectron.range().extractContents();
+		var contents = selektr.range().extractContents();
 
 		deleteEmptyElements($section[0]);
 		$el.append(contents.childNodes);
@@ -735,7 +735,7 @@ function newSection(element) {
 	// ensure correct BR on both affected elements
 	setBR([ $el[0], $section[0] ]);
 
-	selectron.set({
+	selektr.set({
 		ref: $el[0]
 	}, true);
 }
@@ -744,11 +744,11 @@ function newSection(element) {
  * Outdents all list items contained in the selection one level
  *
  * @static
- * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{Element} element - Element which is used as root for selektr.
  */
 function outdent(element){
-	var listItems = selectron.contained.listItems.filter(listItemFilter),
-		positions = selectron.get();
+	var listItems = selektr.contained.listItems.filter(listItemFilter),
+		positions = selektr.get();
 
 	// we outdent in the reverse order from indent
 	listItems.reverse().forEach(function(li, i) {
@@ -780,7 +780,7 @@ function outdent(element){
 		}
 	});
 
-	selectron.restore(positions);
+	selektr.restore(positions);
 }
 
 /**
@@ -788,17 +788,17 @@ function outdent(element){
  * not collapsed
  *
  * @static
- * @param	{Element} element - Element which is used as root for selectron.
+ * @param	{Element} element - Element which is used as root for selektr.
  * @param	{DataTransfer} dataTransfer - Must have a getData method which returns pure text string
  */
 function paste(element, dataTransfer) {
-	var rng = selectron.range(),
+	var rng = selektr.range(),
 		textBlocks = dataTransfer.getData('Text').replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').split(/[\n\r]+/);
 
 	if(!rng.collapsed) {
 		// delete range contents if not collapsed
 		deleteRangeContents(element, rng);
-		rng = selectron.range();
+		rng = selektr.range();
 	}
 
 
@@ -811,12 +811,12 @@ function paste(element, dataTransfer) {
 		// last text block. if we are only pasting one text block, we could
 		// have simply split the current node and inserted the contents inbetween,
 		// but i decided for a tiny performance loss vs no code duplication
-		selectron.set({
-			start: selectron.get('start', true),
+		selektr.set({
+			start: selektr.get('start', true),
 			end: { ref: section, offset: section.childNodes.length }
 		});
 
-		var contents = selectron.range().extractContents();
+		var contents = selektr.range().extractContents();
 		
 		var ref = section.nextSibling,// will be used to place new sections into the DOM
 			parent = section.parentNode,// if no next sibling, save reference to parent
@@ -851,7 +851,7 @@ function paste(element, dataTransfer) {
 		($el || $(section)).append(contents.childNodes);
 
 		// set the range to end of last inserted textnode
-		selectron.set({
+		selektr.set({
 			ref: textNode,
 			offset: textNode.textContent.length,
 		}, true);
@@ -879,12 +879,12 @@ function removeFormat(element, tag) {
 		document.execCommand('removeFormat');
 		element.normalize();
 	} else {
-		var rng = selectron.range();
+		var rng = selektr.range();
 
 		if(!rng.collapsed) {
-			var positions = selectron.get(element),
-				absolutePositions = selectron.get(true),
-				sections = selectron.contained.sections.filter(listItemFilter),
+			var positions = selektr.get(element),
+				absolutePositions = selektr.get(true),
+				sections = selektr.contained.sections.filter(listItemFilter),
 				startSection = _.first(sections),
 				endSection = _.last(sections);
 			
@@ -893,14 +893,14 @@ function removeFormat(element, tag) {
 			sections.slice(1,-1).forEach(unwrap);
 
 			if(startSection !== endSection) {
-				selectron.set({
+				selektr.set({
 					start: {
 						ref: endSection,
 						offset: 0
 					},
 					end: absolutePositions.end
 				});
-				contents = selectron.range().extractContents();
+				contents = selektr.range().extractContents();
 				unwrap(contents);
 				$(endSection).prepend(contents.childNodes);
 
@@ -909,7 +909,7 @@ function removeFormat(element, tag) {
 				tidy(endSection);
 				endSection.normalize();
 
-				selectron.set({
+				selektr.set({
 					start: absolutePositions.start,
 					end: {
 						ref: startSection,
@@ -918,7 +918,7 @@ function removeFormat(element, tag) {
 				});
 			}
 
-			contents = selectron.range().extractContents();
+			contents = selektr.range().extractContents();
 			unwrap(contents);
 			if(startSection !== endSection)
 				if($(_.last(startSection.childNodes)).is('UL,OL')) 
@@ -926,12 +926,12 @@ function removeFormat(element, tag) {
 				else
 					$(startSection).append(contents.childNodes);
 			else {
-				selectron.set(absolutePositions.start);
-				rng = selectron.range();
+				selektr.set(absolutePositions.start);
+				rng = selektr.range();
 				ref = rng.endContainer;
 				var $tag = $(ref).closest(tag, element);
 				if($tag.length === 1) {
-					selectron.set({
+					selektr.set({
 						start: {
 							ref: ref,
 							offset: rng.endOffset
@@ -941,7 +941,7 @@ function removeFormat(element, tag) {
 							offset: $tag[0].childNodes.length
 						}
 					});
-					var newContents = selectron.range().extractContents();
+					var newContents = selektr.range().extractContents();
 					unwrap(newContents);
 					$('<' + tag + '>').insertAfter($tag).append(newContents.childNodes);
 					ref = $tag[0];
@@ -955,7 +955,7 @@ function removeFormat(element, tag) {
 			startSection.normalize();
 
 			// restore the selection
-			selectron.restore(positions);
+			selektr.restore(positions);
 		}
 	}
 	

@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.5.1",
+  "version": "0.6.0-alpha",
   "description": "Why? Because there is nothing like it.",
   "main": "./index.js",
   "scripts": {
@@ -10,10 +10,15 @@
     "type": "git",
     "url": "https://github.com/thecodebureau/spytext"
   },
-  "author": "",
+  "author": "Linus Miller <lohfu@lohfu.io> (https://lohfu.io/)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/thecodebureau/spytext/issues"
   },
-  "homepage": "https://github.com/thecodebureau/spytext"
+  "homepage": "https://github.com/thecodebureau/spytext",
+  "dependencies": {
+    "descendants": "^0.0.1",
+    "selektr": "^0.0.1",
+    "snapback": "^0.4.0"
+  }
 }

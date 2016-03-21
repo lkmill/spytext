@@ -5,7 +5,7 @@
  */
 
 var commands = require('./commands'),
-	selectron = require('./selectron');
+	selektr = require('selektr');
 
 module.exports = require('ridge/view').extend({
 	/**
@@ -68,13 +68,13 @@ module.exports = require('ridge/view').extend({
 
 			$(ul).removeClass('pseudo pseudo-list pseudo-multiple').find('> li').removeClass('active');
 			
-			if(selectron.contained.lists.length > 0) {
+			if(selektr.contained.lists.length > 0) {
 				$(ul).addClass('pseudo pseudo-list');
-			} else if(selectron.styles.blocks.length === 1) {
-				$(ul).find('button[data-option="' + selectron.styles.blocks[0].toLowerCase() + '"]').each(function() {
+			} else if(selektr.styles.blocks.length === 1) {
+				$(ul).find('button[data-option="' + selektr.styles.blocks[0].toLowerCase() + '"]').each(function() {
 					$(this.parentNode).addClass('active');
 				});
-			} else if(selectron.styles.blocks.length > 1) {
+			} else if(selektr.styles.blocks.length > 1) {
 				$(ul).addClass('pseudo pseudo-multiple');
 			}
 		});
