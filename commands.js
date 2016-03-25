@@ -8,6 +8,13 @@ var selektr = require('selektr'),
 	descendants = require('descendants'),
 	sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
+var initial = require('lodash/initial'),
+	head = require('lodash/head'),
+	last = require('lodash/last'),
+	isArray = require('lodash/isArray'),
+	toArray = require('lodash/toArray');
+
+
 function listItemFilter(node) {
 	// this is to filter out LI with nested lists where only text in the nested
 	// list is selected, not text in the actual LI tag siblings to the nested <ul>)
@@ -16,7 +23,7 @@ function listItemFilter(node) {
 	// nodes in the LI containing the nested list. The LI containing 
 	return node.nodeName !== 'LI' ||
 		$(node).children('UL,OL').length === 0 ||
-		selektr.containsSome(_.initial(node.childNodes), true) ||
+		selektr.containsSome(initial(node.childNodes), true) ||
 		selektr.isAtEndOfSection(node);
 }
 
@@ -55,8 +62,8 @@ function block(element, tag) {
 
 	var sections = selektr.contained.sections.filter(listItemFilter),
 		newBlocks = [],
-		$startSection = $(_.first(sections)),
-		$endSection = $(_.last(sections)),
+		$startSection = $(head(sections)),
+		$endSection = $(last(sections)),
 		positions = selektr.get(),
 		$ref;
 
@@ -187,8 +194,8 @@ function deleteRangeContents(element, rng) {
 	rng = rng || selektr.range();
 
 	var $startContainer = $(rng.startContainer),
-		$startSection = $(_.first(selektr.contained.sections)),
-		$endSection = $(_.last(selektr.contained.sections)),
+		$startSection = $(head(selektr.contained.sections)),
+		$endSection = $(last(selektr.contained.sections)),
 		position = selektr.get('start');
 
 	// use native deleteContents to remove the contents of the selection,
@@ -277,7 +284,7 @@ function indent(element, isOutdent){
 		var $prev = $(el).prev();
 
 		if($prev.length === 1) {
-			// only allow indenting list items if they are not the first items in their list
+			// only allow indenting list items if they are not the head items in their list
 
 			// try to fetch the current element's nested list
 			var $nestedList = $prev.children('UL,OL');
@@ -357,7 +364,7 @@ function joinNext(element, section) {
 function join(element, node1, node2) {
 	var length = node1.textContent.length;
 
-	if(node1.firstChild && node1.firstChild.tagName === 'BR') $(node1.firstChild).remove();
+	if(node1.headChild && node1.headChild.tagName === 'BR') $(node1.headChild).remove();
 	if(node1.lastChild && node1.lastChild.tagName === 'BR') $(node1.lastChild).remove();
 	if(node2.lastChild && node2.lastChild.tagName === 'BR') $(node2.lastChild).remove();
 
@@ -366,7 +373,7 @@ function join(element, node1, node2) {
 
 	if(($nestedList = $(node1).children('UL,OL')).length === 1) {
 		// `node1` has a nested list, and `node2` should
-		// be the first list item in the nested list. this means
+		// be the head list item in the nested list. this means
 		// we can leave the nested list, and simply insert
 		// `node2` children before the nested list in `node1`.
 
@@ -423,8 +430,8 @@ function join(element, node1, node2) {
 function format(element, tag){
 	function unwrap(el) {
 		$(tag, el).each(function() {
-			if(this.firstChild)
-				$(this.firstChild).unwrap();
+			if(this.headChild)
+				$(this.headChild).unwrap();
 			else
 				$(this.remove());
 		});
@@ -439,17 +446,17 @@ function format(element, tag){
 		var positions = selektr.get(),
 			absolutePositions = selektr.get(true),
 			sections = selektr.contained.sections.filter(listItemFilter),
-			startSection = _.first(sections),
-			endSection = _.last(sections),
+			startSection = head(sections),
+			endSection = last(sections),
 			contents,
 			$clone;
 
 		sections.slice(1,-1).forEach(function(section) {
 			unwrap(section);
-			childNodes = _.toArray(section.childNodes);
+			childNodes = toArray(section.childNodes);
 
-			if($(_.last(childNodes)).is('UL,OL'))
-				childNodes = _.initial(childNodes);
+			if($(last(childNodes)).is('UL,OL'))
+				childNodes = initial(childNodes);
 
 			$clone = $wrapper.clone();
 			$(section).prepend($clone);
@@ -479,7 +486,7 @@ function format(element, tag){
 				start: absolutePositions.start,
 				end: {
 					ref: startSection,
-					offset: $(_.last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
+					offset: $(last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
 				}
 			});
 		}
@@ -555,8 +562,8 @@ function list(element, tag) {
 		listItems = [],
 		positions = selektr.get();
 	
-	var $startSection = $(_.first(sections)),
-		$endSection = $(_.last(sections)),
+	var $startSection = $(head(sections)),
+		$endSection = $(last(sections)),
 		$list;
 
 	// $list is a reference to the list all new
@@ -634,7 +641,7 @@ function list(element, tag) {
 					var $children = $listItem.children("UL,OL").remove();
 
 					// append $listItem to $ref (which will be the target list
-					// if we are on first level
+					// if we are on head level
 					$ref.append($listItem);
 
 					// check if we had found (and removed) any nested lists
@@ -806,7 +813,7 @@ function paste(element, dataTransfer) {
 		var section = $(rng.startContainer).closest(sectionTags.join(','), element)[0];
 
 		// Select everything from the caret to the end of section and
-		// extract the contents. this is so we can to append the first text block
+		// extract the contents. this is so we can to append the head text block
 		// to the current section (where the extracted content will have been), and insert the extracted contents after the
 		// last text block. if we are only pasting one text block, we could
 		// have simply split the current node and inserted the contents inbetween,
@@ -830,7 +837,7 @@ function paste(element, dataTransfer) {
 					// remove the last item if it is a line break
 					$(section.lastChild).remove();
 
-				// since this is the first text Block,
+				// since this is the head text Block,
 				// simply append the textNode to the section
 				$(section).append(textNode);
 			} else {
@@ -868,8 +875,8 @@ function paste(element, dataTransfer) {
 function removeFormat(element, tag) {
 	function unwrap(el) {
 		$(tag, el).each(function() {
-			if(this.firstChild)
-				$(this.firstChild).unwrap();
+			if(this.headChild)
+				$(this.headChild).unwrap();
 			else
 				$(this.remove());
 		});
@@ -885,8 +892,8 @@ function removeFormat(element, tag) {
 			var positions = selektr.get(element),
 				absolutePositions = selektr.get(true),
 				sections = selektr.contained.sections.filter(listItemFilter),
-				startSection = _.first(sections),
-				endSection = _.last(sections);
+				startSection = head(sections),
+				endSection = last(sections);
 			
 			var contents, $clone;
 
@@ -913,7 +920,7 @@ function removeFormat(element, tag) {
 					start: absolutePositions.start,
 					end: {
 						ref: startSection,
-						offset: $(_.last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
+						offset: $(last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
 					}
 				});
 			}
@@ -921,8 +928,8 @@ function removeFormat(element, tag) {
 			contents = selektr.range().extractContents();
 			unwrap(contents);
 			if(startSection !== endSection)
-				if($(_.last(startSection.childNodes)).is('UL,OL')) 
-					$(_.last(startSection.childNodes)).before(contents.childNodes);
+				if($(last(startSection.childNodes)).is('UL,OL')) 
+					$(last(startSection.childNodes)).before(contents.childNodes);
 				else
 					$(startSection).append(contents.childNodes);
 			else {
@@ -968,7 +975,7 @@ function removeFormat(element, tag) {
  * @param	{Element} element - Element whos descendants need to be checked of extraneous BR tags
  */
 function setBR(element) {
-	if(_.isArray(element)) 
+	if(isArray(element)) 
 		return element.forEach(setBR);
 	
 	if(!element.firstChild ||
@@ -990,13 +997,13 @@ function setBR(element) {
 }
 
 function tidy(element) {
-	// deleteEmptyElements should be called first so we do not have to worrry about empty elements
+	// deleteEmptyElements should be called head so we do not have to worrry about empty elements
 	$('STRONG,U,EM,STRIKE', element).each(function() {
 		if(!this.parentNode) return;
 
 		$(this.tagName, this).each(function() {
-			if(this.firstChild)
-				$(this.firstChild).unwrap();
+			if(this.headChild)
+				$(this.headChild).unwrap();
 		});
 
 		var next = this.nextSibling;
@@ -1006,10 +1013,10 @@ function tidy(element) {
 				$(next).remove();
 			} else {
 				var ref = next;
-				while(ref.firstChild && ref.firstChild === ref.lastChild) {
-					ref = ref.firstChild;
+				while(ref.headChild && ref.headChild === ref.lastChild) {
+					ref = ref.headChild;
 					if(ref.tagName === this.tagName) {
-						$(this.firstChild).unwrap();
+						$(this.headChild).unwrap();
 						$(this).append(next.childNodes);
 						$(next).remove();
 						break;

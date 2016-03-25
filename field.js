@@ -10,6 +10,9 @@ var SpytextToolbar = require('./toolbar');
 var selektr = require('selektr');
 var commands = require('./commands');
 	
+var assign = require('lodash/assign'),
+	toArray = require('lodash/toArray'),
+	tail = require('lodash/tail');
 /**
  * @readonly
  */
@@ -19,7 +22,7 @@ module.exports = require('ridge/view').extend({
 	/**
 	 * @lends SpytextField.prototype
 	 */
-	events: _.extend({
+	events: assign({
 		focus: 'activate',
 
 		blur: 'deactivate',
@@ -38,7 +41,7 @@ module.exports = require('ridge/view').extend({
 		if($(this.el).is(':empty')) {
 			$(this.el).append('<p>');
 		}
-		commands.setBR(_.toArray(this.el.children));
+		commands.setBR(toArray(this.el.children));
 
 		this.originalValue = this.el.innerHTML;
 
@@ -140,7 +143,7 @@ module.exports = require('ridge/view').extend({
 
 		if(commands[command]) {
 			// call the command
-			commands[command].apply(null,  [ field.el ].concat(_.tail(arguments)));
+			commands[command].apply(null,  [ field.el ].concat(tail(arguments)));
 
 			// normalize any text nodes in the field's element
 			field.el.normalize();
