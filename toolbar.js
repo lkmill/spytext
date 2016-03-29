@@ -1,11 +1,17 @@
+'use strict';
+
 /**
- * A Backbone.View for Spytext fields. 
+ * A Backbone.View for Spytext fields.
  *
- * @module spytext/toolbar 
+ * @module spytext/toolbar
  */
 
 var commands = require('./commands'),
-	selektr = require('selektr');
+	selektr = require('selektr'),
+	ancestors = require('dollr/ancestors'),
+	is = require('dollr/is'),
+	uniq = require('lodash/uniq'),
+	children = require('dollr/children');
 
 module.exports = require('ridge/view').extend({
 	/**
@@ -17,7 +23,7 @@ module.exports = require('ridge/view').extend({
 		'click button[data-command]': 'command',
 		'click button[data-undo]': 'undo',
 		'click button[data-redo]': 'redo',
-		'mousedown .container': function(e) {
+		'mousedown .container': function (e) {
 			// this is needed to prevent toolbar from stealing focus
 			e.preventDefault();
 		}
@@ -49,6 +55,50 @@ module.exports = require('ridge/view').extend({
 	setActiveStyles: function() {
 		if(!this.field) return this.toggle();
 
+		var formats = [ 'strong', 'u', 'em', 'strike' ];
+
+		var sections = selektr.contained({ sections: true }, true);
+		var listItems = uniq(sections.filter((node) => node.nodeName === 'LI'));
+		var lists = selektr.contained(children(this.field.el, 'UL,OL'), true);
+		var blocks = sections.filter((node) => node.nodeName !== 'LI');
+
+		var commonAncestor = selektr.range().commonAncestorContainer;
+
+		var textNodes = commonAncestor.nodeType === 3 ? [ commonAncestor ] : selektr.contained({ element: commonAncestor, nodeType: 3 }, true);
+
+		var styles = {
+			sections: sections,
+			listItems: listItems,
+			lists: lists,
+			blocks: uniq(blocks.map((node) => node.nodeName))
+		};
+
+		styles.alignment = blocks.reduce((result, block) => {
+			if (result === undefined) return result;
+
+			let newResult = getComputedStyle(block).textAlign;
+
+			if (newResult === 'start') newResult = 'left';
+
+			if (result === null) result = newResult;
+
+			return result === newResult ? newResult : undefined;
+		}, null);
+
+
+		styles.formats = [];
+
+		formats.forEach((tag) => {
+			var rng = selektr.range();
+
+			if ((textNodes.length > 0 && textNodes.every((node) => ancestors(node, null, this.field.element).some((element) => element.matches(tag)))) ||
+				rng.collapsed && (is(rng.startContainer, tag) ||
+				ancestors(rng.startContainer, null, this.field.element).some((element) => element.matches(tag)))) {
+
+				styles.formats.push(tag);
+			}
+		});
+
 		$('button[data-command]').each(function() {
 			var command = commands[$(this).attr('data-command')];
 
@@ -57,10 +107,10 @@ module.exports = require('ridge/view').extend({
 			var option = $(this).attr('data-option');
 
 			if(command.active)
-				$(this).toggleClass('active', command.active(option));
+				$(this).toggleClass('active', command.active(option, styles));
 			
 			if(command.disabled)
-				$(this).prop('disabled', command.disabled(option));
+				$(this).prop('disabled', command.disabled(option, styles));
 		});
 
 		$('ul[data-command="block"]').each(function() {
@@ -68,17 +118,18 @@ module.exports = require('ridge/view').extend({
 
 			$(ul).removeClass('pseudo pseudo-list pseudo-multiple').find('> li').removeClass('active');
 			
-			if(selektr.contained.lists.length > 0) {
+			if(lists.length > 0) {
 				$(ul).addClass('pseudo pseudo-list');
-			} else if(selektr.styles.blocks.length === 1) {
-				$(ul).find('button[data-option="' + selektr.styles.blocks[0].toLowerCase() + '"]').each(function() {
+			} else if(blocks.length === 1) {
+				$(ul).find('button[data-option="' + styles.blocks[0].toLowerCase() + '"]').each(function() {
 					$(this.parentNode).addClass('active');
 				});
-			} else if(selektr.styles.blocks.length > 1) {
+			} else if(blocks.length > 1) {
 				$(ul).addClass('pseudo pseudo-multiple');
 			}
 		});
 
+		// use undoIndex in snapback instance to decide whether we can undo/redo
 		this.$('button[data-undo]').prop('disabled', this.field.snapback.undoIndex === -1);
 		this.$('button[data-redo]').prop('disabled', this.field.snapback.undoIndex >= (this.field.snapback.undos.length - 1));
 	},

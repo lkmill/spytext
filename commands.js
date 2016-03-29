@@ -5,6 +5,8 @@
  */
 
 var selektr = require('selektr'),
+	children = require('dollr/children'),
+	is = require('dollr/is'),
 	descendants = require('descendants'),
 	sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
 
@@ -36,18 +38,18 @@ function listItemFilter(node) {
  * @return {string} alignment
  */
 function align(element, alignment) {
-	selektr.contained.blocks.forEach(function(child) {
+	selektr.contained(children(element, sectionTags.join())).forEach(function(child) {
 		// do not set text-align property on lists
 		$(child).css('text-align', alignment);
 	});
 }
 
-align.active = function(option, field) {
-	return !!selektr.styles.alignment && selektr.styles.alignment === option;
+align.active = function(option, styles) {
+	return !!styles.alignment && styles.alignment === option;
 };
 
-align.disabled = function() {
-	return selektr.contained.blocks.length === 0;
+align.disabled = function(option, styles) {
+	return styles.blocks.length === 0;
 };
 /**
  * Changes all (partly) contained sections in the current selection to (block
@@ -58,9 +60,9 @@ align.disabled = function() {
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 function block(element, tag) {
-	if(block.active(tag)) return;
+	//if(block.active(tag)) return;
 
-	var sections = selektr.contained.sections.filter(listItemFilter),
+	var sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
 		newBlocks = [],
 		$startSection = $(head(sections)),
 		$endSection = $(last(sections)),
@@ -129,8 +131,8 @@ function block(element, tag) {
 	selektr.restore(positions, true);
 }
 
-block.active = function(tag) {
-	return selektr.styles.blocks.length === 1 && selektr.styles.blocks[0] === tag.toUpperCase();
+block.active = function(tag, styles) {
+	return styles.blocks.length === 1 && styles.blocks[0] === tag.toUpperCase();
 };
 
 /**
@@ -194,8 +196,8 @@ function deleteRangeContents(element, rng) {
 	rng = rng || selektr.range();
 
 	var $startContainer = $(rng.startContainer),
-		$startSection = $(head(selektr.contained.sections)),
-		$endSection = $(last(selektr.contained.sections)),
+		$startSection = $(head(selektr.contained({ sections: true }, true))),
+		$endSection = $(last(selektr.contained({ sections: true }, true))),
 		position = selektr.get('start');
 
 	// use native deleteContents to remove the contents of the selection,
@@ -270,7 +272,7 @@ function deleteRangeContents(element, rng) {
 function indent(element, isOutdent){
 	if(isOutdent) return outdent(element);
 
-	var listItems = selektr.contained.listItems.filter(function(node) {
+	var listItems = selektr.contained(element.querySelectorAll('li'), true).filter(function(node) {
 			return listItemFilter(node) ||
 				selektr.containsEvery(descendants(node, {
 					nodeType: 1,
@@ -304,8 +306,8 @@ function indent(element, isOutdent){
 	selektr.restore(positions, true);
 }
 
-indent.disabled = function() {
-	return selektr.contained.lists.length === 0;
+indent.disabled = function(option, styles) {
+	return styles.lists.length === 0;
 };
 
 /**
@@ -437,7 +439,8 @@ function format(element, tag){
 		});
 	}
 
-	if(format.active(tag)) return removeFormat(element, tag);
+	// TODO need to find a better way to removeFormat
+	//if(format.active(tag)) return removeFormat(element, tag);
 
 	var rng = selektr.range(),
 		$wrapper = $('<' + tag + '>');
@@ -445,7 +448,7 @@ function format(element, tag){
 	if(!rng.collapsed) {
 		var positions = selektr.get(),
 			absolutePositions = selektr.get(true),
-			sections = selektr.contained.sections.filter(listItemFilter),
+			sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
 			startSection = head(sections),
 			endSection = last(sections),
 			contents,
@@ -510,8 +513,8 @@ function format(element, tag){
 	}
 }
 
-format.active = function(option) {
-	return !!option && selektr.styles.formats.indexOf(option.toLowerCase()) > -1;
+format.active = function(option, styles) {
+	return !!option && styles.formats.indexOf(option.toLowerCase()) > -1;
 };
 
 /**
@@ -556,9 +559,12 @@ function link(element, attribute) {
  * @param	{string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
-	if(list.active(tag)) return;
+	// TODO we might have to reimplement the commented line below. currently this works fine
+	// because the list button is disabled when active, but if one calls the list command
+	// on the same kind of list, it will probably split it into a new, same kind list
+	//if(list.active(tag)) return;
 
-	var sections = selektr.contained.sections.filter(listItemFilter),
+	var sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
 		listItems = [],
 		positions = selektr.get();
 	
@@ -680,8 +686,8 @@ function list(element, tag) {
 	selektr.restore(positions, true);
 }
 
-list.active = function(option) {
-	return selektr.contained.lists.length === 1 && $(selektr.contained.lists).is(option);
+list.active = function(option, styles) {
+	return styles.blocks.length === 0 && styles.lists.length === 1 && is(styles.lists[0], option);
 };
 
 /**
@@ -754,7 +760,7 @@ function newSection(element) {
  * @param	{Element} element - Element which is used as root for selektr.
  */
 function outdent(element){
-	var listItems = selektr.contained.listItems.filter(listItemFilter),
+	var listItems = selektr.contained(element.querySelectorAll('li'), true).filter(listItemFilter),
 		positions = selektr.get();
 
 	// we outdent in the reverse order from indent
@@ -891,7 +897,7 @@ function removeFormat(element, tag) {
 		if(!rng.collapsed) {
 			var positions = selektr.get(element),
 				absolutePositions = selektr.get(true),
-				sections = selektr.contained.sections.filter(listItemFilter),
+				sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
 				startSection = head(sections),
 				endSection = last(sections);
 			
