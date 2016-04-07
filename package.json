@@ -18,8 +18,9 @@
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
     "descendants": "^0.0.3",
-    "lodash": "^4.6.1",
-    "selektr": "^0.0.2",
+    "dollr": "0.0.2",
+    "lodash": "^4.9.0",
+    "selektr": "^0.0.3",
     "snapback": "^0.4.1"
   }
 }
