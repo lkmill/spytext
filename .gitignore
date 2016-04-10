@@ -33,8 +33,4 @@ bower_components
 
 /dump
 
-/public
-
-/server/uploads
-
 /*.js
