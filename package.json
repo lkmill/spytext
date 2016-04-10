@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Why? Because there is nothing like it.",
   "main": "./index.js",
   "scripts": {
@@ -22,9 +22,9 @@
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
     "descendants": "^0.0.3",
-    "dollr": "0.0.2",
+    "dollr": "0.0.3",
     "lodash": "^4.9.0",
-    "selektr": "^0.0.3",
+    "selektr": "^0.0.4",
     "snapback": "^0.4.1"
   },
   "devDependencies": {
