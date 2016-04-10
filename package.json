@@ -4,7 +4,11 @@
   "description": "Why? Because there is nothing like it.",
   "main": "./index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rimraf *.js",
+    "lint": "eslint src",
+    "build": "babel src --out-dir .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npm run clean && npm run build"
   },
   "repository": {
     "type": "git",
@@ -22,5 +26,12 @@
     "lodash": "^4.9.0",
     "selektr": "^0.0.3",
     "snapback": "^0.4.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.7.5",
+    "eslint": "^2.7.0",
+    "eslint-config-airbnb": "^6.2.0",
+    "eslint-plugin-react": "^4.3.0",
+    "rimraf": "^2.5.2"
   }
 }
