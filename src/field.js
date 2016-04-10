@@ -1,22 +1,24 @@
+'use strict';
+
 /**
- * A Backbone.View for Spytext fields. 
+ * A Backbone.View for Spytext fields.
  *
- * @module spytext/field 
+ * @module spytext/field
  */
 
-var Snapback = require('snapback');
-var SpytextToolbar = require('./toolbar');
+const Snapback = require('snapback');
+const SpytextToolbar = require('./toolbar');
 
-var selektr = require('selektr');
-var commands = require('./commands');
-	
-var assign = require('lodash/assign'),
+const selektr = require('selektr');
+const commands = require('./commands');
+
+const assign = require('lodash/assign'),
 	toArray = require('lodash/toArray'),
 	tail = require('lodash/tail');
 /**
  * @readonly
  */
-var blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];      
+//const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 module.exports = require('ridge/view').extend({
 	/**
@@ -32,13 +34,12 @@ module.exports = require('ridge/view').extend({
 	 * @constructs
 	 * @augments Backbone.View
 	 */
-	initialize: function() {
-		var _view = this;
+	initialize() {
 		this.$el.addClass('spytext-field').attr('contentEditable', 'true');
 
 		commands.deleteEmptyTextNodes(this.el);
 		commands.deleteEmptyElements(this.el);
-		if($(this.el).is(':empty')) {
+		if ($(this.el).is(':empty')) {
 			$(this.el).append('<p>');
 		}
 		commands.setBR(toArray(this.el.children));
@@ -55,11 +56,11 @@ module.exports = require('ridge/view').extend({
 			 *
 			 * @return {Positions}
 			 */
-			store: function(data) {
+			store(data) {
 				return (this.data = (data || selektr.get()));
 			},
 
-			restore: function(data) {
+			restore(data) {
 				this.store(data);
 
 				selektr.restore(data, true);
@@ -70,35 +71,34 @@ module.exports = require('ridge/view').extend({
 	/**
 	 * Activates the current field.
 	 */
-	activate: function() {
-		var _field = this;
-
+	activate() {
 		// enable snapback, ie. tell the snapback instance's
 		// mutationObserver to observer
-		_field.snapback.enable();
+		this.snapback.enable();
 
 		// toggle the toolbar, passing the current field to it
-		_field.toolbar.toggle(_field);
+		this.toolbar.toggle(this);
 
-		selektr.setElement(_field.el);
+		selektr.setElement(this.el);
 
 		// i think the timeout is because of the range not being initialized
 		// so snapback.storePositions/selektr produces an error
-		setTimeout(function() {
-			_field.snapback.store();
+		setTimeout(() => {
+			this.snapback.store();
 
-			// this is to capture events when mousedown on 
+			// this is to capture events when mousedown on
 			// fields element but mouseup outside
-			$(document).on('mousedown', function(e) {
+			$(document).on('mousedown', (e) => {
 				clearTimeout(this.timeout);
-				_field.snapback.register();
+				this.snapback.register();
 			});
-			$(document).on('mouseup', function(e) {
-				setTimeout(function() {
+
+			$(document).on('mouseup', (e) => {
+				setTimeout(() => {
 					selektr.normalize();
 					selektr.update();
-					_field.toolbar.setActiveStyles();
-					_field.snapback.store();
+					this.toolbar.setActiveStyles();
+					this.snapback.store();
 				});
 			});
 		});
@@ -107,7 +107,7 @@ module.exports = require('ridge/view').extend({
 	/**
 	 * Deactivates the current field.
 	 */
-	deactivate: function() {
+	deactivate() {
 		// register mutations (if any) as an undo before deactivating
 		this.snapback.register();
 
@@ -122,8 +122,8 @@ module.exports = require('ridge/view').extend({
 		$(document).off('mousedown');
 	},
 
-	render: function() {
-		if(!this.el.firstChild) {
+	render() {
+		if (!this.el.firstChild) {
 			this.$el.append('<p><br></p>');
 		}
 	},
@@ -133,28 +133,26 @@ module.exports = require('ridge/view').extend({
 	 *
 	 * @see module:spytext/commands
 	 */
-	command: function(command) {
-		var field = this;
-
+	command(command) {
 		// register mutations (if any) as undo before calling command
 		// so that the command becomes it's own undo without merging
 		// it with any previous mutations in the mutation array in snapback
-		field.snapback.register();
+		this.snapback.register();
 
-		if(commands[command]) {
+		if (commands[command]) {
 			// call the command
-			commands[command].apply(null,  [ field.el ].concat(tail(arguments)));
+			commands[command].apply(null, [ this.el ].concat(tail(arguments)));
 
 			// normalize any text nodes in the field's element
-			field.el.normalize();
+			this.el.normalize();
 
-			$(field.el).trigger('change');
+			$(this.el).trigger('change');
 			// unfortunately, we need to wrap the registation of a new Undo
 			// in a timeout
-			setTimeout(function(){
+			setTimeout(() => {
 				// register the called command as an undo
-				field.snapback.register();
-				field.toolbar.setActiveStyles();
+				this.snapback.register();
+				this.toolbar.setActiveStyles();
 			});
 		}
 	},

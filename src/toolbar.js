@@ -6,7 +6,7 @@
  * @module spytext/toolbar
  */
 
-var commands = require('./commands'),
+const commands = require('./commands'),
 	selektr = require('selektr'),
 	ancestors = require('dollr/ancestors'),
 	is = require('dollr/is'),
@@ -29,7 +29,7 @@ module.exports = require('ridge/view').extend({
 		}
 	},
 
-	render: function() {
+	render() {
 		return this.setElement($('<div class="spytext-toolbar"><div class="container"><ul class="spytext-button-group undo"><li><button class="spytext-button undo" data-undo tabindex="-1"></button></li><li><button class="spytext-button redo" data-redo tabindex="-1"></button></li></ul><ul class="spytext-dropdown block" data-command="block"><li><button data-option="h1">Heading 1</button></li><li><button data-option="h2">Heading 2</button></li><li><button data-option="h3">Heading 3</button></li><li><button data-option="h4">Heading 4</button></li><li><button data-option="h5">Heading 5</button></li><li><button data-option="h6">Heading 6</button></li><li><button data-option="p">Paragraph</button></li></ul><ul class="spytext-button-group format"><li><button class="spytext-button bold" data-command="format" data-option="strong" tabindex="-1"></button></li><li><button class="spytext-button italic" data-command="format" data-option="em" tabindex="-1"></button></li><li><button class="spytext-button underline" data-command="format" data-option="u" tabindex="-1"></button></li><li><button class="spytext-button strike-through" data-command="format" data-option="strike" tabindex="-1"></button></li><li><button class="spytext-button remove-format" data-command="removeFormat" tabindex="-1"></button></li></ul><ul class="spytext-button-group align"><li><button class="spytext-button link" data-command="link" tabindex="-1"></button></li></ul><ul class="spytext-button-group align"><li><button class="spytext-button align-left" data-command="align" data-option="left" tabindex="-1"></button></li><li><button class="spytext-button align-center" data-command="align" data-option="center" tabindex="-1"></button></li><li><button class="spytext-button align-right" data-command="align" data-option="right" tabindex="-1"></button></li><li><button class="spytext-button align-justify" data-command="align" data-option="justify" tabindex="-1"></button></li></ul><ul class="spytext-button-group list"><li><button class="spytext-button unordered-list" data-command="list" data-option="ul" tabindex="-1"></button></li><li><button class="spytext-button ordered-list" data-command="list" data-option="ol" tabindex="-1"></button></li></ul><ul class="spytext-button-group indent"><li><button class="spytext-button indent" data-command="indent" tabindex="-1"></button></li><li><button class="spytext-button outdent" data-command="indent" data-option="outdent" tabindex="-1"></button></li></ul></div></div>'));
 	},
 
@@ -37,36 +37,36 @@ module.exports = require('ridge/view').extend({
 	 * Activates or deactivates the toolbar depending on whether a spytext field
 	 * is passed
 	 */
-	toggle: function(field) {
+	toggle(field) {
 		this.field = field;
 		this.$el.toggleClass('active', !!field);
 	},
 
-	undo: function() {
+	undo() {
 		this.field.snapback.undo();
 		this.setActiveStyles();
 	},
 
-	redo: function() {
+	redo() {
 		this.field.snapback.redo();
 		this.setActiveStyles();
 	},
 
-	setActiveStyles: function() {
-		if(!this.field) return this.toggle();
+	setActiveStyles() {
+		if (!this.field) return this.toggle();
 
-		var formats = [ 'strong', 'u', 'em', 'strike' ];
+		const formats = [ 'strong', 'u', 'em', 'strike' ];
 
-		var sections = selektr.contained({ sections: true }, true);
-		var listItems = uniq(sections.filter((node) => node.nodeName === 'LI'));
-		var lists = selektr.contained(children(this.field.el, 'UL,OL'), true);
-		var blocks = sections.filter((node) => node.nodeName !== 'LI');
+		const sections = selektr.contained({ sections: true }, true);
+		const listItems = uniq(sections.filter((node) => node.nodeName === 'LI'));
+		const lists = selektr.contained(children(this.field.el, 'UL,OL'), true);
+		const blocks = sections.filter((node) => node.nodeName !== 'LI');
 
-		var commonAncestor = selektr.range().commonAncestorContainer;
+		const commonAncestor = selektr.range().commonAncestorContainer;
 
-		var textNodes = commonAncestor.nodeType === 3 ? [ commonAncestor ] : selektr.contained({ element: commonAncestor, nodeType: 3 }, true);
+		const textNodes = commonAncestor.nodeType === 3 ? [ commonAncestor ] : selektr.contained({ element: commonAncestor, nodeType: 3 }, true);
 
-		var styles = {
+		const styles = {
 			sections: sections,
 			listItems: listItems,
 			lists: lists,
@@ -89,42 +89,41 @@ module.exports = require('ridge/view').extend({
 		styles.formats = [];
 
 		formats.forEach((tag) => {
-			var rng = selektr.range();
+			const rng = selektr.range();
 
 			if ((textNodes.length > 0 && textNodes.every((node) => ancestors(node, null, this.field.element).some((element) => element.matches(tag)))) ||
 				rng.collapsed && (is(rng.startContainer, tag) ||
 				ancestors(rng.startContainer, null, this.field.element).some((element) => element.matches(tag)))) {
-
 				styles.formats.push(tag);
 			}
 		});
 
-		$('button[data-command]').each(function() {
-			var command = commands[$(this).attr('data-command')];
+		$('button[data-command]').each(function () {
+			const command = commands[$(this).attr('data-command')];
 
-			if(!command) return;
+			if (!command) return;
 
-			var option = $(this).attr('data-option');
+			const option = $(this).attr('data-option');
 
-			if(command.active)
+			if (command.active)
 				$(this).toggleClass('active', command.active(option, styles));
-			
-			if(command.disabled)
+
+			if (command.disabled)
 				$(this).prop('disabled', command.disabled(option, styles));
 		});
 
-		$('ul[data-command="block"]').each(function() {
-			var ul = this;
+		$('ul[data-command="block"]').each(function () {
+			const ul = this;
 
 			$(ul).removeClass('pseudo pseudo-list pseudo-multiple').find('> li').removeClass('active');
-			
-			if(lists.length > 0) {
+
+			if (lists.length > 0) {
 				$(ul).addClass('pseudo pseudo-list');
-			} else if(styles.blocks.length === 1) {
-				$(ul).find('button[data-option="' + styles.blocks[0].toLowerCase() + '"]').each(function() {
+			} else if (styles.blocks.length === 1) {
+				$(ul).find('button[data-option="' + styles.blocks[0].toLowerCase() + '"]').each(function () {
 					$(this.parentNode).addClass('active');
 				});
-			} else if(styles.blocks.length > 1) {
+			} else if (styles.blocks.length > 1) {
 				$(ul).addClass('pseudo pseudo-multiple');
 			}
 		});
@@ -134,19 +133,19 @@ module.exports = require('ridge/view').extend({
 		this.$('button[data-redo]').prop('disabled', this.field.snapback.undoIndex >= (this.field.snapback.undos.length - 1));
 	},
 
-	listCommand: function(e) {
-		var command = $(e.currentTarget).closest('ul,ol').attr('data-command'),
+	listCommand(e) {
+		const command = $(e.currentTarget).closest('ul,ol').attr('data-command'),
 			option = $(e.currentTarget).attr('data-option');
-			
+
 		this.field.command(command, option);
 	},
 	/**
 	 * Calls a command on the field currently attached to the toolbar
 	 */
-	command: function(e) {
-		var command = $(e.currentTarget).attr('data-command'),
+	command(e) {
+		const command = $(e.currentTarget).attr('data-command'),
 			option = $(e.currentTarget).attr('data-option');
-			
+
 		this.field.command(command, option);
 	}
 });
