@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.6.4",
+  "version": "0.7.0",
   "description": "Why? Because there is nothing like it.",
   "main": "./field.js",
   "scripts": {
