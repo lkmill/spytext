@@ -2,7 +2,7 @@
   "name": "spytext",
   "version": "0.6.4",
   "description": "Why? Because there is nothing like it.",
-  "main": "./index.js",
+  "main": "./field.js",
   "scripts": {
     "clean": "rimraf *.js",
     "lint": "eslint src",
