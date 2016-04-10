@@ -26,10 +26,10 @@ module.exports = {
 				e.preventDefault();
 
 				var c = String.fromCharCode(e.charCode);
-					textNode = document.createTextNode(c);
+				var textNode = document.createTextNode(c);
 
 				rng.insertNode(textNode);
-				offset = 1;
+				var offset = 1;
 
 				selektr.set({
 					ref: textNode,
