@@ -120,11 +120,11 @@ module.exports = require('ridge/view').extend({
 			
 			if(lists.length > 0) {
 				$(ul).addClass('pseudo pseudo-list');
-			} else if(blocks.length === 1) {
+			} else if(styles.blocks.length === 1) {
 				$(ul).find('button[data-option="' + styles.blocks[0].toLowerCase() + '"]').each(function() {
 					$(this.parentNode).addClass('active');
 				});
-			} else if(blocks.length > 1) {
+			} else if(styles.blocks.length > 1) {
 				$(ul).addClass('pseudo pseudo-multiple');
 			}
 		});
