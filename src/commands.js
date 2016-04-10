@@ -456,7 +456,7 @@ function format(element, tag){
 
 		sections.slice(1,-1).forEach(function(section) {
 			unwrap(section);
-			childNodes = toArray(section.childNodes);
+			var childNodes = toArray(section.childNodes);
 
 			if($(last(childNodes)).is('UL,OL'))
 				childNodes = initial(childNodes);
