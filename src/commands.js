@@ -6,13 +6,22 @@
  */
 
 const selektr = require('selektr'),
+  dollr = require('dollr').$,
+  $$ = require('dollr').$$,
+  appendTo = require('dollr/appendTo'),
+  closest = require('dollr/closest'),
   children = require('dollr/children'),
   is = require('dollr/is'),
+  insertAfter = require('dollr/insertAfter'),
+  insertBefore = require('dollr/insertBefore'),
+  nextAll = require('dollr/nextAll'),
   descendants = require('descendants'),
   sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 const initial = require('lodash/initial'),
   head = require('lodash/head'),
+  invoke = require('lodash/invoke'),
+  invokeMap = require('lodash/invokeMap'),
   last = require('lodash/last'),
   isArray = require('lodash/isArray'),
   toArray = require('lodash/toArray');
@@ -566,125 +575,172 @@ function link(element, attribute) {
  * @param {string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
 function list(element, tag) {
-  // TODO we might have to reimplement the commented line below. currently this works fine
-  // because the list button is disabled when active, but if one calls the list command
-  // on the same kind of list, it will probably split it into a new, same kind list
+  /* TODO we might have to reimplement the commented line below. currently this
+   * works fine because the list button is disabled when active, but if one
+   * calls the list command on the same kind of list, it will probably split it
+   * into a new, same kind list
+   */
+
   //if(list.active(tag)) return;
 
   const sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
     listItems = [],
-    positions = selektr.get();
+    positions = selektr.get(),
+    startSection = head(sections),
+    endSection = last(sections);
 
-  const $startSection = $(head(sections)),
-    $endSection = $(last(sections));
-  let $list;
+  let list;
 
-  // $list is a reference to the list all new
-  // list items should be appended to. Essentially,
-  // after the next block of conditionals
-  // we should be able to append all contained sections
-  // to $list and not have to wrorry about remaining lists
+  /* `list` is a reference to the list all new list items should be appended to.
+   * Essentially, after the next block of conditionals we should be able to
+   * append all contained sections to `list` and not have to worry about
+   * remaining lists
+   */
 
-  if ($startSection.is('LI')) {
-    // $startList and $endList should reference lists furthest up the DOM, ie children of
-    // the fields element
-    const $startList = $startSection.closest(element.children);
-    let $endList;
+  if (startSection.matches('LI')) {
+    /* `startList` and `endList` should reference lists furthest up the DOM, ie children of
+     * the fields element
+     */
+    const startList = closest(startSection, element.children);
+    let endList;
 
-    if ($endSection.is('LI'))
-      $endList = $endSection.closest(element.children);
+    if (endSection.matches('LI'))
+      endList = closest(endSection, element.children);
 
-    if ($startList.is(tag)) {
-      // $startList is already the correct list type
-      // simply append all new list items to this
-      $list = $startList;
+    if (startList.matches(tag)) {
+      /* `startList` is already the correct list type
+       * simply append all new list items to this
+       */
+      list = startList;
 
-      if ($endList && $startList.is($endList)) {
-        // we have only selected one list and that list
-        // is already the correct list type, so do nothing
+      if (endList && startList === endList) {
+        /* we have only selected one list and that list
+         * is already the correct list type, so do nothing
+         */
         return;
       }
     } else {
-      // $startList is the wrong list type, we need to create a new list
-      // and insert it after $startList
-      $list = $('<' + tag + '>').insertAfter($startList);
+      /* `startList` is the wrong list type, we need to create a new list
+       * and insert it after `startList`
+       */
+      list = dollr('<' + tag + '>');
 
-      if ($endList && $startList.is($endList) && ($endSection[0].nextSibling || $endSection.children('UL,OL').length > 0)) {
-        // $endSection is a listItem, $startList is the same as $endList and is
-        // the wrong list type AND $endSection either has following siblings or
-        // has a nested list. Thus, we need to create a new list, place it
-        // after $list and append siblings and nested lists of $endSection to it
-        //
-        // the important part here is that $endSection has either next siblings or nested lists. if it did not,
-        // $endList would be empty at the end of the call to list and thus removed automatically
-        $('<' + $endList[0].tagName + '>').insertAfter($list).append($endSection.children('UL,OL').children()).append($endSection.nextAll());
+      insertAfter(list, startList);
+    }
+
+    if (endList && !endList.matches(tag)) {
+      /* `endSection` is a listItem, and `endList` is of the wrong type.
+       * If endSection has nested lists or follwing siblings we need to do some stuff.
+       *
+       * the important part here is that `endSection` has either next siblings or nested lists. if it did not,
+       * endList would be empty at the end of the call to list and thus removed automatically
+       *
+       * if `endSection` is also a list, all sections inbetween `startSection`
+       * and `endSection` will be selected, thus moved into `list` and `list`
+       * will eventually become previousSibling to `endSection`
+       */
+      let secondList;
+
+      if (children(endSection, 'UL,OL').length > 0) {
+      /* `endSection` has a nested list. Use that as our list.
+       */
+
+        secondList = children(endSection, 'UL,OL')[0];
+
+        insertAfter(secondList, list);
       }
+
+      if (endSection.nextSibling) {
+        /* `endSection` has following siblings. We need
+         * to append them to secondList (which needs to be created
+         * if `endSection` did not have a nested list.
+         */
+        if(!secondList) {
+          secondList = dollr('<' + endList.tagName + '>');
+
+          insertAfter(secondList, list);
+        }
+        
+        appendTo(nextAll(endSection), secondList);
+      } 
     }
   } else {
-    // if $startSection is not a list we need to create a new
-    // list that we can append all new list items to.
-    // insert this new list before $startSection
-    //
-    // if $endSection is also a list, all sections inbetween $startSection
-    // and $endSection will be selected, thus moved into $list and $list
-    // will eventually become previousSibling to $endSection
-    $list = $('<' + tag + '>').insertBefore($startSection);
+    /* If `startSection` is not a list we need to create a new
+     * list that we can append all new list items to.
+     * insert this new list before `startSection`
+     */
+    list = dollr('<' + tag + '>');
+
+    insertBefore(list, startSection);
   }
 
   sections.forEach(function (child, i) {
-    let $listItem;
+    let listItem;
 
     if (child.tagName === 'LI') {
-      // the child is itself a list item, we can simply
-      // move it around and do not need a new element
-      $listItem = $(child);
+      /* the child is itself a list item, we can simply
+       * move it around and do not need a new element
+       */
+      listItem = child;
 
-      if (!$list.is($listItem.closest(element.children))) {
-        // only move the listItem if it is not already
-        // contained within the target $list
+      if (list !== closest(listItem, element.children)) {
+        /* only move the listItem if it is not already contained within `list`
+         *
+         * recurse essentially appends the list items to `list`, but
+         * also correctly handles nested lists of the wrong type.
+         */
+        (function recurse(listItem, ref) {
+          /* TODO do not do this if target and soruce list are the same type
+           * ie. all nested lists are already the correct list type
+           *
+           * remove any nested list and save a reference to it
+           */
+          const oldNestedList = children(listItem, 'UL,OL');
 
-        // recurse essentially appends the list items to the
-        // target $list, but also correctly handles nested lists
-        // of the wrong type.
-        (function recurse($listItem, $ref) {
-          // TODO do not do this if target and soruce list are the same type
-          // ie. all nested lists are already the correct list type
-          //
-          // remove any nested list and save a reference to it
-          const $children = $listItem.children('UL,OL').remove();
+          invokeMap(oldNestedList, 'remove');
 
-          // append $listItem to $ref (which will be the target list
-          // if we are on head level
-          $ref.append($listItem);
+          /* append `listItem` to `ref` (which will be the target list
+           * if we are on head level
+           */
+          appendTo(listItem, ref);
 
           // check if we had found (and removed) any nested lists
-          if ($children.length > 0) {
-            // create a new nested list and append it to the $listItem
-            const $nestedList = $('<' + tag + '>').appendTo($listItem);
+          if (oldNestedList.length > 0) {
+            // create a new nested list and append it to the `listItem`
+            const nestedList = dollr('<' + tag + '>');
 
-            // recurse through all of the old nested lists list items
-            // and add them to the new nested list
-            $children.children().each(function () {
-              recurse($(this), $nestedList);
+            // TODO check if append is right
+            appendTo(nestedList, listItem);
+
+            /* recurse through all of the old nested lists list items
+             * and add them to the new nested list
+             */
+            $$(oldNestedList[0].children).forEach(function (li) {
+              recurse(li, nestedList);
             });
           }
-        })($listItem, $list);
+        })(listItem, list);
       }
     } else {
-      // child is not a list item, create a new list item
-      // and append all of child's childNodes to it
-      $listItem = $('<li>').appendTo($list).append(child.childNodes);
+      /* `child` is not a list item, create a new list item
+       * and append all of `child`'s childNodes to it
+       */
+      listItem = dollr('<li>');
+
+      appendTo(listItem, list);
+      appendTo(child.childNodes, listItem);
 
       if (!child.previousSibling && !child.nextSibling)
-        // remove child's parent if child is only sibling
-        $(child).parent().remove();
+        // remove `child`'s parent if `child` is only sibling
+        child.parentNode.remove();
       else
-        // remove only child if it has no siblings
-        $(child).remove();
+        // remove only `child` if it has no siblings
+        child.remove();
     }
-    // we save a reference to all listItems so we can use
-    // them to correctly restore the selection
-    listItems.push($listItem[0]);
+    /* we save a reference to all listItems so we can use
+     * them to correctly restore the selection
+     */
+    listItems.push(listItem);
   });
 
   // remove empty elements
