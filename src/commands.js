@@ -14,6 +14,7 @@ const selektr = require('selektr'),
   is = require('dollr/is'),
   insertAfter = require('dollr/insertAfter'),
   insertBefore = require('dollr/insertBefore'),
+  next = require('dollr/next'),
   nextAll = require('dollr/nextAll'),
   descendants = require('descendants'),
   sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
@@ -77,69 +78,97 @@ function block(element, tag) {
 
   const sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
     newBlocks = [],
-    $startSection = $(head(sections)),
-    $endSection = $(last(sections)),
+    startSection = head(sections),
+    endSection = last(sections),
     positions = selektr.get();
 
-  let $ref;
+  let ref;
 
-  // $ref is the DOM element which we place our new
-  // blocks before. if it is undefined, new blocks will
-  // be appended to 'element'.
+  /* `ref` is the DOM element which we place our new
+   * blocks before. if it is undefined, new blocks will
+   * be appended to `element`.
+   */
 
-  if ($endSection.is('LI')) {
-    // if endSection is a list item, we have to do some crazyness
+  if (endSection.matches('LI')) {
+    /* if `endSection` is a list item, we have to do some crazyness
+     *
+     * begin by getting a reference to the ancestor lists
+     * NOTE: `startList` might not be a list. if `startSection` is not
+     * a list item, the `startList` will be `startSection` (since all block
+     * elements except LI are children of `element`
+     */
+    const endList = closest(startSection, element.children);
+    let startList;
 
-    // begin by getting a reference to the ancestor lists
-    // NOTE: $startList might not be a list. if $startSection is not
-    // a list item, the $startList will be $startSection (since all block
-    // elements except LI are children of 'element'
-    const $startList = $startSection.closest(element.children),
-      $endList = $endSection.closest(element.children);
+    if (startSection.matches('LI'))
+      startList = closest(startSection, element.children);
 
-    if (!$startList.is($endList)) {
-      // if $startList and $endList are not the same
-      // we place all new blocks before $endList
-      $ref = $endList;
-    } else if ($endSection[0].nextSibling || $endSection.children('UL,OL').length > 0) {
-      // if endSection has following siblings or has a nested list,
-      // create a new list and place it after startList.
-      // place all new blocks before this new list
-      $ref = $('<' + $endList[0].tagName + '>').insertAfter($startList).append($endSection.children('UL,OL').children()).append($endSection.nextAll());
-    } else {
-      // $startList is $endList and last selected LI is last child and has no
-      // nested list. simply place all new blocks after $startList/endList, ie
-      // before the next element
-      $ref = $endList.next();
+    let secondList;
+
+    if (children(endSection, 'UL,OL').length > 0) {
+    /* `endSection` has a nested list. Use that as our list.
+     */
+
+      secondList = children(endSection, 'UL,OL')[0];
+
+      insertAfter(secondList, endList);
     }
+
+    if (endSection.nextSibling) {
+      /* `endSection` has following siblings. We need
+       * to append them to secondList (which needs to be created
+       * if `endSection` did not have a nested list.
+       */
+      if(!secondList) {
+        secondList = dollr('<' + endList.tagName + '>');
+
+        insertAfter(secondList, endList);
+      }
+      
+      appendTo(nextAll(endSection), secondList);
+    } 
+
+    if(secondList)
+      ref = secondList;
+    else
+      /* `startList` is `endList` and last selected LI is last child and has no
+       * nested list. simply place all new blocks after `startList`/`endList`, ie
+       * before the next element
+       */
+      ref = next(endList);
   } else {
-    // $endSection is not a list, simply place
-    // new elements after $endSection next sibling
-    $ref = $endSection.next();
+    /* `endSection` is not a list, simply place
+     * new elements after `endSection` next sibling
+     */
+    ref = next(endSection);
   }
 
   sections.forEach(function (child, i) {
-    const $newBlock = $('<' + tag + '>').attr('style', $(child).attr('style'));
+    const newBlock = dollr('<' + tag + '>');
+    
+    newBlock.style.cssText = child.style.cssText;
 
-    // place the newBlock before the reference,
-    // or append it to element
-    if ($ref.length > 0)
-      $ref.before($newBlock);
+    /* place `newBlock` before `ref`, or append it to `element`
+     */
+    if (ref)
+      insertBefore(newBlock, ref);
     else
-      $(element).append($newBlock);
+      appendTo(newBlock, element);
 
 
-    newBlocks.push($newBlock.append(child.childNodes)[0]);
+    appendTo(child.childNodes, newBlock);
+    newBlocks.push(newBlock);
 
-    // remove parent if child has no siblings,
-    // otherwise simply remove the child
+    /* remove parent if `child` has no siblings, otherwise simply remove the
+     * child
+     */
     if (!child.nextSibling && !child.previousSibling)
-      $(child).parent().remove();
+      child.parentNode.remove();
     else
-      $(child).remove();
+      child.remove();
   });
 
-  $(':empty:not("BR")', element).remove();
+  invokeMap($$(':empty:not(BR)', element), 'remove');
 
   // set the selection
   selektr.restore(positions, true);
