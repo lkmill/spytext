@@ -52,9 +52,10 @@ function listItemFilter(node) {
  * @return {string} alignment
  */
 function align(element, alignment) {
-  selektr.contained(children(element, sectionTags.join())).forEach(function (child) {
+  // we slice the sectionTags because we do not want to align LI tags
+  selektr.contained(children(element, sectionTags.slice(0,-1).join()), true).forEach(function (child) {
     // do not set text-align property on lists
-    $(child).css('text-align', alignment);
+    child.style.textAlign = alignment;
   });
 }
 
