@@ -16,6 +16,7 @@ const selektr = require('selektr'),
   insertBefore = require('dollr/insertBefore'),
   next = require('dollr/next'),
   nextAll = require('dollr/nextAll'),
+  wrap = require('dollr/wrap'),
   descendants = require('descendants'),
   sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
@@ -201,7 +202,7 @@ function deleteEmptyTextNodes(element) {
         textNode.parentNode.removeChild(textNode);
       } else if (textNode.parentNode === element) {
         // if textNode is a child of element, wrap it in <p> tag
-        $(textNode).wrap('<p>');
+        wrap(textNode, '<p>');
       }
     }
   });
