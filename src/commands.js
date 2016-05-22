@@ -889,7 +889,7 @@ function outdent(element) {
 
   // we outdent in the reverse order from indent
   listItems.reverse().forEach(function (li, i) {
-    if (!$(li).is('LI') || $(li).parent().is($(element).children())) {
+    if (!li.matches('LI') || is(li.parentNode, element.children)) {
       // do nothing if not a list item, or if list item
       // is already top level (level 1), ie if it's parent is a child
       // of element
@@ -901,20 +901,23 @@ function outdent(element) {
       // to move them into a new or existing nested list
 
       // attempt to selected a nested list
-      let $nestedList = $(li).children('UL,OL');
+      let nestedList = children(li, 'UL,OL')[0];
 
-      if ($nestedList.length === 0) {
+      if (!nestedList) {
         // if there is no nested list, create a new one
-        const tagName = $(li).closest('OL,UL')[0].tagName;
-        $nestedList = $('<' + tagName + '>').appendTo(li);
+        const tagName = closest(li, 'OL,UL').tagName;
+
+        nestedList = dollr('<' + tagName + '>');
+
+        appendTo(nestedList, li);
       }
 
       // append all list item's next siblings to the nestedlist
-      $nestedList.append($(li).nextAll());
+      appendTo(nextAll(li), nestedList);
     }
 
     // actual outdenting. Place the list item after its closest LI ancestor
-    $(li).parent().parent().after(li);
+    insertAfter(li, li.parentNode.parentNode);
   });
 
   selektr.restore(positions);
