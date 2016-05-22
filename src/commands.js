@@ -800,7 +800,7 @@ function list(element, tag) {
   });
 
   // remove empty elements
-  $(':empty:not("BR")', element).remove();
+  invokeMap($$(':empty:not(BR)', element), 'remove');
 
   selektr.restore(positions, true);
 }
