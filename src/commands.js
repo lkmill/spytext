@@ -943,14 +943,15 @@ function paste(element, dataTransfer) {
 
 
   if (textBlocks.length > 0) {
-    const section = $(rng.startContainer).closest(sectionTags.join(','), element)[0];
+    const section = closest(rng.startContainer, sectionTags.join(','), element);
 
-    // Select everything from the caret to the end of section and
-    // extract the contents. this is so we can to append the head text block
-    // to the current section (where the extracted content will have been), and insert the extracted contents after the
-    // last text block. if we are only pasting one text block, we could
-    // have simply split the current node and inserted the contents inbetween,
-    // but i decided for a tiny performance loss vs no code duplication
+    /* Select everything from the caret to the end of section and
+     * extract the contents. this is so we can to append the head text block
+     * to the current section (where the extracted content will have been), and insert the extracted contents after the
+     * last text block. if we are only pasting one text block, we could
+     * have simply split the current node and inserted the contents inbetween,
+     * but i decided for a tiny performance loss vs no code duplication
+     */
     selektr.set({
       start: selektr.get('start', true),
       end: { ref: section, offset: section.childNodes.length }
@@ -964,7 +965,7 @@ function paste(element, dataTransfer) {
     const parent = section.parentNode;
 
     let textNode,
-      $el;
+      el;
 
     for (let i = 0; i < textBlocks.length; i++) {
       textNode = document.createTextNode(textBlocks[i]);
@@ -972,27 +973,29 @@ function paste(element, dataTransfer) {
       if (i === 0) {
         if (section.lastChild && section.lastChild.nodeName === 'BR')
           // remove the last item if it is a line break
-          $(section.lastChild).remove();
+          section.lastChild.remove();
 
         // since this is the head text Block,
         // simply append the textNode to the section
-        $(section).append(textNode);
+        appendTo(textNode, section);
       } else {
         // create a new section
-        $el = $('<' + section.tagName + '>').append(textNode);
+        el = dollr('<' + section.tagName + '>');
+
+        appendTo(textNode, el);
 
         if (ref)
           // insert before the ref
-          $(ref).before($el);
+          insertBefore(el, ref);
         else
           // append to parent if we have no ref
-          $(parent).append($el);
+          appendTo(el, parent);
       }
     }
     // append any contents extracted from the range prevously to the
     // last inserted new section, or section if only
     // one text block was pasted
-    ($el || $(section)).append(contents.childNodes);
+    appendTo(contents.childNodes, el || section);
 
     // set the range to end of last inserted textnode
     selektr.set({
