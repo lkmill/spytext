@@ -1014,11 +1014,11 @@ function paste(element, dataTransfer) {
  */
 function removeFormat(element, tag) {
   function _unwrap(el) {
-    $(tag, el).each(function () {
-      if (this.firstChild)
-        $(this.firstChild).unwrap();
+    $$(tag, el).forEach(function (el) {
+      if (el.firstChild)
+        unwrap(el.firstChild);
       else
-        $(this.remove());
+        el.remove();
     });
   }
 
@@ -1049,7 +1049,7 @@ function removeFormat(element, tag) {
         });
         contents = selektr.range().extractContents();
         _unwrap(contents);
-        $(endSection).prepend(contents.childNodes);
+        prependTo(contents.childNodes, endSection);
 
         endSection.normalize();
         deleteEmptyElements(endSection);
@@ -1060,7 +1060,7 @@ function removeFormat(element, tag) {
           start: absolutePositions.start,
           end: {
             ref: startSection,
-            offset: $(last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
+            offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
           }
         });
       }
@@ -1068,33 +1068,38 @@ function removeFormat(element, tag) {
       contents = selektr.range().extractContents();
       _unwrap(contents);
       if (startSection !== endSection)
-        if ($(last(startSection.childNodes)).is('UL,OL'))
-          $(last(startSection.childNodes)).before(contents.childNodes);
+        if (is(last(startSection.childNodes), 'UL,OL'))
+          insertBefore(contents.childNodes, last(startSection.childNodes));
         else
-          $(startSection).append(contents.childNodes);
+          appendTo(contents.childNodes, startSection);
       else {
         selektr.set(absolutePositions.start);
         rng = selektr.range();
         let ref = rng.endContainer;
-        const $tag = $(ref).closest(tag, element);
+        const tagElement = closest(ref, tag, element);
 
-        if ($tag.length === 1) {
+        if (tag) {
           selektr.set({
             start: {
-              ref: ref,
+              ref,
               offset: rng.endOffset
             },
             end: {
-              ref: $tag[0],
-              offset: $tag[0].childNodes.length
+              ref,
+              offset: tag.childNodes.length
             }
           });
           const newContents = selektr.range().extractContents();
           _unwrap(newContents);
-          $('<' + tag + '>').insertAfter($tag).append(newContents.childNodes);
-          ref = $tag[0];
+
+          const el = dollr('<' + tag + '>');
+
+          insertAfter(el, tagElement);
+
+          appendTo(newContents.childNodes, el);
+          ref = tagElement;
         }
-        $(ref).after(contents.childNodes);
+        insertAfter(contents.childNodes, ref);
       }
 
       startSection.normalize();
