@@ -9,6 +9,7 @@
 const commands = require('./commands'),
   assign = require('object-assign'),
   selektr = require('selektr'),
+  closest = require('dollr/closest'),
   dollr = require('dollr/dollr').$,
   $$ = require('dollr/dollr').$$,
   ancestors = require('dollr/ancestors'),
@@ -39,7 +40,6 @@ assign(Toolbar.prototype, {
     'click button[data-undo]': 'undo',
     'click button[data-redo]': 'redo',
     'mousedown .container': function (e) {
-      console.log('preventing mousedown');
       // this is needed to prevent toolbar from stealing focus
       e.preventDefault();
     }
@@ -148,8 +148,8 @@ assign(Toolbar.prototype, {
   },
 
   listCommand(e) {
-    const command = $(e.target).closest('ul,ol').attr('data-command'),
-      option = $(e.target).attr('data-option');
+    const command = closest(e.target, 'ul,ol').getAttribute('data-command'),
+      option = e.target.getAttribute('data-option');
 
     this.field.command(command, option);
   },
@@ -157,8 +157,8 @@ assign(Toolbar.prototype, {
    * Calls a command on the field currently attached to the toolbar
    */
   command(e) {
-    const command = $(e.currentTarget).attr('data-command'),
-      option = $(e.currentTarget).attr('data-option');
+    const command = e.target.getAttribute('data-command'),
+      option = e.target.getAttribute('data-option');
 
     this.field.command(command, option);
   }
