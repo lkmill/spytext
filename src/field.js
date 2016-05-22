@@ -16,8 +16,10 @@ const assign = require('object-assign'),
   dollr = require('dollr/dollr').$,
   $$ = require('dollr/dollr').$$,
   on = require('dollr/on'),
+  off = require('dollr/off'),
+  trigger = require('dollr/trigger'),
+  appendTo = require('dollr/appendTo'),
   forEach = require('lodash/forEach'),
-  toArray = require('lodash/toArray'),
   tail = require('lodash/tail');
 /**
  * @readonly
@@ -27,20 +29,21 @@ const assign = require('object-assign'),
 function Field(options) {
   this.el = dollr(options.el);
 
-  $(this.el).addClass('spytext-field').attr('contentEditable', 'true');
+  this.el.classList.add('spytext-field');
+  this.el.setAttribute('contentEditable', 'true');
 
   commands.deleteEmptyTextNodes(this.el);
   commands.deleteEmptyElements(this.el);
-  if ($(this.el).is(':empty')) {
-    $(this.el).append('<p>');
+  if (this.el.childNodes.length === 0) {
+    appendTo(dollr('<p>'), this.el);
   }
-  commands.setBR(toArray(this.el.children));
+  commands.setBR($$(this.el.children));
 
   this.originalValue = this.el.innerHTML;
 
   this.toolbar = new SpytextToolbar();
 
-  $(document.body).append(this.toolbar.el);
+  appendTo(this.toolbar.el, document.body);
 
   this.snapback = new Snapback(this.el, {
     /**
@@ -60,9 +63,6 @@ function Field(options) {
   });
 
   forEach(this.events, (fnc, eventStr) => {
-    //const arr = eventStr.split(' ');
-
-    //on($$(arr[1], this.el), arr[0], (fnc instanceof Function ? fnc : this[fnc]).bind(this));
     on(this.el, eventStr, (fnc instanceof Function ? fnc : this[fnc]).bind(this));
   });
 }
@@ -101,12 +101,12 @@ assign(Field.prototype, {
 
       // this is to capture events when mousedown on
       // fields element but mouseup outside
-      $(document).on('mousedown', (e) => {
+      on(document, 'mousedown', (e) => {
         clearTimeout(this.timeout);
         this.snapback.register();
       });
 
-      $(document).on('mouseup', (e) => {
+      on(document, 'mouseup', (e) => {
         setTimeout(() => {
           selektr.normalize();
           selektr.update();
@@ -131,14 +131,8 @@ assign(Field.prototype, {
     this.toolbar.toggle();
 
     // stop listening to mouseup and mousedown on document
-    $(document).off('mouseup');
-    $(document).off('mousedown');
-  },
-
-  render() {
-    if (!this.el.firstChild) {
-      $(this.el).append('<p><br></p>');
-    }
+    off(document, 'mouseup');
+    off(document, 'mousedown');
   },
 
   /**
@@ -159,7 +153,7 @@ assign(Field.prototype, {
       // normalize any text nodes in the field's element
       this.el.normalize();
 
-      $(this.el).trigger('change');
+      trigger(this.el, 'change');
       // unfortunately, we need to wrap the registation of a new Undo
       // in a timeout
       setTimeout(() => {
