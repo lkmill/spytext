@@ -12,7 +12,11 @@ const SpytextToolbar = require('./toolbar');
 const selektr = require('selektr');
 const commands = require('./commands');
 
-const assign = require('lodash/assign'),
+const assign = require('object-assign'),
+  dollr = require('dollr/dollr').$,
+  $$ = require('dollr/dollr').$$,
+  on = require('dollr/on'),
+  forEach = require('lodash/forEach'),
   toArray = require('lodash/toArray'),
   tail = require('lodash/tail');
 /**
@@ -20,7 +24,50 @@ const assign = require('lodash/assign'),
  */
 //const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
-module.exports = require('ridge/view').extend({
+function Field(options) {
+  this.el = dollr(options.el);
+
+  $(this.el).addClass('spytext-field').attr('contentEditable', 'true');
+
+  commands.deleteEmptyTextNodes(this.el);
+  commands.deleteEmptyElements(this.el);
+  if ($(this.el).is(':empty')) {
+    $(this.el).append('<p>');
+  }
+  commands.setBR(toArray(this.el.children));
+
+  this.originalValue = this.el.innerHTML;
+
+  this.toolbar = new SpytextToolbar();
+
+  $(document.body).append(this.toolbar.el);
+
+  this.snapback = new Snapback(this.el, {
+    /**
+     * Saves and returns the positions of the current selection
+     *
+     * @return {Positions}
+     */
+    store(data) {
+      return (this.data = (data || selektr.get()));
+    },
+
+    restore(data) {
+      this.store(data);
+
+      selektr.restore(data, true);
+    },
+  });
+
+  forEach(this.events, (fnc, eventStr) => {
+    //const arr = eventStr.split(' ');
+
+    //on($$(arr[1], this.el), arr[0], (fnc instanceof Function ? fnc : this[fnc]).bind(this));
+    on(this.el, eventStr, (fnc instanceof Function ? fnc : this[fnc]).bind(this));
+  });
+}
+
+assign(Field.prototype, {
   /**
    * @lends SpytextField.prototype
    */
@@ -34,40 +81,6 @@ module.exports = require('ridge/view').extend({
    * @constructs
    * @augments Backbone.View
    */
-  initialize() {
-    this.$el.addClass('spytext-field').attr('contentEditable', 'true');
-
-    commands.deleteEmptyTextNodes(this.el);
-    commands.deleteEmptyElements(this.el);
-    if ($(this.el).is(':empty')) {
-      $(this.el).append('<p>');
-    }
-    commands.setBR(toArray(this.el.children));
-
-    this.originalValue = this.el.innerHTML;
-
-    this.toolbar = new SpytextToolbar();
-
-    $(document.body).append(this.toolbar.el);
-
-    this.snapback = new Snapback(this.el, {
-      /**
-       * Saves and returns the positions of the current selection
-       *
-       * @return {Positions}
-       */
-      store(data) {
-        return (this.data = (data || selektr.get()));
-      },
-
-      restore(data) {
-        this.store(data);
-
-        selektr.restore(data, true);
-      },
-    });
-  },
-
   /**
    * Activates the current field.
    */
@@ -124,7 +137,7 @@ module.exports = require('ridge/view').extend({
 
   render() {
     if (!this.el.firstChild) {
-      this.$el.append('<p><br></p>');
+      $(this.el).append('<p><br></p>');
     }
   },
 
@@ -157,3 +170,5 @@ module.exports = require('ridge/view').extend({
     }
   },
 });
+
+module.exports = Field;
