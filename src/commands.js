@@ -711,14 +711,14 @@ function list(element, tag) {
          * to append them to secondList (which needs to be created
          * if `endSection` did not have a nested list.
          */
-        if(!secondList) {
+        if (!secondList) {
           secondList = dollr('<' + endList.tagName + '>');
 
           insertAfter(secondList, list);
         }
-        
+
         appendTo(nextAll(endSection), secondList);
-      } 
+      }
     }
   } else {
     /* If `startSection` is not a list we need to create a new
@@ -775,7 +775,7 @@ function list(element, tag) {
               recurse(li, nestedList);
             });
           }
-        })(listItem, list);
+        }(listItem, list));
       }
     } else {
       /* `child` is not a list item, create a new list item
