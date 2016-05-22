@@ -215,17 +215,15 @@ function deleteEmptyTextNodes(element) {
  * @param {Element} element - Element which descendants to look for empty text nodes
  */
 function deleteEmptyElements(element) {
-  $(':empty:not(BR)', element).each(function () {
-    let $el = $(this);
-
-    let $parent;
+  $$(':empty:not(BR)', element).forEach(function (el) {
+    let parent;
 
     // recurse up the DOM and delete all elements
     // until a non-empty $el is found
-    while (!$el.is(element) && $el.is(':empty')) {
-      $parent = $el.parent();
-      $el.remove();
-      $el = $parent;
+    while (el !== element && el.childNodes.length === 0) {
+      parent = el.parentNode;
+      el.remove();
+      el = parent;
     }
   });
 }
