@@ -17,6 +17,7 @@ const selektr = require('selektr'),
   next = require('dollr/next'),
   nextAll = require('dollr/nextAll'),
   prependTo = require('dollr/prependTo'),
+  text = require('dollr/text'),
   unwrap = require('dollr/unwrap'),
   wrap = require('dollr/wrap'),
   descendants = require('descendants'),
@@ -818,12 +819,12 @@ list.active = function (option, styles) {
  */
 function newSection(element) {
   const rng = selektr.range();
-  const $section = $(rng.startContainer).closest(sectionTags.join(','), element);
+  const section = closest(rng.startContainer, sectionTags.join(','), element);
 
-  if ($section.is('LI') && ($section.text().length - $section.children('UL,OL').text().length === 0)) {
+  if (section.matches('LI') && (section.textContent.length - text(children(section, 'UL,OL')).length === 0)) {
     // we are in an empty list item (could have a nested list though)
 
-    if ($section.parent().is($(element).children())) {
+    if (is(section.parentNode, element.children)) {
       // list items containing list is child of element... no levels to outdent
       // so create a new
       block(element, 'P');
@@ -837,9 +838,13 @@ function newSection(element) {
   // create a new block with the same tag as blockElement, insert it before blockElement and append
   // the contents of the extracted range to it's end
   //const $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
-  const $el = $('<' + (!$section.is('LI') && selektr.isAtEndOfSection() ? 'p' : $section[0].tagName) + '>').attr('style', $section.attr('style')).insertAfter($section);
+  const el = dollr('<' + (!section.matches('LI') && selektr.isAtEndOfSection() ? 'p' : section.tagName) + '>');
 
-  if ($section.children().is('UL,OL') || !selektr.isAtEndOfSection()) {
+  el.style.cssText = section.style.cssText;
+
+  insertAfter(el, section);
+
+  if (children(section, 'UL,OL').length || !selektr.isAtEndOfSection()) {
     // Select everything from the start of blockElement to the caret. This
     // includes everything that will be moved into the new block placed before the current
     selektr.set({
@@ -848,27 +853,27 @@ function newSection(element) {
         offset: rng.startOffset
       },
       end: {
-        ref: $section[0],
-        offset: $section[0].childNodes.length
+        ref: section,
+        offset: section.childNodes.length
       }
     });
 
     // extract the contents
     const contents = selektr.range().extractContents();
 
-    deleteEmptyElements($section[0]);
-    $el.append(contents.childNodes);
+    deleteEmptyElements(section);
+    appendTo(contents.childNodes, el);
   }
 
   // normalize any textnodes
-  $el[0].normalize();
-  $section[0].normalize();
+  el.normalize();
+  section.normalize();
 
   // ensure correct BR on both affected elements
-  setBR([ $el[0], $section[0] ]);
+  setBR([ el, section ]);
 
   selektr.set({
-    ref: $el[0]
+    ref: el
   }, true);
 }
 
