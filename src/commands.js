@@ -17,6 +17,7 @@ const selektr = require('selektr'),
   next = require('dollr/next'),
   nextAll = require('dollr/nextAll'),
   prependTo = require('dollr/prependTo'),
+  unwrap = require('dollr/unwrap'),
   wrap = require('dollr/wrap'),
   descendants = require('descendants'),
   sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
@@ -498,12 +499,12 @@ function join(element, node1, node2) {
  * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
 function format(element, tag) {
-  function unwrap(el) {
-    $(tag, el).each(function () {
-      if (this.firstChild)
-        $(this.firstChild).unwrap();
+  function _unwrap(el) {
+    $$(tag, el).forEach(function (el) {
+      if (el.firstChild)
+        unwrap(el.firstChild);
       else
-        $(this.remove());
+        el.remove();
     });
   }
 
@@ -511,7 +512,7 @@ function format(element, tag) {
   //if(format.active(tag)) return removeFormat(element, tag);
 
   const rng = selektr.range(),
-    $wrapper = $('<' + tag + '>');
+    wrapper = dollr('<' + tag + '>');
 
   if (!rng.collapsed) {
     const positions = selektr.get(),
@@ -520,18 +521,19 @@ function format(element, tag) {
       startSection = head(sections),
       endSection = last(sections);
     let contents,
-      $clone;
+      clone;
 
     sections.slice(1, -1).forEach(function (section) {
-      unwrap(section);
+      _unwrap(section);
       let childNodes = toArray(section.childNodes);
 
-      if ($(last(childNodes)).is('UL,OL'))
+      if (is(last(childNodes), 'UL,OL'))
         childNodes = initial(childNodes);
 
-      $clone = $wrapper.clone();
-      $(section).prepend($clone);
-      $clone.append(childNodes);
+      clone = wrapper.cloneNode();
+      prependTo(clone, section);
+
+      appendTo(childNodes, clone);
     });
 
     if (startSection !== endSection) {
@@ -542,11 +544,11 @@ function format(element, tag) {
         },
         end: absolutePositions.end
       });
-      $clone = $wrapper.clone();
+      clone = wrapper.cloneNode();
       contents = selektr.range().extractContents();
-      unwrap(contents);
-      $(endSection).prepend($clone);
-      $clone.append(contents.childNodes);
+      _unwrap(contents);
+      prependTo(clone, endSection);
+      appendTo(contents.childNodes, clone);
 
       endSection.normalize();
       deleteEmptyElements(endSection);
@@ -557,16 +559,16 @@ function format(element, tag) {
         start: absolutePositions.start,
         end: {
           ref: startSection,
-          offset: $(last(startSection.childNodes)).is('UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
+          offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
         }
       });
     }
 
     contents = selektr.range().extractContents();
-    unwrap(contents);
-    $clone = $wrapper.clone();
-    rng.insertNode($clone[0]);
-    $clone.append(contents.childNodes);
+    _unwrap(contents);
+    clone = wrapper.cloneNode();
+    rng.insertNode(clone);
+    appendTo(contents.childNodes, clone);
 
     startSection.normalize();
     deleteEmptyElements(startSection);
@@ -576,8 +578,8 @@ function format(element, tag) {
     // restore the selection
     selektr.restore(positions, true);
   } else {
-    rng.insertNode($wrapper[0]);
-    selektr.set({ ref: $wrapper[0] }, true);
+    rng.insertNode(wrapper);
+    selektr.set({ ref: wrapper }, true);
   }
 }
 
@@ -1000,7 +1002,7 @@ function paste(element, dataTransfer) {
  * @param {Element} element - Only used to normalize text nodes
  */
 function removeFormat(element, tag) {
-  function unwrap(el) {
+  function _unwrap(el) {
     $(tag, el).each(function () {
       if (this.firstChild)
         $(this.firstChild).unwrap();
@@ -1024,7 +1026,7 @@ function removeFormat(element, tag) {
 
       let contents;
 
-      sections.slice(1, -1).forEach(unwrap);
+      sections.slice(1, -1).forEach(_unwrap);
 
       if (startSection !== endSection) {
         selektr.set({
@@ -1035,7 +1037,7 @@ function removeFormat(element, tag) {
           end: absolutePositions.end
         });
         contents = selektr.range().extractContents();
-        unwrap(contents);
+        _unwrap(contents);
         $(endSection).prepend(contents.childNodes);
 
         endSection.normalize();
@@ -1053,7 +1055,7 @@ function removeFormat(element, tag) {
       }
 
       contents = selektr.range().extractContents();
-      unwrap(contents);
+      _unwrap(contents);
       if (startSection !== endSection)
         if ($(last(startSection.childNodes)).is('UL,OL'))
           $(last(startSection.childNodes)).before(contents.childNodes);
@@ -1077,7 +1079,7 @@ function removeFormat(element, tag) {
             }
           });
           const newContents = selektr.range().extractContents();
-          unwrap(newContents);
+          _unwrap(newContents);
           $('<' + tag + '>').insertAfter($tag).append(newContents.childNodes);
           ref = $tag[0];
         }
