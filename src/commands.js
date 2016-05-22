@@ -17,6 +17,7 @@ const selektr = require('selektr'),
   next = require('dollr/next'),
   nextAll = require('dollr/nextAll'),
   prependTo = require('dollr/prependTo'),
+  prevAll = require('dollr/prevAll'),
   text = require('dollr/text'),
   unwrap = require('dollr/unwrap'),
   wrap = require('dollr/wrap'),
@@ -1124,19 +1125,19 @@ function setBR(element) {
     return element.forEach(setBR);
 
   if (!element.firstChild ||
-    ($(element.lastChild).is('UL,OL') && $(element).text().length - $(element.lastChild).text().length === 0 &&
-      $(element.lastChild).prevAll('br').length === 0 && $(element.lastChild).prevAll().find('br').length === 0)) {
-    $(element).prepend('<BR>');
+    (is(element.lastChild, 'UL,OL') && element.textContent.length - element.lastChild.textContent.length === 0 &&
+      prevAll(element.lastChild, 'br').length === 0 && $$('br', prevAll(element.lastChild)).length === 0)) {
+    prependTo(dollr('<br>'), element);
   } else {
-    $('BR:last-child', element).each(function (i, br) {
+    $$('BR:last-child', element).forEach(function (br, i) {
       if (br.nextSibling) return;
 
       while (br.previousSibling && br.previousSibling.tagName === 'BR') {
-        $(br.previousSibling).remove();
+        br.previousSibling.remove();
       }
 
       if (br.previousSibling)
-        $(br).remove();
+        br.remove();
     });
   }
 }
