@@ -1,18 +1,18 @@
 {
-	"extends": "airbnb",
+	"extends": "airbnb-base",
 
 	"parserOptions": {
 		"sourceType": "strict"
 	},
 
 	"rules": {
-		"no-case-declarations": 0,
+    "import/no-unresolved": 0,
+    "no-case-declarations": 0,
+    "global-require": 0,
+    "no-underscore-dangle": 0,
 		"default-case": 0,
-		"no-fallthrough": 0,
-		"no-cond-assign": 0,
 		"one-var": 0,
 		"prefer-rest-params": 0,
-		"object-shorthand": 0,
 		"no-unused-vars": [ 2, { "args": "none" } ],
 		"no-alert": 0,
 		"quote-props": 0,
@@ -36,13 +36,6 @@
 	},
 
 	globals: {
-		"$": true,
-		"_": true,
-		"ENV": true,
-		"google": true,
-		"INITIAL_STATE": true,
-		"INITIAL_CONTEXT": true,
-		"PWD": true,
-		"Backbone": true
+		"$": true
 	}
 }
