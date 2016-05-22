@@ -434,14 +434,14 @@ function joinNext(element, section) {
  * @param {Element} node2 - Second node to join
  */
 function join(element, node1, node2) {
-  if (node1.firstChild && node1.firstChild.tagName === 'BR') $(node1.firstChild).remove();
-  if (node1.lastChild && node1.lastChild.tagName === 'BR') $(node1.lastChild).remove();
-  if (node2.lastChild && node2.lastChild.tagName === 'BR') $(node2.lastChild).remove();
+  if (node1.firstChild && node1.firstChild.tagName === 'BR') node1.firstChild.remove();
+  if (node1.lastChild && node1.lastChild.tagName === 'BR') node1.lastChild.remove();
+  if (node2.lastChild && node2.lastChild.tagName === 'BR') node2.lastChild.remove();
 
-  let $nestedList,
+  let nestedList,
     position;
 
-  if (($nestedList = $(node1).children('UL,OL')).length === 1) {
+  if ((nestedList = children(node1, 'UL,OL')[0])) {
     // `node1` has a nested list, and `node2` should
     // be the head list item in the nested list. this means
     // we can leave the nested list, and simply insert
@@ -453,20 +453,20 @@ function join(element, node1, node2) {
 
     position = {
       ref: node1,
-      offset: selektr.count(node1, $nestedList[0])
+      offset: selektr.count(node1, nestedList)
     };
 
-    $nestedList.before(node2.childNodes);
-  } else if (!$(node1).is('LI') && ($nestedList = $(node2).children('UL,OL')).length === 1) {
+    insertBefore(node2.childNodes, nestedList);
+  } else if (!node1.matches('LI') && (nestedList = children(node2, 'UL,OL')[0])) {
     // `node1` is a not a list item, and `node2` has nested list. decrease the
     // nested list's level by moving all its children to after `node2`, then
     // remove the nested list.
 
     // insert $nestedList's list items after `node2`
-    $(node2).after($nestedList.children());
+    insertAfter(children(nestedList), node2);
 
     // remove the empty $nestedList
-    $nestedList.remove();
+    nestedList.remove();
   }
 
   position = position || {
@@ -475,17 +475,17 @@ function join(element, node1, node2) {
   };
 
   // append any childNodes of `node2` to `node1` (this will already be done if `node1` had a nested list
-  $(node1).append(node2.childNodes);
+  appendTo(node2.childNodes, node1);
 
   node1.normalize();
   setBR(node1);
 
   if (!node2.nextSibling && !node2.previousSibling)
     // `node2` has no siblings, so remove parent
-    $(node2).parent().remove();
+    node2.parentNode.remove();
   else
     // `node2` has at least one sibling, only remove `node2`
-    $(node2).remove();
+    node2.remove();
 
   selektr.restore(position, true);
 }
