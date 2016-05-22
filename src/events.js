@@ -9,7 +9,9 @@
 const selektr = require('selektr');
 const commands = require('./commands');
 
-const sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
+const sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ],
+  closest = require('dollr/closest'),
+  trigger = require('dollr/trigger');
 
 module.exports = {
   /**
@@ -17,8 +19,11 @@ module.exports = {
    * After a navigation key has been pressed, update the position in snapback
    */
   keypress(e) {
-    //The keypress event is fired when a key is pressed down and that key normally produces a character value (use input instead).
-    // Firefox will fire keypress for some other keys as well, but they will have charCode === 0.
+    /* The keypress event is fired when a key is pressed down and that key
+     * normally produces a character value (use input instead).  Firefox will
+     * fire keypress for some other keys as well, but they will have
+     * charCode === 0.
+     */
 
     const rng = selektr.range(),
       container = rng.startContainer;
@@ -38,12 +43,12 @@ module.exports = {
           offset: offset
         });
       }
-      $(this.el).trigger('input');
+      trigger(this.el, 'input');
       selektr.update();
     }
   },
 
-  keyup: function (e) {
+  keyup(e) {
     // TODO make sure we cover all different kinds of navigation keys, such as
     // home and end
     switch (e.keyCode) {
@@ -51,7 +56,7 @@ module.exports = {
         // cannot remember why this is needed for backspace but not delete
         selektr.update(true, false, false);
       case 46:// delete
-        $(this.el).trigger('input');
+        trigger(this.el, 'input');
         break;
       case 33:
       case 34:
@@ -165,7 +170,7 @@ module.exports = {
           return;
         case 8: //backspace
         case 46: // delete
-          const section = $(rng.startContainer).closest(sectionTags.join(','))[0];
+          const section = closest(rng.startContainer, sectionTags.join(','));
 
           // join lines if backspace and start of section, or delete and end of section
           if (e.keyCode === 8 && selektr.isAtStartOfSection(section)) {
