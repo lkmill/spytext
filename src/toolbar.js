@@ -148,8 +148,8 @@ assign(Toolbar.prototype, {
   },
 
   listCommand(e) {
-    const command = $(e.currentTarget).closest('ul,ol').attr('data-command'),
-      option = $(e.currentTarget).attr('data-option');
+    const command = $(e.target).closest('ul,ol').attr('data-command'),
+      option = $(e.target).attr('data-option');
 
     this.field.command(command, option);
   },
