@@ -110,39 +110,41 @@ assign(Toolbar.prototype, {
       }
     });
 
-    $('button[data-command]').each(function () {
-      const command = commands[$(this).attr('data-command')];
+    $$('button[data-command]', this.el).forEach(function (el) {
+      const command = commands[el.getAttribute('data-command')];
 
       if (!command) return;
 
-      const option = $(this).attr('data-option');
+      const option = el.getAttribute('data-option');
 
       if (command.active)
-        $(this).toggleClass('active', command.active(option, styles));
+        el.classList.toggle('active', command.active(option, styles));
 
       if (command.disabled)
-        $(this).prop('disabled', command.disabled(option, styles));
+        el.disabled = command.disabled(option, styles);
     });
 
-    $('ul[data-command="block"]').each(function () {
-      const ul = this;
+    $$('ul[data-command="block"]', this.el).forEach(function (el) {
+      const ul = el;
 
-      $(ul).removeClass('pseudo pseudo-list pseudo-multiple').find('> li').removeClass('active');
+      ul.classList.remove('pseudo', 'pseudo-list', 'pseudo-multiple');
+
+      $$('li', ul).forEach((li) => li.classList.remove('active'));
 
       if (lists.length > 0) {
-        $(ul).addClass('pseudo pseudo-list');
+        ul.classList.add('pseudo', 'pseudo-list');
       } else if (styles.blocks.length === 1) {
-        $(ul).find('button[data-option="' + styles.blocks[0].toLowerCase() + '"]').each(function () {
-          $(this.parentNode).addClass('active');
+        $$('button[data-option="' + styles.blocks[0].toLowerCase() + '"]', ul).forEach(function (el) {
+          el.parentNode.classList.add('active');
         });
       } else if (styles.blocks.length > 1) {
-        $(ul).addClass('pseudo pseudo-multiple');
+        ul.classList.add('pseudo', 'pseudo-multiple');
       }
     });
 
     // use undoIndex in snapback instance to decide whether we can undo/redo
-    $('button[data-undo]', this.el).prop('disabled', this.field.snapback.undoIndex === -1);
-    $('button[data-redo]', this.el).prop('disabled', this.field.snapback.undoIndex >= (this.field.snapback.undos.length - 1));
+    $$('button[data-undo]', this.el).forEach((button) => { button.disabled = this.field.snapback.undoIndex === -1; });
+    $$('button[data-redo]', this.el).forEach((button) => { button.disabled = this.field.snapback.undoIndex >= (this.field.snapback.undos.length - 1); });
   },
 
   listCommand(e) {
