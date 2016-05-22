@@ -1175,21 +1175,21 @@ function tidy(element) {
 }
 
 module.exports = {
-  align: align,
-  block: block,
-  deleteRangeContents: deleteRangeContents,
-  deleteEmptyElements: deleteEmptyElements,
-  deleteEmptyTextNodes: deleteEmptyTextNodes,
-  format: format,
-  indent: indent,
-  join: join,
-  joinPrev: joinPrev,
-  joinNext: joinNext,
-  link: link,
-  list: list,
-  newSection: newSection,
-  outdent: outdent,
-  paste: paste,
-  removeFormat: removeFormat,
-  setBR: setBR
+  align,
+  block,
+  deleteRangeContents,
+  deleteEmptyElements,
+  deleteEmptyTextNodes,
+  format,
+  indent,
+  join,
+  joinPrev,
+  joinNext,
+  link,
+  list,
+  newSection,
+  outdent,
+  paste,
+  removeFormat,
+  setBR
 };
