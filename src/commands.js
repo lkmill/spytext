@@ -16,13 +16,13 @@ const selektr = require('selektr'),
   insertBefore = require('dollr/insertBefore'),
   next = require('dollr/next'),
   nextAll = require('dollr/nextAll'),
+  prependTo = require('dollr/prependTo'),
   wrap = require('dollr/wrap'),
   descendants = require('descendants'),
   sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 const initial = require('lodash/initial'),
   head = require('lodash/head'),
-  invoke = require('lodash/invoke'),
   invokeMap = require('lodash/invokeMap'),
   last = require('lodash/last'),
   isArray = require('lodash/isArray'),
@@ -54,7 +54,7 @@ function listItemFilter(node) {
  */
 function align(element, alignment) {
   // we slice the sectionTags because we do not want to align LI tags
-  selektr.contained(children(element, sectionTags.slice(0,-1).join()), true).forEach(function (child) {
+  selektr.contained(children(element, sectionTags.slice(0, -1).join()), true).forEach(function (child) {
     // do not set text-align property on lists
     child.style.textAlign = alignment;
   });
@@ -121,16 +121,16 @@ function block(element, tag) {
        * to append them to secondList (which needs to be created
        * if `endSection` did not have a nested list.
        */
-      if(!secondList) {
+      if (!secondList) {
         secondList = dollr('<' + endList.tagName + '>');
 
         insertAfter(secondList, endList);
       }
-      
-      appendTo(nextAll(endSection), secondList);
-    } 
 
-    if(secondList)
+      appendTo(nextAll(endSection), secondList);
+    }
+
+    if (secondList)
       ref = secondList;
     else
       /* `startList` is `endList` and last selected LI is last child and has no
@@ -147,7 +147,7 @@ function block(element, tag) {
 
   sections.forEach(function (child, i) {
     const newBlock = dollr('<' + tag + '>');
-    
+
     newBlock.style.cssText = child.style.cssText;
 
     /* place `newBlock` before `ref`, or append it to `element`
@@ -271,10 +271,10 @@ function deleteRangeContents(element, rng) {
         // move listItems to `startSection`'s parent list)
         list = startSection.parentNode;
 
-        if(nestedList)
+        if (nestedList)
           // append potential `nestedList` to `startSection`
           appendTo(nestedList, startSection);
-      } else if(nestedList) {
+      } else if (nestedList) {
         /* `startSection` is not a listItem which means all `endSection`'s
          * previous listItems have been deleted. Move listItems to
          * `endSection` outermost containing list
@@ -334,33 +334,40 @@ function deleteRangeContents(element, rng) {
 function indent(element, isOutdent) {
   if (isOutdent) return outdent(element);
 
-  const listItems = selektr.contained(element.querySelectorAll('li'), true).filter(function (node) {
+  const listItems = selektr.contained($$('li', element), true).filter(function (node) {
       return listItemFilter(node) ||
         selektr.containsEvery(descendants(node, {
           nodeType: 1,
-          filter: function (node) { return !node.previousSibling; },
+          filter: (node) => !node.previousSibling,
           onlyDeepest: true
         }), true);
     }),
     positions = selektr.get();
 
   listItems.forEach(function (el) {
-    const $prev = $(el).prev();
+    const prev = el.previousSibling;
 
-    if ($prev.length === 1) {
+    if (prev) {
       // only allow indenting list items if they are not the head items in their list
 
       // try to fetch the current element's nested list
-      let $nestedList = $prev.children('UL,OL');
-      if ($nestedList.length === 0) {
+      let nestedList = children(prev, 'UL,OL')[0];
+
+      if (!nestedList) {
         // if the previous list item has no nested list, create a new one
-        const tagName = $(el).closest('OL,UL')[0].tagName;
-        $nestedList = $('<' + tagName + '>').appendTo($(el).prev());
+        const tagName = closest(el, 'OL,UL').tagName;
+
+        nestedList = dollr('<' + tagName + '>');
+
+        appendTo(nestedList, prev);
       }
       // append the list item itself to the previous list items nested list.
       // if the list item itself has a nested list, append all list items
       // on this nested list to the previous elements nested list
-      $nestedList.append(el).append($(el).children('UL,OL').children());
+      //$nestedList.append(el).append($(el).children('UL,OL').children());
+
+      appendTo(el, nestedList);
+      appendTo(children(children(el, 'UL,OL')[0]), nestedList);
     }
   });
 
@@ -427,7 +434,7 @@ function joinNext(element, section) {
  * @param {Element} node2 - Second node to join
  */
 function join(element, node1, node2) {
-  if (node1.headChild && node1.headChild.tagName === 'BR') $(node1.headChild).remove();
+  if (node1.firstChild && node1.firstChild.tagName === 'BR') $(node1.firstChild).remove();
   if (node1.lastChild && node1.lastChild.tagName === 'BR') $(node1.lastChild).remove();
   if (node2.lastChild && node2.lastChild.tagName === 'BR') $(node2.lastChild).remove();
 
@@ -493,8 +500,8 @@ function join(element, node1, node2) {
 function format(element, tag) {
   function unwrap(el) {
     $(tag, el).each(function () {
-      if (this.headChild)
-        $(this.headChild).unwrap();
+      if (this.firstChild)
+        $(this.firstChild).unwrap();
       else
         $(this.remove());
     });
@@ -995,8 +1002,8 @@ function paste(element, dataTransfer) {
 function removeFormat(element, tag) {
   function unwrap(el) {
     $(tag, el).each(function () {
-      if (this.headChild)
-        $(this.headChild).unwrap();
+      if (this.firstChild)
+        $(this.firstChild).unwrap();
       else
         $(this.remove());
     });
@@ -1122,8 +1129,8 @@ function tidy(element) {
     if (!this.parentNode) return;
 
     $(this.tagName, this).each(function () {
-      if (this.headChild)
-        $(this.headChild).unwrap();
+      if (this.firstChild)
+        $(this.firstChild).unwrap();
     });
 
     const next = this.nextSibling;
@@ -1133,10 +1140,10 @@ function tidy(element) {
         $(next).remove();
       } else {
         let ref = next;
-        while (ref.headChild && ref.headChild === ref.lastChild) {
-          ref = ref.headChild;
+        while (ref.firstChild && ref.firstChild === ref.lastChild) {
+          ref = ref.firstChild;
           if (ref.tagName === this.tagName) {
-            $(this.headChild).unwrap();
+            $(this.firstChild).unwrap();
             $(this).append(next.childNodes);
             $(next).remove();
             break;
