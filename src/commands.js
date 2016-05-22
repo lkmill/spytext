@@ -241,68 +241,86 @@ function deleteRangeContents(element, rng) {
   // fetch range if rng is not set
   rng = rng || selektr.range();
 
-  const $startContainer = $(rng.startContainer),
-    $startSection = $(head(selektr.contained({ sections: true }, true))),
-    $endSection = $(last(selektr.contained({ sections: true }, true))),
+  const startContainer = rng.startContainer,
+    // TODO should we really use sections: true instead of passing selectors?
+    //containedSections = selektr.contained({ sections: true }, true),
+    containedSections = selektr.contained({ sections: true }, true).filter(listItemFilter),
+    startSection = head(containedSections),
+    endSection = last(containedSections),
     position = selektr.get('start');
 
   // use native deleteContents to remove the contents of the selection,
   rng.deleteContents();
 
-  if (!$startSection.is($endSection)) {
-    // if $startSection is not $endSection, we need to clean up any mess that
-    // deleteContents has left and then append all childNodes of $endSection to $startSection
+  if (startSection !== endSection) {
+    /* if `startSection` is not `endSection`, we need to clean up any mess that
+     * deleteContents has left and then append all childNodes of `endSection`
+     * to `startSection`
+     */
 
-    if ($endSection.is('LI')) {
-      // $endSection is a list item... we might need to clear up a mess
+    if (endSection.matches('LI')) {
+      // `endSection` is a list item... we might need to clear up a mess
 
-      // $list will be the list to which we move any nested lists of $endSection
-      // to and any of $endSection's next siblings
-      let $list;
-      const $nestedList = $endSection.children('UL,OL');
+      /* `list` will be the list to which we move any of `endSections` nested
+       * lists and next siblings.
+       */
+      let list;
+      const nestedList = children(endSection, 'UL,OL')[0];
 
-      if ($startSection.is('LI')) {
-        // $startSection is a listItem,
+      if (startSection.matches('LI')) {
+        // `startSection` is a listItem,
 
-        // move listItems to $startSection's parent list)
-        $list = $startSection.parent();
+        // move listItems to `startSection`'s parent list)
+        list = startSection.parentNode;
 
-        // append potential $nestedList to $startSection
-        $startSection.append($nestedList);
+        if(nestedList)
+          // append potential `nestedList` to `startSection`
+          appendTo(nestedList, startSection);
+      } else if(nestedList) {
+        /* `startSection` is not a listItem which means all `endSection`'s
+         * previous listItems have been deleted. Move listItems to
+         * `endSection` outermost containing list
+         */
+        list = nestedList;
+
+        insertAfter(nestedList, startSection);
+
+        // append all `nestedList`'s children to `list`
+        //appendTo(children(nestedList), list);
       } else {
-        // $startSection is not a listItem which means all $endSection's previous listItems
-        // have been selected. Move listItems to $endSection outermost containing list
-        $list = $endSection.closest(element.children);
-
-        // append all $nestedList's children to $list
-        $list.append($nestedList.children());
+        /* TODO clear up empty list items when deleting from a normal section
+         * to nested list item without children (nested lists)
+         */
+        list = endSection.parentNode;
       }
 
-      if (!$list.is($endSection.parent()) && $endSection[0].nextSibling) {
-        // append all next siblings to $endSection, but only
-        // if $list is not $endSection's parent (because then target
-        // and source will be same)
-        $list.append($endSection.nextAll());
+      if (list !== endSection.parentNode && endSection.nextSibling) {
+        /* append all next siblings to `endSection`, but only if `list` is not
+         * `endSection`'s parent (because then target and source will be same)
+         */
+        appendTo(nextAll(endSection), list);
       }
     }
 
-    // Move all childNodes from $endSection to $startSection by inserting them
-    // after $startContainer (should now be a at the end of $startSection).
-    // $startContainer is used instead of appending to $startSection in case a nested list
-    // has been appended to $startSection, otherwise the childNodes would be
-    // incorrectly placed after this nested list.
-    if ($startContainer[0].nodeType === 1)
-      $startContainer.prepend($endSection[0].childNodes);
+    /* Move all childNodes from `endSection` to `startSection` by inserting
+     * them after `startContainer` (should now be a at the end of
+     * `startSection`).  `startContainer` is used instead of appending to
+     * `startSection` in case a nested list has been appended to
+     * `startSection`, otherwise the childNodes would be incorrectly placed
+     * after this nested list.
+     */
+    if (startContainer.nodeType === 1)
+      prependTo(endSection.childNodes, startContainer);
     else
-      $startContainer.after($endSection[0].childNodes);
+      insertAfter(endSection.childNodes, startContainer);
 
-    // remove the empty $endSection
-    $endSection.remove();
+    // remove the empty `endSection`
+    endSection.remove();
   }
 
-  $startSection[0].normalize();
+  startSection.normalize();
 
-  setBR($startSection[0]);
+  setBR(startSection);
 
   deleteEmptyElements(element);
 
