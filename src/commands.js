@@ -1144,27 +1144,28 @@ function setBR(element) {
 
 function tidy(element) {
   // deleteEmptyElements should be called head so we do not have to worrry about empty elements
-  $('STRONG,U,EM,STRIKE', element).each(function () {
-    if (!this.parentNode) return;
+  $$('STRONG,U,EM,STRIKE', element).forEach(function (el) {
+    if (!el.parentNode) return;
 
-    $(this.tagName, this).each(function () {
-      if (this.firstChild)
-        $(this.firstChild).unwrap();
+    $$(el.tagName, el).forEach(function (el) {
+      if (el.firstChild)
+        unwrap(el.firstChild);
     });
 
-    const next = this.nextSibling;
+    const next = el.nextSibling;
+
     if (next && next.nodeType === 1) {
-      if (next.tagName === this.tagName) {
-        $(this).append(next.childNodes);
-        $(next).remove();
+      if (next.tagName === el.tagName) {
+        appendTo(next.childNodes, el);
+        next.remove();
       } else {
         let ref = next;
         while (ref.firstChild && ref.firstChild === ref.lastChild) {
           ref = ref.firstChild;
-          if (ref.tagName === this.tagName) {
-            $(this.firstChild).unwrap();
-            $(this).append(next.childNodes);
-            $(next).remove();
+          if (ref.tagName === el.tagName) {
+            unwrap(el.firstChild);
+            appendTo(next.childNodes, el);
+            next.remove();
             break;
           }
         }
