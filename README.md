@@ -1,23 +1,51 @@
-# Spytext - The Tiny But Fully Functional RTE for the Web
+# Spytext - The Tiny HTML5 Editor
 
-Always the seer is a __sayer__. Somehow his dream is told: somehow he publishes it
-with solemn joy: sometimes with pencil on canvas: sometimes with chisel on
-stone; sometimes in towers and aisles of granite, his soul's worship is
-builded; sometimes in anthems of indefinite music; but clearest and most
-permanent, in words. 
-- Ralph Waldo Emerson
+Spytext is an HTML5 editor, not a Rich Text Editor.
 
-## Why ?
+Spytext uses `contentEditable`, but most browsers behave very differently in
+handling line breaks, new sections, backspaces, deletes, formatting etc. As a
+result, Spytext uses it's own DOM manipulating commands, selection management
+(through [selekr](https://github.com/lohfu/selekr)) and DOM undo/redo
+(through [snapback](https://github.com/lohfu/snapback)). The only parts conentEditable
+still handles are actual type inputs and text traversal (arrow buttons, page up, etc).
 
-Simply because there are no other really good, bare-bone text editors using
-`contentEditable`. Most browsers behave very differently in handling line
-breaks, new sections, backspaces, deletes, formatting etc. So basically we
-have overriden all these actions with our own DOM manipulating actions.  The
-only things we use native actions for is actual typing and text traversal
-(arrow buttons, page up, etc). Even the undo/redo has been completely replaced
-to allow us to modify the DOM however we like, but still be able to go back
-to previous changes. This might sound like a daunting task, but it turned out
-to be quite simple. And thus it is also very small, just look below.
+Despite all this, the entire library (include dollr,
+selektr and snapback, but without LoDash) weighs in around 10kb gzipped.
+
+## Demo
+
+There is a Plunker demo at: <https://embed.plnkr.co/sJNI4kVqX7VEgA0mY2UJ/>
+
+## Usage
+
+### NPM
+
+```
+$ npm install spytext
+```
+
+```js
+import Spytext from 'spytext';
+
+/* OR */
+
+var Spytext = require('spytext');
+
+document.addEventListener('DOMContentLoaded', function () {
+  var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
+}, false);
+```
+
+### CDN
+
+```html
+<script src="https://npmcdn.com/spytext@0.8.0-alpha/dist/spytext.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
+}, false);
+</script>
+```
 
 ## Functionality
 
@@ -28,14 +56,12 @@ to be quite simple. And thus it is also very small, just look below.
 + Indent/outdent these lists and
 + Undo/redo
 
-## Spytext is Tiny
+## Spytext is Small
 
-Spytext depends on having jQuery and Underscore/Lodash available in global
-scope. Other than that, no dependencies and the sizes are follwing:
-
-          | Minified  | Compressed
-----------|-----------|-----------
-Spytext   | 24.4kb    | 7.51kb    
+                                   | Minified  | Compressed
+-----------------------------------|-----------|-----------
+Spytext (All deps except Lodash)   | 39kb      | 10.1kb    
+Spytext                            | 70kb      | 19kb    
 
 
 ## Compatability
