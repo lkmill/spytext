@@ -103,10 +103,10 @@ function block(element, tag) {
      * elements except LI are children of `element`
      */
     const endList = closest(startSection, element.children);
-    let startList;
+    //let startList;
 
-    if (startSection.matches('LI'))
-      startList = closest(startSection, element.children);
+    //if (startSection.matches('LI'))
+    //  startList = closest(startSection, element.children);
 
     let secondList;
 
@@ -364,10 +364,10 @@ function indent(element, isOutdent) {
 
         appendTo(nestedList, prev);
       }
-      // append the list item itself to the previous list items nested list.
-      // if the list item itself has a nested list, append all list items
-      // on this nested list to the previous elements nested list
-      //$nestedList.append(el).append($(el).children('UL,OL').children());
+      /* append the list item itself to the previous list items nested list.
+       * if the list item itself has a nested list, append all list items
+       * on this nested list to the previous elements nested list
+       */
 
       appendTo(el, nestedList);
       appendTo(children(children(el, 'UL,OL')[0]), nestedList);
@@ -423,7 +423,7 @@ function joinNext(element, section) {
     next = treeWalker.nextNode();
   }
 
-  // next should only be null or undefined if delete is called at beginning of field
+  // `next` should only be null or undefined if delete is called at beginning of field
   if (next)
     return join(element, section, next);
 }
@@ -445,14 +445,15 @@ function join(element, node1, node2) {
     position;
 
   if ((nestedList = children(node1, 'UL,OL')[0])) {
-    // `node1` has a nested list, and `node2` should
-    // be the head list item in the nested list. this means
-    // we can leave the nested list, and simply insert
-    // `node2` children before the nested list in `node1`.
-
-    // update length to only be length of text in `node1` excluding length of
-    // text in nested list, so selektr sets the position correctly
-    //length = length - $nestedList.text().length;
+    /* `node1` has a nested list, and `node2` should
+     * be the head list item in the nested list. this means
+     * we can leave the nested list, and simply insert
+     * `node2` children before the nested list in `node1`.
+     *
+     * update length to only be length of text in `node1` excluding length of
+     * text in nested list, so selektr sets the position correctly
+     * length = length - $nestedList.text().length;
+     */
 
     position = {
       ref: node1,
@@ -465,7 +466,7 @@ function join(element, node1, node2) {
     // nested list's level by moving all its children to after `node2`, then
     // remove the nested list.
 
-    // insert $nestedList's list items after `node2`
+    // insert `nestedList`'s list items after `node2`
     insertAfter(children(nestedList), node2);
 
     // remove the empty $nestedList
@@ -836,8 +837,10 @@ function newSection(element) {
     return;
   }
 
-  // create a new block with the same tag as blockElement, insert it before blockElement and append
-  // the contents of the extracted range to it's end
+  /* create a new block with the same tag as blockElement, insert it before
+   * blockElement and append
+   * the contents of the extracted range to it's end
+   */
   //const $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
   const el = dollr('<' + (!section.matches('LI') && selektr.isAtEndOfSection() ? 'p' : section.tagName) + '>');
 
@@ -846,8 +849,10 @@ function newSection(element) {
   insertAfter(el, section);
 
   if (children(section, 'UL,OL').length || !selektr.isAtEndOfSection()) {
-    // Select everything from the start of blockElement to the caret. This
-    // includes everything that will be moved into the new block placed before the current
+    /* Select everything from the start of blockElement to the caret. This
+     * includes everything that will be moved into the new block placed before
+     * the current
+     */
     selektr.set({
       start: {
         ref: rng.startContainer,
@@ -898,10 +903,11 @@ function outdent(element) {
     }
 
     if (li.nextSibling) {
-      // the list item has following siblings, we need
-      // to move them into a new or existing nested list
+      /* `li` has following siblings, we need
+       * to move them into a new or existing nested list
+       */
 
-      // attempt to selected a nested list
+     //attempt to selected a nested list
       let nestedList = children(li, 'UL,OL')[0];
 
       if (!nestedList) {
@@ -913,7 +919,7 @@ function outdent(element) {
         appendTo(nestedList, li);
       }
 
-      // append all list item's next siblings to the nestedlist
+      // append all `li`'s next siblings to `nestedlist`
       appendTo(nextAll(li), nestedList);
     }
 
@@ -976,8 +982,9 @@ function paste(element, dataTransfer) {
           // remove the last item if it is a line break
           section.lastChild.remove();
 
-        // since this is the head text Block,
-        // simply append the textNode to the section
+        /* since this is the head text Block,
+         * simply append the textNode to the section
+         */
         appendTo(textNode, section);
       } else {
         // create a new section
@@ -993,9 +1000,10 @@ function paste(element, dataTransfer) {
           appendTo(el, parent);
       }
     }
-    // append any contents extracted from the range prevously to the
-    // last inserted new section, or section if only
-    // one text block was pasted
+    /* append any contents extracted from the range prevously to the
+     * last inserted new section, or section if only
+     * one text block was pasted
+     */
     appendTo(contents.childNodes, el || section);
 
     // set the range to end of last inserted textnode
