@@ -26,7 +26,7 @@ const assign = require('object-assign'),
  */
 //const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
-function Field(options) {
+function Spytext(options) {
   this.el = dollr(options.el);
 
   this.el.classList.add('spytext-field');
@@ -67,20 +67,13 @@ function Field(options) {
   });
 }
 
-assign(Field.prototype, {
-  /**
-   * @lends SpytextField.prototype
-   */
+assign(Spytext.prototype, {
   events: assign({
     focus: 'activate',
 
     blur: 'deactivate',
   }, require('./events')),
 
-  /**
-   * @constructs
-   * @augments Backbone.View
-   */
   /**
    * Activates the current field.
    */
@@ -165,4 +158,4 @@ assign(Field.prototype, {
   },
 });
 
-module.exports = Field;
+module.exports = Spytext;
