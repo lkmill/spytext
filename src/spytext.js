@@ -1,33 +1,30 @@
-'use strict';
-
 /**
  * A Backbone.View for Spytext fields.
  *
  * @module spytext/field
  */
 
-const Snapback = require('snapback');
-const SpytextToolbar = require('./toolbar');
+import Snapback from 'snapback';
+import SpytextToolbar from './toolbar';
 
-const selektr = require('selektr');
-const commands = require('./commands');
+import * as selektr from 'selektr';
+import * as commands from './commands';
 
-const assign = require('object-assign'),
-  dollr = require('dollr/dollr').$,
-  $$ = require('dollr/dollr').$$,
-  on = require('dollr/on'),
-  off = require('dollr/off'),
-  trigger = require('dollr/trigger'),
-  appendTo = require('dollr/appendTo'),
-  forEach = require('lodash/forEach'),
-  tail = require('lodash/tail');
+import assign from 'object-assign';
+import { $, $$ } from 'dollr/dollr';
+import on from 'dollr/on';
+import off from 'dollr/off';
+import trigger from 'dollr/trigger';
+import appendTo from 'dollr/appendTo';
+import forEach from 'lodash/forEach';
+import tail from 'lodash/tail';
 /**
  * @readonly
  */
 //const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 function Spytext(options) {
-  this.el = dollr(options.el);
+  this.el = $(options.el);
 
   this.el.classList.add('spytext-field');
   this.el.setAttribute('contentEditable', 'true');
@@ -35,7 +32,7 @@ function Spytext(options) {
   commands.deleteEmptyTextNodes(this.el);
   commands.deleteEmptyElements(this.el);
   if (this.el.childNodes.length === 0) {
-    appendTo(dollr('<p>'), this.el);
+    appendTo($('<p>'), this.el);
   }
   commands.setBR($$(this.el.children));
 
@@ -158,4 +155,4 @@ assign(Spytext.prototype, {
   },
 });
 
-module.exports = Spytext;
+export default Spytext;

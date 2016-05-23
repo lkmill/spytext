@@ -1,36 +1,36 @@
-'use strict';
 /**
  * All the commands for Spytext
  *
  * @module spytext/commands
  */
 
-const selektr = require('selektr'),
-  dollr = require('dollr').$,
-  $$ = require('dollr').$$,
-  appendTo = require('dollr/appendTo'),
-  closest = require('dollr/closest'),
-  children = require('dollr/children'),
-  is = require('dollr/is'),
-  insertAfter = require('dollr/insertAfter'),
-  insertBefore = require('dollr/insertBefore'),
-  next = require('dollr/next'),
-  nextAll = require('dollr/nextAll'),
-  prependTo = require('dollr/prependTo'),
-  prevAll = require('dollr/prevAll'),
-  text = require('dollr/text'),
-  unwrap = require('dollr/unwrap'),
-  wrap = require('dollr/wrap'),
-  descendants = require('descendants'),
-  sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
+import * as selektr from 'selektr';
 
-const initial = require('lodash/initial'),
-  head = require('lodash/head'),
-  invokeMap = require('lodash/invokeMap'),
-  last = require('lodash/last'),
-  isArray = require('lodash/isArray'),
-  toArray = require('lodash/toArray');
+import { $, $$ } from 'dollr';
 
+import appendTo from 'dollr/appendTo';
+import closest from 'dollr/closest';
+import children from 'dollr/children';
+import is from 'dollr/is';
+import insertAfter from 'dollr/insertAfter';
+import insertBefore from 'dollr/insertBefore';
+import next from 'dollr/next';
+import nextAll from 'dollr/nextAll';
+import prependTo from 'dollr/prependTo';
+import prevAll from 'dollr/prevAll';
+import text from 'dollr/text';
+import unwrap from 'dollr/unwrap';
+import wrap from 'dollr/wrap';
+import descendants from 'dollr/descendants';
+
+import initial from 'lodash/initial';
+import head from 'lodash/head';
+import invokeMap from 'lodash/invokeMap';
+import last from 'lodash/last';
+import isArray from 'lodash/isArray';
+import toArray from 'lodash/toArray';
+
+const sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 function listItemFilter(node) {
   /* this is to filter out LI with nested lists where only text in the nested
@@ -55,7 +55,7 @@ function listItemFilter(node) {
  * @param {Element} element - Reference element to be used for selektr to fetch elements contained in selection
  * @return {string} alignment
  */
-function align(element, alignment) {
+export function align(element, alignment) {
   // we slice the sectionTags because we do not want to align LI tags
   selektr.contained(children(element, sectionTags.slice(0, -1).join()), true).forEach(function (child) {
     // do not set text-align property on lists
@@ -78,7 +78,7 @@ align.disabled = function (option, styles) {
  * @param {Element} element - Reference element to be used for selektr to fetch elements contained in selection
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
-function block(element, tag) {
+export function block(element, tag) {
   //if(block.active(tag)) return;
 
   const sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
@@ -125,7 +125,7 @@ function block(element, tag) {
        * if `endSection` did not have a nested list.
        */
       if (!secondList) {
-        secondList = dollr('<' + endList.tagName + '>');
+        secondList = $('<' + endList.tagName + '>');
 
         insertAfter(secondList, endList);
       }
@@ -149,7 +149,7 @@ function block(element, tag) {
   }
 
   sections.forEach(function (child, i) {
-    const newBlock = dollr('<' + tag + '>');
+    const newBlock = $('<' + tag + '>');
 
     newBlock.style.cssText = child.style.cssText;
 
@@ -189,7 +189,7 @@ block.active = function (tag, styles) {
  * @static
  * @param {Element} element - Element which descendants to look for empty text nodes
  */
-function deleteEmptyTextNodes(element) {
+export function deleteEmptyTextNodes(element) {
   function isBlock(node) {
     return node && node.nodeType === 1 && !getComputedStyle(node).display.match(/inline/);
   }
@@ -217,7 +217,7 @@ function deleteEmptyTextNodes(element) {
  * @static
  * @param {Element} element - Element which descendants to look for empty text nodes
  */
-function deleteEmptyElements(element) {
+export function deleteEmptyElements(element) {
   $$(':empty:not(BR)', element).forEach(function (el) {
     let parent;
 
@@ -238,7 +238,7 @@ function deleteEmptyElements(element) {
  * @param {Element} element - Element which descendants to look for empty text nodes
  * @param {Range} [rng] -
  */
-function deleteRangeContents(element, rng) {
+export function deleteRangeContents(element, rng) {
   // fetch range if rng is not set
   rng = rng || selektr.range();
 
@@ -334,7 +334,7 @@ function deleteRangeContents(element, rng) {
  * @static
  * @param {Element} element - Element which descendants to look for empty text nodes
  */
-function indent(element, isOutdent) {
+export function indent(element, isOutdent) {
   if (isOutdent) return outdent(element);
 
   const listItems = selektr.contained($$('li', element), true).filter(function (node) {
@@ -360,7 +360,7 @@ function indent(element, isOutdent) {
         // if the previous list item has no nested list, create a new one
         const tagName = closest(el, 'OL,UL').tagName;
 
-        nestedList = dollr('<' + tagName + '>');
+        nestedList = $('<' + tagName + '>');
 
         appendTo(nestedList, prev);
       }
@@ -390,7 +390,7 @@ indent.disabled = function (option, styles) {
  * @param {Element} element - Element which is used as root for the TreeWalker
  * @param {Element} section - Element which should be join the the previous section
  */
-function joinPrev(element, section) {
+export function joinPrev(element, section) {
   const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
   treeWalker.currentNode = section;
 
@@ -413,7 +413,7 @@ function joinPrev(element, section) {
  * @param {Element} element - Element which is used as root for the TreeWalker
  * @param {Element} section - Element which should be join the next section
  */
-function joinNext(element, section) {
+export function joinNext(element, section) {
   const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null, false);
   treeWalker.currentNode = section;
 
@@ -436,7 +436,7 @@ function joinNext(element, section) {
  * @param {Element} node1 - First node to join
  * @param {Element} node2 - Second node to join
  */
-function join(element, node1, node2) {
+export function join(element, node1, node2) {
   if (node1.firstChild && node1.firstChild.tagName === 'BR') node1.firstChild.remove();
   if (node1.lastChild && node1.lastChild.tagName === 'BR') node1.lastChild.remove();
   if (node2.lastChild && node2.lastChild.tagName === 'BR') node2.lastChild.remove();
@@ -501,7 +501,7 @@ function join(element, node1, node2) {
  * @param {Element} element - Element which is used as root for selektr.
  * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
-function format(element, tag) {
+export function format(element, tag) {
   function _unwrap(el) {
     $$(tag, el).forEach(function (el) {
       if (el.firstChild)
@@ -515,7 +515,7 @@ function format(element, tag) {
   //if(format.active(tag)) return removeFormat(element, tag);
 
   const rng = selektr.range(),
-    wrapper = dollr('<' + tag + '>');
+    wrapper = $('<' + tag + '>');
 
   if (!rng.collapsed) {
     const positions = selektr.get(),
@@ -597,7 +597,7 @@ format.active = function (option, styles) {
  * @param {Element} element - Element which is used as root for selektr.
  * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
-function link(element, attribute) {
+export function link(element, attribute) {
   const sel = window.getSelection();
   let node = sel.focusNode.parentNode;
   if (node.tagName.toLowerCase() !== 'a') {
@@ -633,7 +633,7 @@ function link(element, attribute) {
  * @param {Element} element - Element which is used as root for selektr.
  * @param {string} tag - The type of list tag, unordered (<UL>) or ordered (<OL>) lists.
  */
-function list(element, tag) {
+export function list(element, tag) {
   /* TODO we might have to reimplement the commented line below. currently this
    * works fine because the list button is disabled when active, but if one
    * calls the list command on the same kind of list, it will probably split it
@@ -682,7 +682,7 @@ function list(element, tag) {
       /* `startList` is the wrong list type, we need to create a new list
        * and insert it after `startList`
        */
-      list = dollr('<' + tag + '>');
+      list = $('<' + tag + '>');
 
       insertAfter(list, startList);
     }
@@ -715,7 +715,7 @@ function list(element, tag) {
          * if `endSection` did not have a nested list.
          */
         if (!secondList) {
-          secondList = dollr('<' + endList.tagName + '>');
+          secondList = $('<' + endList.tagName + '>');
 
           insertAfter(secondList, list);
         }
@@ -728,7 +728,7 @@ function list(element, tag) {
      * list that we can append all new list items to.
      * insert this new list before `startSection`
      */
-    list = dollr('<' + tag + '>');
+    list = $('<' + tag + '>');
 
     insertBefore(list, startSection);
   }
@@ -766,7 +766,7 @@ function list(element, tag) {
           // check if we had found (and removed) any nested lists
           if (oldNestedList.length > 0) {
             // create a new nested list and append it to the `listItem`
-            const nestedList = dollr('<' + tag + '>');
+            const nestedList = $('<' + tag + '>');
 
             // TODO check if append is right
             appendTo(nestedList, listItem);
@@ -784,7 +784,7 @@ function list(element, tag) {
       /* `child` is not a list item, create a new list item
        * and append all of `child`'s childNodes to it
        */
-      listItem = dollr('<li>');
+      listItem = $('<li>');
 
       appendTo(listItem, list);
       appendTo(child.childNodes, listItem);
@@ -819,7 +819,7 @@ list.active = function (option, styles) {
  * @param {Element} element - Element which is used as root for selektr.
  * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
  */
-function newSection(element) {
+export function newSection(element) {
   const rng = selektr.range();
   const section = closest(rng.startContainer, sectionTags.join(','), element);
 
@@ -842,7 +842,7 @@ function newSection(element) {
    * the contents of the extracted range to it's end
    */
   //const $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
-  const el = dollr('<' + (!section.matches('LI') && selektr.isAtEndOfSection() ? 'p' : section.tagName) + '>');
+  const el = $('<' + (!section.matches('LI') && selektr.isAtEndOfSection() ? 'p' : section.tagName) + '>');
 
   el.style.cssText = section.style.cssText;
 
@@ -889,7 +889,7 @@ function newSection(element) {
  * @static
  * @param {Element} element - Element which is used as root for selektr.
  */
-function outdent(element) {
+export function outdent(element) {
   const listItems = selektr.contained(element.querySelectorAll('li'), true).filter(listItemFilter),
     positions = selektr.get();
 
@@ -914,7 +914,7 @@ function outdent(element) {
         // if there is no nested list, create a new one
         const tagName = closest(li, 'OL,UL').tagName;
 
-        nestedList = dollr('<' + tagName + '>');
+        nestedList = $('<' + tagName + '>');
 
         appendTo(nestedList, li);
       }
@@ -938,7 +938,7 @@ function outdent(element) {
  * @param {Element} element - Element which is used as root for selektr.
  * @param {DataTransfer} dataTransfer - Must have a getData method which returns pure text string
  */
-function paste(element, dataTransfer) {
+export function paste(element, dataTransfer) {
   let rng = selektr.range();
   const textBlocks = dataTransfer.getData('Text').replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').split(/[\n\r]+/);
 
@@ -988,7 +988,7 @@ function paste(element, dataTransfer) {
         appendTo(textNode, section);
       } else {
         // create a new section
-        el = dollr('<' + section.tagName + '>');
+        el = $('<' + section.tagName + '>');
 
         appendTo(textNode, el);
 
@@ -1021,7 +1021,7 @@ function paste(element, dataTransfer) {
  * @static
  * @param {Element} element - Only used to normalize text nodes
  */
-function removeFormat(element, tag) {
+export function removeFormat(element, tag) {
   function _unwrap(el) {
     $$(tag, el).forEach(function (el) {
       if (el.firstChild)
@@ -1101,7 +1101,7 @@ function removeFormat(element, tag) {
           const newContents = selektr.range().extractContents();
           _unwrap(newContents);
 
-          const el = dollr('<' + tag + '>');
+          const el = $('<' + tag + '>');
 
           insertAfter(el, tagElement);
 
@@ -1128,14 +1128,14 @@ function removeFormat(element, tag) {
  * @static
  * @param {Element} element - Element whos descendants need to be checked of extraneous BR tags
  */
-function setBR(element) {
+export function setBR(element) {
   if (isArray(element))
     return element.forEach(setBR);
 
   if (!element.firstChild ||
     (is(element.lastChild, 'UL,OL') && element.textContent.length - element.lastChild.textContent.length === 0 &&
       prevAll(element.lastChild, 'br').length === 0 && $$('br', prevAll(element.lastChild)).length === 0)) {
-    prependTo(dollr('<br>'), element);
+    prependTo($('<br>'), element);
   } else {
     $$('BR:last-child', element).forEach(function (br, i) {
       if (br.nextSibling) return;
@@ -1150,7 +1150,7 @@ function setBR(element) {
   }
 }
 
-function tidy(element) {
+export function tidy(element) {
   // deleteEmptyElements should be called head so we do not have to worrry about empty elements
   $$('STRONG,U,EM,STRIKE', element).forEach(function (el) {
     if (!el.parentNode) return;
@@ -1181,23 +1181,3 @@ function tidy(element) {
     }
   });
 }
-
-module.exports = {
-  align,
-  block,
-  deleteRangeContents,
-  deleteEmptyElements,
-  deleteEmptyTextNodes,
-  format,
-  indent,
-  join,
-  joinPrev,
-  joinNext,
-  link,
-  list,
-  newSection,
-  outdent,
-  paste,
-  removeFormat,
-  setBR
-};

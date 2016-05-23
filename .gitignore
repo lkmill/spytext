@@ -33,4 +33,10 @@ bower_components
 
 /dump
 
+/dist
+
+/es
+
+/lib
+
 /*.js
