@@ -37,7 +37,6 @@ export function keypress(e) {
       });
     }
     trigger(this.el, 'input');
-    selektr.update();
   }
 }
 
@@ -46,8 +45,6 @@ export function keyup(e) {
   // home and end
   switch (e.keyCode) {
     case 8: //backspace
-      // cannot remember why this is needed for backspace but not delete
-      selektr.update(true, false, false);
     case 46:// delete
       trigger(this.el, 'input');
       break;
@@ -62,7 +59,6 @@ export function keyup(e) {
       // navigation keys... set new (initial) position in snapback
       // clear timeout (if any) and register undo (if any) will already have been done in keydown
       selektr.normalize();
-      selektr.update();
       this.snapback.store();
       this.toolbar.setActiveStyles();
       break;
@@ -112,7 +108,6 @@ export function keydown(e) {
         // ie if next line is omitted the stored selektr position
         // might be wrong if the user very quickly presses undo
         // after typing
-        selektr.update(true, false, false);
         if (e.shiftKey) {
           this.snapback.redo();
         } else {
@@ -123,7 +118,6 @@ export function keydown(e) {
       case 65://a
         e.preventDefault();
         selektr.select(this.el.children.length === 1 ? this.el.firstChild : this.el);
-        selektr.update();
         this.snapback.store();
         this.toolbar.setActiveStyles();
         break;
@@ -190,9 +184,6 @@ export function keydown(e) {
     // only register an undo if user has not typed for 300 ms
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
-      // this is needed as a result of removing selektr update from inside snapback:register. could probably put this somewhere better.
-      // putting it in keyUp makes it screw up sometimes for backspace.
-      selektr.update(true, false, false);
       this.snapback.register();
       this.toolbar.setActiveStyles();
     }, 300);

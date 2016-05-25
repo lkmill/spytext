@@ -102,7 +102,6 @@ assign(Spytext.prototype, {
       on(document, 'mouseup', (e) => {
         setTimeout(() => {
           selektr.normalize();
-          selektr.update();
           this.toolbar.setActiveStyles();
           this.snapback.store();
         });
