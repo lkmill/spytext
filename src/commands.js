@@ -176,7 +176,7 @@ export function block(element, tag) {
   invokeMap($$(':empty:not(BR)', element), 'remove');
 
   // set the selection
-  selektr.restore(positions, true);
+  selektr.set(positions);
 }
 
 block.active = function (tag, styles) {
@@ -325,7 +325,7 @@ export function deleteRangeContents(element, rng) {
 
   deleteEmptyElements(element);
 
-  selektr.restore(position, true);
+  selektr.set(position);
 }
 
 /**
@@ -375,7 +375,7 @@ export function indent(element, isOutdent) {
   });
 
   // restore the selection
-  selektr.restore(positions, true);
+  selektr.set(positions);
 }
 
 indent.disabled = function (option, styles) {
@@ -491,7 +491,7 @@ export function join(element, node1, node2) {
     // `node2` has at least one sibling, only remove `node2`
     node2.remove();
 
-  selektr.restore(position, true);
+  selektr.set(position);
 }
 
 /**
@@ -579,7 +579,7 @@ export function format(element, tag) {
     startSection.normalize();
 
     // restore the selection
-    selektr.restore(positions, true);
+    selektr.set(positions);
   } else {
     rng.insertNode(wrapper);
     selektr.set({ ref: wrapper }, true);
@@ -805,7 +805,7 @@ export function list(element, tag) {
   // remove empty elements
   invokeMap($$(':empty:not(BR)', element), 'remove');
 
-  selektr.restore(positions, true);
+  selektr.set(positions);
 }
 
 list.active = function (option, styles) {
@@ -927,7 +927,7 @@ export function outdent(element) {
     insertAfter(li, li.parentNode.parentNode);
   });
 
-  selektr.restore(positions);
+  selektr.set(positions);
 }
 
 /**
@@ -1117,7 +1117,7 @@ export function removeFormat(element, tag) {
       startSection.normalize();
 
       // restore the selection
-      selektr.restore(positions);
+      selektr.set(positions);
     }
   }
 }

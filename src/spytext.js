@@ -58,7 +58,7 @@ function Spytext(options) {
     restore(data) {
       this.store(data);
 
-      selektr.restore(data, true);
+      selektr.set(data);
     },
   });
 
