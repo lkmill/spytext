@@ -546,7 +546,7 @@ export function format(element, tag) {
           offset: 0
         },
         end: absolutePositions.end
-      });
+      }, false);
       clone = wrapper.cloneNode();
       contents = selektr.range().extractContents();
       _unwrap(contents);
@@ -564,7 +564,7 @@ export function format(element, tag) {
           ref: startSection,
           offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
         }
-      });
+      }, false);
     }
 
     contents = selektr.range().extractContents();
@@ -582,7 +582,7 @@ export function format(element, tag) {
     selektr.set(positions);
   } else {
     rng.insertNode(wrapper);
-    selektr.set({ ref: wrapper }, true);
+    selektr.set({ ref: wrapper }, false);
   }
 }
 
@@ -880,7 +880,7 @@ export function newSection(element) {
 
   selektr.set({
     ref: el
-  }, true);
+  }, false);
 }
 
 /**
@@ -962,7 +962,7 @@ export function paste(element, dataTransfer) {
     selektr.set({
       start: selektr.get('start', true),
       end: { ref: section, offset: section.childNodes.length }
-    });
+    }, false);
 
     const contents = selektr.range().extractContents();
 
@@ -1010,7 +1010,7 @@ export function paste(element, dataTransfer) {
     selektr.set({
       ref: textNode,
       offset: textNode.textContent.length,
-    }, true);
+    }, false);
   }
 }
 
@@ -1055,7 +1055,7 @@ export function removeFormat(element, tag) {
             offset: 0
           },
           end: absolutePositions.end
-        });
+        }, false);
         contents = selektr.range().extractContents();
         _unwrap(contents);
         prependTo(contents.childNodes, endSection);
@@ -1071,7 +1071,7 @@ export function removeFormat(element, tag) {
             ref: startSection,
             offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
           }
-        });
+        }, false);
       }
 
       contents = selektr.range().extractContents();
@@ -1082,7 +1082,7 @@ export function removeFormat(element, tag) {
         else
           appendTo(contents.childNodes, startSection);
       else {
-        selektr.set(absolutePositions.start);
+        selektr.set(absolutePositions.start, false);
         rng = selektr.range();
         let ref = rng.endContainer;
         const tagElement = closest(ref, tag, element);
@@ -1097,7 +1097,7 @@ export function removeFormat(element, tag) {
               ref,
               offset: tag.childNodes.length
             }
-          });
+          }, false);
           const newContents = selektr.range().extractContents();
           _unwrap(newContents);
 
