@@ -18,6 +18,9 @@ import trigger from 'dollr/trigger';
 import appendTo from 'dollr/appendTo';
 import forEach from 'lodash/forEach';
 import tail from 'lodash/tail';
+
+import * as events from './events';
+
 /**
  * @readonly
  */
@@ -69,7 +72,7 @@ assign(Spytext.prototype, {
     focus: 'activate',
 
     blur: 'deactivate',
-  }, require('./events')),
+  }, events),
 
   /**
    * Activates the current field.
