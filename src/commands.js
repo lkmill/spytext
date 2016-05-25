@@ -6,7 +6,7 @@
 
 import * as selektr from 'selektr';
 
-import { $, $$ } from 'dollr';
+import { $, $$ } from 'dollr/dollr';
 
 import appendTo from 'dollr/appendTo';
 import closest from 'dollr/closest';
