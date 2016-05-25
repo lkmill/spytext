@@ -28,7 +28,7 @@
   "dependencies": {
     "dollr": "0.0.6",
     "lodash": "^4.13.1",
-    "selektr": "0.0.7",
+    "selektr": "0.0.8",
     "snapback": "^0.6.1"
   },
   "devDependencies": {
