@@ -862,7 +862,7 @@ export function newSection(element) {
         ref: section,
         offset: section.childNodes.length
       }
-    });
+    }, false);
 
     // extract the contents
     const contents = selektr.range().extractContents();
