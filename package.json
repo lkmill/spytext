@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.8.0-alpha.4",
+  "version": "0.8.0-alpha.5",
   "description": "Why? Because there is nothing like it.",
   "main": "lib/spytext.js",
   "js:next": "es/spytext.js",
