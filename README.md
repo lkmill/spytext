@@ -36,10 +36,10 @@ document.addEventListener('DOMContentLoaded', function () {
 }, false);
 ```
 
-### CDN
+### CDN (UMD build)
 
 ```html
-<script src="https://npmcdn.com/spytext@0.8.0-alpha/dist/spytext.min.js"></script>
+<script src="https://npmcdn.com/spytext@0.8.0-alpha.5/dist/spytext.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
@@ -58,10 +58,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 ## Spytext is Small
 
+Spytext uses LoDash, which adds a significant amount of code.
+If you already use LoDash in your project, total SpyText
+footprint will be much smaller than values below.
+
                                    | Minified  | Compressed
 -----------------------------------|-----------|-----------
-Spytext (All deps except Lodash)   | 39kb      | 10.1kb    
-Spytext                            | 70kb      | 19kb    
+Spytext (UMD build, all deps)      | 45.4kb    | 14.5kb    
 
 
 ## Compatability
