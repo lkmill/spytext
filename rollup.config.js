@@ -11,9 +11,13 @@ export default {
       jsnext: true,  // Default: false
       main: true,  // Default: true
       browser: true,  // Default: false
-    }), commonjs({
+    }),
+    commonjs({
       include: 'node_modules/**',  // Default: undefined
-      exclude: [ 'node_modules/dollr/es/**', 'node_modules/lodash-es/**' ],  // Default: undefined
+      exclude: [
+        'node_modules/dollr/es/**',
+        'node_modules/lodash-es/**'
+      ],  // Default: undefined
       sourceMap: false,  // Default: true
     })
   ],
