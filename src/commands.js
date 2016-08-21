@@ -6,22 +6,25 @@
 
 import * as selektr from 'selektr';
 
-import { $, $$ } from 'dollr/dollr';
+import {
+  $,
+  $$,
+  appendTo,
+  closest,
+  children,
+  is,
+  insertAfter,
+  insertBefore,
+  next,
+  nextAll,
+  prependTo,
+  prevAll,
+  text,
+  unwrap,
+  wrap,
+  descendants
+} from 'dollr';
 
-import appendTo from 'dollr/appendTo';
-import closest from 'dollr/closest';
-import children from 'dollr/children';
-import is from 'dollr/is';
-import insertAfter from 'dollr/insertAfter';
-import insertBefore from 'dollr/insertBefore';
-import next from 'dollr/next';
-import nextAll from 'dollr/nextAll';
-import prependTo from 'dollr/prependTo';
-import prevAll from 'dollr/prevAll';
-import text from 'dollr/text';
-import unwrap from 'dollr/unwrap';
-import wrap from 'dollr/wrap';
-import descendants from 'dollr/descendants';
 
 import initial from 'lodash/initial';
 import head from 'lodash/head';
@@ -940,7 +943,12 @@ export function outdent(element) {
  */
 export function paste(element, dataTransfer) {
   let rng = selektr.range();
-  const textBlocks = dataTransfer.getData('Text').replace(/</g, '&lt;').replace(/>/, '&gt;').replace(/[\n\r]+$/g, '').split(/[\n\r]+/);
+  const textBlocks = dataTransfer
+    .getData('Text')
+    .replace(/</g, '&lt;')
+    .replace(/>/, '&gt;')
+    .replace(/[\n\r]+$/g, '')
+    .split(/[\n\r]+/);
 
   if (!rng.collapsed) {
     // delete range contents if not collapsed

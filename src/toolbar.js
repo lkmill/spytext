@@ -4,17 +4,20 @@
  * @module spytext/toolbar
  */
 
-import * as commands from './commands';
 import assign from 'object-assign';
 import * as selektr from 'selektr';
-import closest from 'dollr/closest';
-import { $, $$ } from 'dollr/dollr';
-import ancestors from 'dollr/ancestors';
-import is from 'dollr/is';
-import on from 'dollr/on';
+import {
+  $,
+  $$,
+  ancestors,
+  closest,
+  is,
+  on
+} from 'dollr';
 import uniq from 'lodash/uniq';
 import forEach from 'lodash/forEach';
 import children from 'dollr/children';
+import * as commands from './commands';
 
 function Toolbar() {
   this.el = $('<div class="spytext-toolbar"><div class="container"><ul class="spytext-button-group undo"><li><button class="spytext-button undo" data-undo tabindex="-1"></button></li><li><button class="spytext-button redo" data-redo tabindex="-1"></button></li></ul><ul class="spytext-dropdown block" data-command="block"><li><button data-option="h1">Heading 1</button></li><li><button data-option="h2">Heading 2</button></li><li><button data-option="h3">Heading 3</button></li><li><button data-option="h4">Heading 4</button></li><li><button data-option="h5">Heading 5</button></li><li><button data-option="h6">Heading 6</button></li><li><button data-option="p">Paragraph</button></li></ul><ul class="spytext-button-group format"><li><button class="spytext-button bold" data-command="format" data-option="strong" tabindex="-1"></button></li><li><button class="spytext-button italic" data-command="format" data-option="em" tabindex="-1"></button></li><li><button class="spytext-button underline" data-command="format" data-option="u" tabindex="-1"></button></li><li><button class="spytext-button strike-through" data-command="format" data-option="strike" tabindex="-1"></button></li><li><button class="spytext-button remove-format" data-command="removeFormat" tabindex="-1"></button></li></ul><ul class="spytext-button-group align"><li><button class="spytext-button link" data-command="link" tabindex="-1"></button></li></ul><ul class="spytext-button-group align"><li><button class="spytext-button align-left" data-command="align" data-option="left" tabindex="-1"></button></li><li><button class="spytext-button align-center" data-command="align" data-option="center" tabindex="-1"></button></li><li><button class="spytext-button align-right" data-command="align" data-option="right" tabindex="-1"></button></li><li><button class="spytext-button align-justify" data-command="align" data-option="justify" tabindex="-1"></button></li></ul><ul class="spytext-button-group list"><li><button class="spytext-button unordered-list" data-command="list" data-option="ul" tabindex="-1"></button></li><li><button class="spytext-button ordered-list" data-command="list" data-option="ol" tabindex="-1"></button></li></ul><ul class="spytext-button-group indent"><li><button class="spytext-button indent" data-command="indent" tabindex="-1"></button></li><li><button class="spytext-button outdent" data-command="indent" data-option="outdent" tabindex="-1"></button></li></ul></div></div>');

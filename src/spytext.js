@@ -8,17 +8,20 @@ import Snapback from 'snapback';
 import SpytextToolbar from './toolbar';
 
 import * as selektr from 'selektr';
-import * as commands from './commands';
 
 import assign from 'object-assign';
-import { $, $$ } from 'dollr/dollr';
-import on from 'dollr/on';
-import off from 'dollr/off';
-import trigger from 'dollr/trigger';
-import appendTo from 'dollr/appendTo';
+import {
+  $,
+  $$,
+  on,
+  off,
+  trigger,
+  appendTo
+} from 'dollr';
 import forEach from 'lodash/forEach';
 import tail from 'lodash/tail';
 
+import * as commands from './commands';
 import * as events from './events';
 
 /**
