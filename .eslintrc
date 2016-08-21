@@ -34,7 +34,7 @@
     "strict": [ 2, "global" ]
   },
 
-  globals: {
-    "$": true
+  "env": {
+    "browser": true
   }
 }
