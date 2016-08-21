@@ -7,8 +7,8 @@
   "scripts": {
     "clean": "rimraf es lib dist",
     "lint": "eslint src",
-    "build": "npm run build:commonjs && npm run build:es && npm run build:umd && npm run build:umd:min",
-    "build:commonjs": "BABEL_ENV=commonjs babel src --out-dir lib",
+    "build": "npm run build:cjs && npm run build:es && npm run build:umd && npm run build:umd:min",
+    "build:cjs": "BABEL_ENV=cjs babel src --out-dir lib",
     "build:es": "BABEL_ENV=es babel src --out-dir es",
     "build:umd": "mkdir -p dist && BABEL_ENV=es rollup -c -o dist/spytext.js",
     "build:umd:min": "mkdir -p dist && BABEL_ENV=es rollup -c | uglifyjs -c -m > dist/spytext.min.js",
@@ -28,6 +28,7 @@
   "dependencies": {
     "dollr": "0.0.7",
     "lodash": "^4.13.1",
+    "object-assign": "^4.1.0",
     "selektr": "0.1.1",
     "snapback": "^0.6.1"
   },
