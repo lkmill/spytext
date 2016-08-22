@@ -5,7 +5,6 @@
  */
 
 import Snapback from 'snapback';
-import SpytextToolbar from './toolbar';
 
 import * as selektr from 'selektr';
 
@@ -21,6 +20,7 @@ import {
 import forEach from 'lodash/forEach';
 import tail from 'lodash/tail';
 
+import SpytextToolbar from './toolbar';
 import * as commands from './commands';
 import * as events from './events';
 

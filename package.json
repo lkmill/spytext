@@ -13,7 +13,7 @@
     "build:umd": "mkdir -p dist && BABEL_ENV=es rollup -c -o dist/spytext.js",
     "build:umd:min": "mkdir -p dist && BABEL_ENV=es rollup -c | uglifyjs -c -m > dist/spytext.min.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "npm run clean && npm run build"
+    "prepublish": "npm run clean && npm run lint && npm run build"
   },
   "repository": {
     "type": "git",
