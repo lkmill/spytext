@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
 ### CDN (UMD build)
 
 ```html
-<script src="https://npmcdn.com/spytext@0.8.0-alpha.5/dist/spytext.min.js"></script>
+<script src="https://unpkg.com/spytext@0.8.0-alpha.5/dist/spytext.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
