@@ -22,7 +22,7 @@ import {
   text,
   unwrap,
   wrap,
-  descendants
+  descendants,
 } from 'dollr';
 
 
@@ -33,7 +33,7 @@ import last from 'lodash/last';
 import isArray from 'lodash/isArray';
 import toArray from 'lodash/toArray';
 
-const sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
+const sectionTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'];
 
 function listItemFilter(node) {
   /* this is to filter out LI with nested lists where only text in the nested
@@ -55,12 +55,13 @@ function listItemFilter(node) {
  * all blocks contained in current selection
  *
  * @static
- * @param {Element} element - Reference element to be used for selektr to fetch elements contained in selection
+ * @param {Element} element - Reference element to be used for selektr to fetch
+ * elements contained in selection
  * @return {string} alignment
  */
 export function align(element, alignment) {
   // we slice the sectionTags because we do not want to align LI tags
-  selektr.contained(children(element, sectionTags.slice(0, -1).join()), true).forEach(function (child) {
+  selektr.contained(children(element, sectionTags.slice(0, -1).join()), true).forEach((child) => {
     // do not set text-align property on lists
     child.style.textAlign = alignment;
   });
@@ -78,17 +79,18 @@ align.disabled = function (option, styles) {
  * level) elements of tagName `tag`.
  *
  * @static
- * @param {Element} element - Reference element to be used for selektr to fetch elements contained in selection
+ * @param {Element} element - Reference element to be used for selektr to fetch
+ * elements contained in selection
  * @return {string} tag - Tag to turn blocks into. Ie H1 or P
  */
 export function block(element, tag) {
-  //if(block.active(tag)) return;
+  // if(block.active(tag)) return;
 
-  const sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
-    newBlocks = [],
-    startSection = head(sections),
-    endSection = last(sections),
-    positions = selektr.get();
+  const sections = selektr.contained({ sections: true }, true).filter(listItemFilter);
+  const newBlocks = [];
+  const startSection = head(sections);
+  const endSection = last(sections);
+  const positions = selektr.get();
 
   let ref;
 
@@ -106,16 +108,16 @@ export function block(element, tag) {
      * elements except LI are children of `element`
      */
     const endList = closest(startSection, element.children);
-    //let startList;
+    // let startList;
 
-    //if (startSection.matches('LI'))
+    // if (startSection.matches('LI'))
     //  startList = closest(startSection, element.children);
 
     let secondList;
 
     if (children(endSection, 'UL,OL').length > 0) {
-    /* `endSection` has a nested list. Use that as our list.
-     */
+      /* `endSection` has a nested list. Use that as our list.
+      */
 
       secondList = children(endSection, 'UL,OL')[0];
 
@@ -128,7 +130,7 @@ export function block(element, tag) {
        * if `endSection` did not have a nested list.
        */
       if (!secondList) {
-        secondList = $('<' + endList.tagName + '>');
+        secondList = $(`<${endList.tagName}>`);
 
         insertAfter(secondList, endList);
       }
@@ -136,14 +138,15 @@ export function block(element, tag) {
       appendTo(nextAll(endSection), secondList);
     }
 
-    if (secondList)
+    if (secondList) {
       ref = secondList;
-    else
+    } else {
       /* `startList` is `endList` and last selected LI is last child and has no
        * nested list. simply place all new blocks after `startList`/`endList`, ie
        * before the next element
        */
       ref = next(endList);
+    }
   } else {
     /* `endSection` is not a list, simply place
      * new elements after `endSection` next sibling
@@ -151,17 +154,18 @@ export function block(element, tag) {
     ref = next(endSection);
   }
 
-  sections.forEach(function (child, i) {
-    const newBlock = $('<' + tag + '>');
+  sections.forEach((child) => {
+    const newBlock = $(`<${tag}>`);
 
     newBlock.style.cssText = child.style.cssText;
 
     /* place `newBlock` before `ref`, or append it to `element`
-     */
-    if (ref)
+    */
+    if (ref) {
       insertBefore(newBlock, ref);
-    else
+    } else {
       appendTo(newBlock, element);
+    }
 
 
     appendTo(child.childNodes, newBlock);
@@ -170,10 +174,11 @@ export function block(element, tag) {
     /* remove parent if `child` has no siblings, otherwise simply remove the
      * child
      */
-    if (!child.nextSibling && !child.previousSibling)
+    if (!child.nextSibling && !child.previousSibling) {
       child.parentNode.remove();
-    else
+    } else {
       child.remove();
+    }
   });
 
   invokeMap($$(':empty:not(BR)', element), 'remove');
@@ -198,8 +203,8 @@ export function deleteEmptyTextNodes(element) {
   }
 
   descendants(element, {
-    nodeType: 3
-  }).forEach(function (textNode) {
+    nodeType: 3,
+  }).forEach((textNode) => {
     if (isBlock(textNode.previousSibling) || isBlock(textNode.nextSibling)) {
       textNode.textContent = textNode.textContent.trim();
 
@@ -221,7 +226,7 @@ export function deleteEmptyTextNodes(element) {
  * @param {Element} element - Element which descendants to look for empty text nodes
  */
 export function deleteEmptyElements(element) {
-  $$(':empty:not(BR)', element).forEach(function (el) {
+  $$(':empty:not(BR)', element).forEach((el) => {
     let parent;
 
     // recurse up the DOM and delete all elements
@@ -245,13 +250,13 @@ export function deleteRangeContents(element, rng) {
   // fetch range if rng is not set
   rng = rng || selektr.range();
 
-  const startContainer = rng.startContainer,
-    // TODO should we really use sections: true instead of passing selectors?
-    //containedSections = selektr.contained({ sections: true }, true),
-    containedSections = selektr.contained({ sections: true }, true).filter(listItemFilter),
-    startSection = head(containedSections),
-    endSection = last(containedSections),
-    position = selektr.get('start');
+  const startContainer = rng.startContainer;
+  // TODO should we really use sections: true instead of passing selectors?
+  // containedSections = selektr.contained({ sections: true }, true),
+  const containedSections = selektr.contained({ sections: true }, true).filter(listItemFilter);
+  const startSection = head(containedSections);
+  const endSection = last(containedSections);
+  const position = selektr.get('start');
 
   // use native deleteContents to remove the contents of the selection,
   rng.deleteContents();
@@ -277,9 +282,10 @@ export function deleteRangeContents(element, rng) {
         // move listItems to `startSection`'s parent list)
         list = startSection.parentNode;
 
-        if (nestedList)
+        if (nestedList) {
           // append potential `nestedList` to `startSection`
           appendTo(nestedList, startSection);
+        }
       } else if (nestedList) {
         /* `startSection` is not a listItem which means all `endSection`'s
          * previous listItems have been deleted. Move listItems to
@@ -290,7 +296,7 @@ export function deleteRangeContents(element, rng) {
         insertAfter(nestedList, startSection);
 
         // append all `nestedList`'s children to `list`
-        //appendTo(children(nestedList), list);
+        // appendTo(children(nestedList), list);
       } else {
         /* TODO clear up empty list items when deleting from a normal section
          * to nested list item without children (nested lists)
@@ -313,10 +319,11 @@ export function deleteRangeContents(element, rng) {
      * `startSection`, otherwise the childNodes would be incorrectly placed
      * after this nested list.
      */
-    if (startContainer.nodeType === 1)
+    if (startContainer.nodeType === 1) {
       prependTo(endSection.childNodes, startContainer);
-    else
+    } else {
       insertAfter(endSection.childNodes, startContainer);
+    }
 
     // remove the empty `endSection`
     endSection.remove();
@@ -340,17 +347,17 @@ export function deleteRangeContents(element, rng) {
 export function indent(element, isOutdent) {
   if (isOutdent) return outdent(element);
 
-  const listItems = selektr.contained($$('li', element), true).filter(function (node) {
-      return listItemFilter(node) ||
-        selektr.containsEvery(descendants(node, {
-          nodeType: 1,
-          filter: (node) => !node.previousSibling,
-          onlyDeepest: true
-        }), true);
-    }),
-    positions = selektr.get();
+  const listItems = selektr.contained($$('li', element), true).filter((node) => (
+    listItemFilter(node) ||
+      selektr.containsEvery(descendants(node, {
+        nodeType: 1,
+        filter: (node) => !node.previousSibling,
+        onlyDeepest: true,
+      }), true)
+  ));
+  const positions = selektr.get();
 
-  listItems.forEach(function (el) {
+  listItems.forEach((el) => {
     const prev = el.previousSibling;
 
     if (prev) {
@@ -363,7 +370,7 @@ export function indent(element, isOutdent) {
         // if the previous list item has no nested list, create a new one
         const tagName = closest(el, 'OL,UL').tagName;
 
-        nestedList = $('<' + tagName + '>');
+        nestedList = $(`<${tagName}>`);
 
         appendTo(nestedList, prev);
       }
@@ -404,8 +411,9 @@ export function joinPrev(element, section) {
   }
 
   // prev should only be null or undefined if backspace is called at beginning of field
-  if (prev)
+  if (prev) {
     return join(element, prev, section);
+  }
 }
 
 /**
@@ -427,8 +435,9 @@ export function joinNext(element, section) {
   }
 
   // `next` should only be null or undefined if delete is called at beginning of field
-  if (next)
+  if (next) {
     return join(element, section, next);
+  }
 }
 
 /**
@@ -444,8 +453,8 @@ export function join(element, node1, node2) {
   if (node1.lastChild && node1.lastChild.tagName === 'BR') node1.lastChild.remove();
   if (node2.lastChild && node2.lastChild.tagName === 'BR') node2.lastChild.remove();
 
-  let nestedList,
-    position;
+  let nestedList;
+  let position;
 
   if ((nestedList = children(node1, 'UL,OL')[0])) {
     /* `node1` has a nested list, and `node2` should
@@ -460,7 +469,7 @@ export function join(element, node1, node2) {
 
     position = {
       ref: node1,
-      offset: selektr.count(node1, nestedList)
+      offset: selektr.count(node1, nestedList),
     };
 
     insertBefore(node2.childNodes, nestedList);
@@ -478,21 +487,23 @@ export function join(element, node1, node2) {
 
   position = position || {
     ref: node1,
-    offset: selektr.count(node1)
+    offset: selektr.count(node1),
   };
 
-  // append any childNodes of `node2` to `node1` (this will already be done if `node1` had a nested list
+  // append any childNodes of `node2` to `node1` (this will already be done if
+  // `node1` had a nested list
   appendTo(node2.childNodes, node1);
 
   node1.normalize();
   setBR(node1);
 
-  if (!node2.nextSibling && !node2.previousSibling)
+  if (!node2.nextSibling && !node2.previousSibling) {
     // `node2` has no siblings, so remove parent
     node2.parentNode.remove();
-  else
+  } else {
     // `node2` has at least one sibling, only remove `node2`
     node2.remove();
+  }
 
   selektr.set(position);
 }
@@ -502,39 +513,42 @@ export function join(element, node1, node2) {
  *
  * @static
  * @param {Element} element - Element which is used as root for selektr.
- * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
+ * @param {string|Element} [tag] - Tag to format text with. If tag is omited,
+ * `removeFormat` will be called instead
  */
 export function format(element, tag) {
   function _unwrap(el) {
-    $$(tag, el).forEach(function (el) {
-      if (el.firstChild)
+    $$(tag, el).forEach((el) => {
+      if (el.firstChild) {
         unwrap(el.firstChild);
-      else
+      } else {
         el.remove();
+      }
     });
   }
 
   // TODO need to find a better way to removeFormat
-  //if(format.active(tag)) return removeFormat(element, tag);
+  // if(format.active(tag)) return removeFormat(element, tag);
 
-  const rng = selektr.range(),
-    wrapper = $('<' + tag + '>');
+  const rng = selektr.range();
+  const wrapper = $(`<${tag}>`);
 
   if (!rng.collapsed) {
-    const positions = selektr.get(),
-      absolutePositions = selektr.get(true),
-      sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
-      startSection = head(sections),
-      endSection = last(sections);
-    let contents,
-      clone;
+    const positions = selektr.get();
+    const absolutePositions = selektr.get(true);
+    const sections = selektr.contained({ sections: true }, true).filter(listItemFilter);
+    const startSection = head(sections);
+    const endSection = last(sections);
+    let contents;
+    let clone;
 
-    sections.slice(1, -1).forEach(function (section) {
+    sections.slice(1, -1).forEach((section) => {
       _unwrap(section);
       let childNodes = toArray(section.childNodes);
 
-      if (is(last(childNodes), 'UL,OL'))
+      if (is(last(childNodes), 'UL,OL')) {
         childNodes = initial(childNodes);
+      }
 
       clone = wrapper.cloneNode();
       prependTo(clone, section);
@@ -546,9 +560,9 @@ export function format(element, tag) {
       selektr.set({
         start: {
           ref: endSection,
-          offset: 0
+          offset: 0,
         },
-        end: absolutePositions.end
+        end: absolutePositions.end,
       }, false);
       clone = wrapper.cloneNode();
       contents = selektr.range().extractContents();
@@ -565,8 +579,8 @@ export function format(element, tag) {
         start: absolutePositions.start,
         end: {
           ref: startSection,
-          offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
-        }
+          offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length,
+        },
       }, false);
     }
 
@@ -598,9 +612,10 @@ format.active = function (option, styles) {
  *
  * @static
  * @param {Element} element - Element which is used as root for selektr.
- * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
+ * @param {string|Element} [tag] - Tag to format text with. If tag is omited,
+ * `removeFormat` will be called instead
  */
-export function link(element, attribute) {
+export function link() {
   const sel = window.getSelection();
   let node = sel.focusNode.parentNode;
   if (node.tagName.toLowerCase() !== 'a') {
@@ -620,6 +635,7 @@ export function link(element, attribute) {
     sel.addRange(range);
   }
 
+  // eslint-disable-next-line
   const result = prompt('Link address:', href);
 
   if (result !== '') {
@@ -643,13 +659,13 @@ export function list(element, tag) {
    * into a new, same kind list
    */
 
-  //if(list.active(tag)) return;
+  // if(list.active(tag)) return;
 
-  const sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
-    listItems = [],
-    positions = selektr.get(),
-    startSection = head(sections),
-    endSection = last(sections);
+  const sections = selektr.contained({ sections: true }, true).filter(listItemFilter);
+  const listItems = [];
+  const positions = selektr.get();
+  const startSection = head(sections);
+  const endSection = last(sections);
 
   let list;
 
@@ -666,8 +682,9 @@ export function list(element, tag) {
     const startList = closest(startSection, element.children);
     let endList;
 
-    if (endSection.matches('LI'))
+    if (endSection.matches('LI')) {
       endList = closest(endSection, element.children);
+    }
 
     if (startList.matches(tag)) {
       /* `startList` is already the correct list type
@@ -685,7 +702,7 @@ export function list(element, tag) {
       /* `startList` is the wrong list type, we need to create a new list
        * and insert it after `startList`
        */
-      list = $('<' + tag + '>');
+      list = $(`<${tag}>`);
 
       insertAfter(list, startList);
     }
@@ -694,7 +711,8 @@ export function list(element, tag) {
       /* `endSection` is a listItem, and `endList` is of the wrong type.
        * If endSection has nested lists or follwing siblings we need to do some stuff.
        *
-       * the important part here is that `endSection` has either next siblings or nested lists. if it did not,
+       * the important part here is that `endSection` has either next siblings
+       * or nested lists. if it did not,
        * endList would be empty at the end of the call to list and thus removed automatically
        *
        * if `endSection` is also a list, all sections inbetween `startSection`
@@ -704,8 +722,8 @@ export function list(element, tag) {
       let secondList;
 
       if (children(endSection, 'UL,OL').length > 0) {
-      /* `endSection` has a nested list. Use that as our list.
-       */
+        /* `endSection` has a nested list. Use that as our list.
+        */
 
         secondList = children(endSection, 'UL,OL')[0];
 
@@ -718,7 +736,7 @@ export function list(element, tag) {
          * if `endSection` did not have a nested list.
          */
         if (!secondList) {
-          secondList = $('<' + endList.tagName + '>');
+          secondList = $(`<${endList.tagName}>`);
 
           insertAfter(secondList, list);
         }
@@ -731,12 +749,12 @@ export function list(element, tag) {
      * list that we can append all new list items to.
      * insert this new list before `startSection`
      */
-    list = $('<' + tag + '>');
+    list = $(`<${tag}>`);
 
     insertBefore(list, startSection);
   }
 
-  sections.forEach(function (child, i) {
+  sections.forEach((child) => {
     let listItem;
 
     if (child.tagName === 'LI') {
@@ -769,7 +787,7 @@ export function list(element, tag) {
           // check if we had found (and removed) any nested lists
           if (oldNestedList.length > 0) {
             // create a new nested list and append it to the `listItem`
-            const nestedList = $('<' + tag + '>');
+            const nestedList = $(`<${tag}>`);
 
             // TODO check if append is right
             appendTo(nestedList, listItem);
@@ -777,7 +795,7 @@ export function list(element, tag) {
             /* recurse through all of the old nested lists list items
              * and add them to the new nested list
              */
-            $$(oldNestedList[0].children).forEach(function (li) {
+            $$(oldNestedList[0].children).forEach((li) => {
               recurse(li, nestedList);
             });
           }
@@ -792,12 +810,13 @@ export function list(element, tag) {
       appendTo(listItem, list);
       appendTo(child.childNodes, listItem);
 
-      if (!child.previousSibling && !child.nextSibling)
+      if (!child.previousSibling && !child.nextSibling) {
         // remove `child`'s parent if `child` is only sibling
         child.parentNode.remove();
-      else
+      } else {
         // remove only `child` if it has no siblings
         child.remove();
+      }
     }
     /* we save a reference to all listItems so we can use
      * them to correctly restore the selection
@@ -820,7 +839,8 @@ list.active = function (option, styles) {
  *
  * @static
  * @param {Element} element - Element which is used as root for selektr.
- * @param {string|Element} [tag] - Tag to format text with. If tag is omited, `removeFormat` will be called instead
+ * @param {string|Element} [tag] - Tag to format text with. If tag is omited,
+ * `removeFormat` will be called instead
  */
 export function newSection(element) {
   const rng = selektr.range();
@@ -844,8 +864,9 @@ export function newSection(element) {
    * blockElement and append
    * the contents of the extracted range to it's end
    */
-  //const $el = $('<' + $section[0].tagName + '>').attr('style', $section.attr('style')).insertAfter($section);
-  const el = $('<' + (!section.matches('LI') && selektr.isAtEndOfSection() ? 'p' : section.tagName) + '>');
+  // const $el = $('<' + $section[0].tagName + '>').attr('style',
+  // $section.attr('style')).insertAfter($section);
+  const el = $(`<${!section.matches('LI') && selektr.isAtEndOfSection() ? 'p' : section.tagName}>`);
 
   el.style.cssText = section.style.cssText;
 
@@ -859,12 +880,12 @@ export function newSection(element) {
     selektr.set({
       start: {
         ref: rng.startContainer,
-        offset: rng.startOffset
+        offset: rng.startOffset,
       },
       end: {
         ref: section,
-        offset: section.childNodes.length
-      }
+        offset: section.childNodes.length,
+      },
     }, false);
 
     // extract the contents
@@ -879,10 +900,10 @@ export function newSection(element) {
   section.normalize();
 
   // ensure correct BR on both affected elements
-  setBR([ el, section ]);
+  setBR([el, section]);
 
   selektr.set({
-    ref: el
+    ref: el,
   }, false);
 }
 
@@ -893,11 +914,11 @@ export function newSection(element) {
  * @param {Element} element - Element which is used as root for selektr.
  */
 export function outdent(element) {
-  const listItems = selektr.contained(element.querySelectorAll('li'), true).filter(listItemFilter),
-    positions = selektr.get();
+  const listItems = selektr.contained(element.querySelectorAll('li'), true).filter(listItemFilter);
+  const positions = selektr.get();
 
   // we outdent in the reverse order from indent
-  listItems.reverse().forEach(function (li, i) {
+  listItems.reverse().forEach((li) => {
     if (!li.matches('LI') || is(li.parentNode, element.children)) {
       // do nothing if not a list item, or if list item
       // is already top level (level 1), ie if it's parent is a child
@@ -910,14 +931,14 @@ export function outdent(element) {
        * to move them into a new or existing nested list
        */
 
-     //attempt to selected a nested list
+      // attempt to selected a nested list
       let nestedList = children(li, 'UL,OL')[0];
 
       if (!nestedList) {
         // if there is no nested list, create a new one
         const tagName = closest(li, 'OL,UL').tagName;
 
-        nestedList = $('<' + tagName + '>');
+        nestedList = $(`<${tagName}>`);
 
         appendTo(nestedList, li);
       }
@@ -960,16 +981,17 @@ export function paste(element, dataTransfer) {
   if (textBlocks.length > 0) {
     const section = closest(rng.startContainer, sectionTags.join(','), element);
 
-    /* Select everything from the caret to the end of section and
-     * extract the contents. this is so we can to append the head text block
-     * to the current section (where the extracted content will have been), and insert the extracted contents after the
-     * last text block. if we are only pasting one text block, we could
-     * have simply split the current node and inserted the contents inbetween,
-     * but i decided for a tiny performance loss vs no code duplication
+    /* Select everything from the caret to the end of section and extract the
+     * contents. this is so we can to append the head text block to the current
+     * section (where the extracted content will have been), and insert the
+     * extracted contents after the last text block. if we are only pasting one
+     * text block, we could have simply split the current node and inserted the
+     * contents inbetween, but i decided for a tiny performance loss vs no code
+     * duplication
      */
     selektr.set({
       start: selektr.get('start', true),
-      end: { ref: section, offset: section.childNodes.length }
+      end: { ref: section, offset: section.childNodes.length },
     }, false);
 
     const contents = selektr.range().extractContents();
@@ -979,16 +1001,17 @@ export function paste(element, dataTransfer) {
     // if no next sibling, save reference to parent
     const parent = section.parentNode;
 
-    let textNode,
-      el;
+    let textNode;
+    let el;
 
     for (let i = 0; i < textBlocks.length; i++) {
       textNode = document.createTextNode(textBlocks[i]);
 
       if (i === 0) {
-        if (section.lastChild && section.lastChild.nodeName === 'BR')
+        if (section.lastChild && section.lastChild.nodeName === 'BR') {
           // remove the last item if it is a line break
           section.lastChild.remove();
+        }
 
         /* since this is the head text Block,
          * simply append the textNode to the section
@@ -996,16 +1019,17 @@ export function paste(element, dataTransfer) {
         appendTo(textNode, section);
       } else {
         // create a new section
-        el = $('<' + section.tagName + '>');
+        el = $(`<${section.tagName}>`);
 
         appendTo(textNode, el);
 
-        if (ref)
+        if (ref) {
           // insert before the ref
           insertBefore(el, ref);
-        else
+        } else {
           // append to parent if we have no ref
           appendTo(el, parent);
+        }
       }
     }
     /* append any contents extracted from the range prevously to the
@@ -1031,11 +1055,12 @@ export function paste(element, dataTransfer) {
  */
 export function removeFormat(element, tag) {
   function _unwrap(el) {
-    $$(tag, el).forEach(function (el) {
-      if (el.firstChild)
+    $$(tag, el).forEach((el) => {
+      if (el.firstChild) {
         unwrap(el.firstChild);
-      else
+      } else {
         el.remove();
+      }
     });
   }
 
@@ -1046,11 +1071,11 @@ export function removeFormat(element, tag) {
     let rng = selektr.range();
 
     if (!rng.collapsed) {
-      const positions = selektr.get(element),
-        absolutePositions = selektr.get(true),
-        sections = selektr.contained({ sections: true }, true).filter(listItemFilter),
-        startSection = head(sections),
-        endSection = last(sections);
+      const positions = selektr.get(element);
+      const absolutePositions = selektr.get(true);
+      const sections = selektr.contained({ sections: true }, true).filter(listItemFilter);
+      const startSection = head(sections);
+      const endSection = last(sections);
 
       let contents;
 
@@ -1060,9 +1085,9 @@ export function removeFormat(element, tag) {
         selektr.set({
           start: {
             ref: endSection,
-            offset: 0
+            offset: 0,
           },
-          end: absolutePositions.end
+          end: absolutePositions.end,
         }, false);
         contents = selektr.range().extractContents();
         _unwrap(contents);
@@ -1077,19 +1102,20 @@ export function removeFormat(element, tag) {
           start: absolutePositions.start,
           end: {
             ref: startSection,
-            offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length
-          }
+            offset: is(last(startSection.childNodes), 'UL,OL') ? startSection.childNodes.length - 1 : startSection.childNodes.length,
+          },
         }, false);
       }
 
       contents = selektr.range().extractContents();
       _unwrap(contents);
-      if (startSection !== endSection)
-        if (is(last(startSection.childNodes), 'UL,OL'))
+      if (startSection !== endSection) {
+        if (is(last(startSection.childNodes), 'UL,OL')) {
           insertBefore(contents.childNodes, last(startSection.childNodes));
-        else
+        } else {
           appendTo(contents.childNodes, startSection);
-      else {
+        }
+      } else {
         selektr.set(absolutePositions.start, false);
         rng = selektr.range();
         let ref = rng.endContainer;
@@ -1099,17 +1125,17 @@ export function removeFormat(element, tag) {
           selektr.set({
             start: {
               ref,
-              offset: rng.endOffset
+              offset: rng.endOffset,
             },
             end: {
               ref,
-              offset: tag.childNodes.length
-            }
+              offset: tag.childNodes.length,
+            },
           }, false);
           const newContents = selektr.range().extractContents();
           _unwrap(newContents);
 
-          const el = $('<' + tag + '>');
+          const el = $(`<${tag}>`);
 
           insertAfter(el, tagElement);
 
@@ -1137,35 +1163,38 @@ export function removeFormat(element, tag) {
  * @param {Element} element - Element whos descendants need to be checked of extraneous BR tags
  */
 export function setBR(element) {
-  if (isArray(element))
+  if (isArray(element)) {
     return element.forEach(setBR);
+  }
 
   if (!element.firstChild ||
-    (is(element.lastChild, 'UL,OL') && element.textContent.length - element.lastChild.textContent.length === 0 &&
-      prevAll(element.lastChild, 'br').length === 0 && $$('br', prevAll(element.lastChild)).length === 0)) {
+      (is(element.lastChild, 'UL,OL') && element.textContent.length - element.lastChild.textContent.length === 0 &&
+       prevAll(element.lastChild, 'br').length === 0 && $$('br', prevAll(element.lastChild)).length === 0)) {
     prependTo($('<br>'), element);
   } else {
-    $$('BR:last-child', element).forEach(function (br, i) {
+    $$('BR:last-child', element).forEach((br) => {
       if (br.nextSibling) return;
 
       while (br.previousSibling && br.previousSibling.tagName === 'BR') {
         br.previousSibling.remove();
       }
 
-      if (br.previousSibling)
+      if (br.previousSibling) {
         br.remove();
+      }
     });
   }
 }
 
 export function tidy(element) {
   // deleteEmptyElements should be called head so we do not have to worrry about empty elements
-  $$('STRONG,U,EM,STRIKE', element).forEach(function (el) {
+  $$('STRONG,U,EM,STRIKE', element).forEach((el) => {
     if (!el.parentNode) return;
 
-    $$(el.tagName, el).forEach(function (el) {
-      if (el.firstChild)
+    $$(el.tagName, el).forEach((el) => {
+      if (el.firstChild) {
         unwrap(el.firstChild);
+      }
     });
 
     const next = el.nextSibling;

@@ -8,7 +8,7 @@ import { closest, trigger } from 'dollr';
 import * as selektr from 'selektr';
 import * as commands from './commands';
 
-const sectionTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
+const sectionTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'];
 
 export function keypress(e) {
   /* The keypress event is fired when a key is pressed down and that key
@@ -17,8 +17,8 @@ export function keypress(e) {
    * charCode === 0.
    */
 
-  const rng = selektr.range(),
-    container = rng.startContainer;
+  const rng = selektr.range();
+  const container = rng.startContainer;
 
   if (e.charCode > 0) {
     if (e.charCode !== 13 && container.nodeType === 1) {
@@ -32,7 +32,7 @@ export function keypress(e) {
 
       selektr.set({
         ref: textNode,
-        offset: offset
+        offset,
       });
     }
     trigger(this.el, 'input');
@@ -42,8 +42,9 @@ export function keypress(e) {
 export function keyup(e) {
   // TODO make sure we cover all different kinds of navigation keys, such as
   // home and end
+  // eslint-disable-next-line default-case
   switch (e.keyCode) {
-    case 8: //backspace
+    case 8: // backspace
     case 46:// delete
       trigger(this.el, 'input');
       break;
@@ -81,14 +82,16 @@ export function keydown(e) {
     // prevent all ctrl key bindings
     // NOTE paste events are handled directly
 
+  // eslint-disable-next-line default-case
     switch (e.keyCode) {
-      case 8: //backspace
+      case 8: // backspace
       case 46: // delete
         e.preventDefault();
         break;
-      case 66://b
-      case 73://i
-      case 85://u
+      case 66:// b
+      case 73:// i
+      case 85: {
+        // u
         e.preventDefault();
         const arr = [];
         arr[66] = 'strong';
@@ -96,12 +99,13 @@ export function keydown(e) {
         arr[85] = 'u';
         this.command('format', arr[e.keyCode]);
         break;
-      case 89://y
+      }
+      case 89:// y
         e.preventDefault();
         this.snapback.redo();
         this.toolbar.setActiveStyles();
         break;
-      case 90://z
+      case 90:// z
         e.preventDefault();
         // make sure selektr has updated after last key stroke.
         // ie if next line is omitted the stored selektr position
@@ -114,7 +118,7 @@ export function keydown(e) {
         }
         this.toolbar.setActiveStyles();
         break;
-      case 65://a
+      case 65:// a
         e.preventDefault();
         selektr.select(this.el.children.length === 1 ? this.el.firstChild : this.el);
         this.snapback.store();
@@ -124,7 +128,18 @@ export function keydown(e) {
   } else {
     const rng = selektr.range();
 
-    if (rng && !rng.collapsed && (e.keyCode === 8 || e.keyCode === 46 || e.keyCode === 13 || inbetween(65, 90) || inbetween(48, 57) || inbetween(186, 222) || inbetween(96, 111))) {
+    if (rng
+        && !rng.collapsed
+        && (
+          e.keyCode === 8
+          || e.keyCode === 46
+          || e.keyCode === 13
+          || inbetween(65, 90)
+          || inbetween(48, 57)
+          || inbetween(186, 222)
+          || inbetween(96, 111)
+        )
+    ) {
       // the range is not collapsed, IE the user has selected some text AND
       // a manipulation button has been pressed. We delete the range contents, but
       // only preventDefault if backspace or delete.
@@ -140,6 +155,7 @@ export function keydown(e) {
     }
 
     // By now we never have a non-collapsed range
+    // eslint-disable-next-line default-case
     switch (e.keyCode) {
       case 33:
       case 34:
@@ -154,8 +170,9 @@ export function keydown(e) {
         clearTimeout(this.timeout);
         this.snapback.register();
         return;
-      case 8: //backspace
-      case 46: // delete
+      case 8: // backspace
+      case 46: {
+        // delete
         const section = closest(rng.startContainer, sectionTags.join(','));
 
         // join lines if backspace and start of section, or delete and end of section
@@ -169,6 +186,7 @@ export function keydown(e) {
           this.command('joinNext', section);
         }
         break;
+      }
       case 13:
         if (!e.shiftKey) {
           // only override default behaviour if shift-key is not pressed. all
@@ -193,8 +211,9 @@ export function paste(e) {
   e.preventDefault();
 
   // handle jQuery events
-  if (e.originalEvent)
+  if (e.originalEvent) {
     e = e.originalEvent;
+  }
 
   // TODO check what browsers this works in
   this.command('paste', e.clipboardData);

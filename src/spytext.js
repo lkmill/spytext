@@ -15,19 +15,19 @@ import {
   on,
   off,
   trigger,
-  appendTo
+  appendTo,
 } from 'dollr';
 import forEach from 'lodash/forEach';
-import tail from 'lodash/tail';
 
 import SpytextToolbar from './toolbar';
 import * as commands from './commands';
 import * as events from './events';
 
+console.log('\n\n\n\nHELLO!\n\n\n');
 /**
  * @readonly
  */
-//const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
+// const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 function Spytext(options) {
   this.el = $(options.el);
@@ -97,12 +97,12 @@ assign(Spytext.prototype, {
 
       // this is to capture events when mousedown on
       // fields element but mouseup outside
-      on(document, 'mousedown', (e) => {
+      on(document, 'mousedown', () => {
         clearTimeout(this.timeout);
         this.snapback.register();
       });
 
-      on(document, 'mouseup', (e) => {
+      on(document, 'mouseup', () => {
         setTimeout(() => {
           selektr.normalize();
           this.toolbar.setActiveStyles();
@@ -135,7 +135,7 @@ assign(Spytext.prototype, {
    *
    * @see module:spytext/commands
    */
-  command(command) {
+  command(command, ...args) {
     // register mutations (if any) as undo before calling command
     // so that the command becomes it's own undo without merging
     // it with any previous mutations in the mutation array in snapback
@@ -143,7 +143,7 @@ assign(Spytext.prototype, {
 
     if (commands[command]) {
       // call the command
-      commands[command].apply(null, [ this.el ].concat(tail(arguments)));
+      commands[command](this.el, ...args);
 
       // normalize any text nodes in the field's element
       this.el.normalize();

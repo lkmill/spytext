@@ -5,7 +5,7 @@ import nodeResolve from 'rollup-plugin-node-resolve';
 export default {
   plugins: [
     babel({
-      exclude: 'node_modules/**'
+      exclude: 'node_modules/**',
     }),
     nodeResolve({
       jsnext: true,  // Default: false
@@ -16,12 +16,12 @@ export default {
       include: 'node_modules/**',  // Default: undefined
       exclude: [
         'node_modules/dollr/es/**',
-        'node_modules/lodash-es/**'
+        'node_modules/lodash-es/**',
       ],  // Default: undefined
       sourceMap: false,  // Default: true
-    })
+    }),
   ],
   entry: 'src/spytext.js',
   format: 'umd',
-  moduleName: 'Spytext'
+  moduleName: 'Spytext',
 };

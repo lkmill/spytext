@@ -12,7 +12,7 @@ import {
   ancestors,
   closest,
   is,
-  on
+  on,
 } from 'dollr';
 import uniq from 'lodash/uniq';
 import forEach from 'lodash/forEach';
@@ -42,7 +42,7 @@ assign(Toolbar.prototype, {
     'mousedown .container': function (e) {
       // this is needed to prevent toolbar from stealing focus
       e.preventDefault();
-    }
+    },
   },
 
   /**
@@ -67,7 +67,7 @@ assign(Toolbar.prototype, {
   setActiveStyles() {
     if (!this.field) return this.toggle();
 
-    const formats = [ 'strong', 'u', 'em', 'strike' ];
+    const formats = ['strong', 'u', 'em', 'strike'];
 
     const sections = selektr.contained({ sections: true }, true);
     const listItems = uniq(sections.filter((node) => node.nodeName === 'LI'));
@@ -76,13 +76,14 @@ assign(Toolbar.prototype, {
 
     const commonAncestor = selektr.range().commonAncestorContainer;
 
-    const textNodes = commonAncestor.nodeType === 3 ? [ commonAncestor ] : selektr.contained({ element: commonAncestor, nodeType: 3 }, true);
+    const textNodes = commonAncestor.nodeType === 3
+      ? [commonAncestor] : selektr.contained({ element: commonAncestor, nodeType: 3 }, true);
 
     const styles = {
-      sections: sections,
-      listItems: listItems,
-      lists: lists,
-      blocks: uniq(blocks.map((node) => node.nodeName))
+      sections,
+      listItems,
+      lists,
+      blocks: uniq(blocks.map((node) => node.nodeName)),
     };
 
     styles.alignment = blocks.reduce((result, block) => {
@@ -103,28 +104,37 @@ assign(Toolbar.prototype, {
     formats.forEach((tag) => {
       const rng = selektr.range();
 
-      if ((textNodes.length > 0 && textNodes.every((node) => ancestors(node, null, this.field.element).some((element) => element.matches(tag)))) ||
+      if (
+        (
+         textNodes.length > 0
+         && textNodes.every((node) => (
+          ancestors(node, null, this.field.element).some((element) => element.matches(tag))))
+        ) ||
         rng.collapsed && (is(rng.startContainer, tag) ||
-        ancestors(rng.startContainer, null, this.field.element).some((element) => element.matches(tag)))) {
+        ancestors(rng.startContainer, null, this.field.element)
+          .some((element) => element.matches(tag)))
+      ) {
         styles.formats.push(tag);
       }
     });
 
-    $$('button[data-command]', this.el).forEach(function (el) {
+    $$('button[data-command]', this.el).forEach((el) => {
       const command = commands[el.getAttribute('data-command')];
 
       if (!command) return;
 
       const option = el.getAttribute('data-option');
 
-      if (command.active)
+      if (command.active) {
         el.classList.toggle('active', command.active(option, styles));
+      }
 
-      if (command.disabled)
+      if (command.disabled) {
         el.disabled = command.disabled(option, styles);
+      }
     });
 
-    $$('ul[data-command="block"]', this.el).forEach(function (el) {
+    $$('ul[data-command="block"]', this.el).forEach((el) => {
       const ul = el;
 
       ul.classList.remove('pseudo', 'pseudo-list', 'pseudo-multiple');
@@ -134,7 +144,7 @@ assign(Toolbar.prototype, {
       if (lists.length > 0) {
         ul.classList.add('pseudo', 'pseudo-list');
       } else if (styles.blocks.length === 1) {
-        $$('button[data-option="' + styles.blocks[0].toLowerCase() + '"]', ul).forEach(function (el) {
+        $$(`button[data-option="${styles.blocks[0].toLowerCase()}"]`, ul).forEach((el) => {
           el.parentNode.classList.add('active');
         });
       } else if (styles.blocks.length > 1) {
@@ -148,8 +158,8 @@ assign(Toolbar.prototype, {
   },
 
   listCommand(e) {
-    const command = closest(e.target, 'ul,ol').getAttribute('data-command'),
-      option = e.target.getAttribute('data-option');
+    const command = closest(e.target, 'ul,ol').getAttribute('data-command');
+    const option = e.target.getAttribute('data-option');
 
     this.field.command(command, option);
   },
@@ -157,11 +167,11 @@ assign(Toolbar.prototype, {
    * Calls a command on the field currently attached to the toolbar
    */
   command(e) {
-    const command = e.target.getAttribute('data-command'),
-      option = e.target.getAttribute('data-option');
+    const command = e.target.getAttribute('data-command');
+    const option = e.target.getAttribute('data-option');
 
     this.field.command(command, option);
-  }
+  },
 });
 
 export default Toolbar;
