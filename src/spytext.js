@@ -8,7 +8,6 @@ import Snapback from 'snapback';
 
 import * as selektr from 'selektr';
 
-import assign from 'object-assign';
 import {
   $,
   $$,
@@ -17,13 +16,12 @@ import {
   trigger,
   appendTo,
 } from 'dollr';
-import forEach from 'lodash/forEach';
+import { forEach } from 'lowline';
 
 import SpytextToolbar from './toolbar';
 import * as commands from './commands';
 import * as events from './events';
 
-console.log('\n\n\n\nHELLO!\n\n\n');
 /**
  * @readonly
  */
@@ -70,8 +68,8 @@ function Spytext(options) {
   });
 }
 
-assign(Spytext.prototype, {
-  events: assign({
+Object.assign(Spytext.prototype, {
+  events: Object.assign({
     focus: 'activate',
 
     blur: 'deactivate',

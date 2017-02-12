@@ -26,12 +26,7 @@ import {
 } from 'dollr';
 
 
-import initial from 'lodash/initial';
-import head from 'lodash/head';
-import invokeMap from 'lodash/invokeMap';
-import last from 'lodash/last';
-import isArray from 'lodash/isArray';
-import toArray from 'lodash/toArray';
+import { head, last, invokeMap } from 'lowline';
 
 const sectionTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'];
 
@@ -46,7 +41,7 @@ function listItemFilter(node) {
    */
   return node.nodeName !== 'LI' ||
     children(node, 'UL,OL').length === 0 ||
-    selektr.containsSome(initial(node.childNodes), true) ||
+    selektr.containsSome(Array.from(node.childNodes).slice(0, -1), true) ||
     selektr.isAtEndOfSection(node);
 }
 
@@ -544,10 +539,10 @@ export function format(element, tag) {
 
     sections.slice(1, -1).forEach((section) => {
       _unwrap(section);
-      let childNodes = toArray(section.childNodes);
+      let childNodes = Array.from(section.childNodes);
 
       if (is(last(childNodes), 'UL,OL')) {
-        childNodes = initial(childNodes);
+        childNodes = Array.from(childNodes).slice(0, -1);
       }
 
       clone = wrapper.cloneNode();
@@ -1163,7 +1158,7 @@ export function removeFormat(element, tag) {
  * @param {Element} element - Element whos descendants need to be checked of extraneous BR tags
  */
 export function setBR(element) {
-  if (isArray(element)) {
+  if (Array.isArray(element)) {
     return element.forEach(setBR);
   }
 

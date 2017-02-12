@@ -4,19 +4,17 @@
  * @module spytext/toolbar
  */
 
-import assign from 'object-assign';
 import * as selektr from 'selektr';
 import {
   $,
   $$,
   ancestors,
+  children,
   closest,
   is,
   on,
 } from 'dollr';
-import uniq from 'lodash/uniq';
-import forEach from 'lodash/forEach';
-import children from 'dollr/children';
+import { uniq, forEach } from 'lowline';
 import * as commands from './commands';
 
 function Toolbar() {
@@ -29,7 +27,7 @@ function Toolbar() {
   });
 }
 
-assign(Toolbar.prototype, {
+Object.assign(Toolbar.prototype, {
   /**
    * @lends SpytextToolbar.prototype
    * @augments Backbone.View
