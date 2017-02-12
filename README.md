@@ -1,16 +1,18 @@
 # Spytext - The Tiny HTML5 Editor
 
-Spytext is an HTML5 editor, not a Rich Text Editor.
+Spytext is an HTML5 editor, not a Rich Text Editor, weighing in at 8.6 kb.
 
-Spytext uses `contentEditable`, but most browsers behave very differently in
-handling line breaks, new sections, backspaces, deletes, formatting etc. As a
-result, Spytext uses it's own DOM manipulating commands, selection management
-(through [selekr](https://github.com/lohfu/selekr)) and DOM undo/redo
-(through [snapback](https://github.com/lohfu/snapback)). The only parts conentEditable
-still handles are actual type inputs and text traversal (arrow buttons, page up, etc).
+Spytext is built `contentEditable`, but most browsers handle handling line
+breaks, new sections, backspaces, deletes, formatting etc very differently. As
+a result, Spytext uses it's own DOM manipulating commands (through
+[dollr](https://github.com/lohfu/dollr)), selection management (through
+[selektr](https://github.com/lohfu/selektr)) and DOM undo/redo (through
+[snapback](https://github.com/lohfu/snapback)). The only parts contentEditable
+still handles are actual type inputs and text traversal (arrow buttons, page
+up, etc).
 
-Despite all this, the entire library (include dollr,
-selektr and snapback, but without LoDash) weighs in around 10kb gzipped.
+Despite all this, the entire library (including ALL dependencies)
+is [tiny](#spytext-is-tiny).
 
 ## Demo
 
@@ -39,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
 ### CDN (UMD build)
 
 ```html
-<script src="https://npmcdn.com/spytext@0.8.0-alpha.5/dist/spytext.min.js"></script>
+<script src="https://unpkg.com/spytext@0.9.1/dist/spytext.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
@@ -54,20 +56,17 @@ document.addEventListener('DOMContentLoaded', function () {
 + Align/justify text blocks
 + Create ordered and unordered lists
 + Indent/outdent these lists and
-+ Undo/redo
++ Selection management
++ Undo/redo (including remembering selections positions)
 
-## Spytext is Small
-
-Spytext uses LoDash, which adds a significant amount of code.
-If you already use LoDash in your project, total SpyText
-footprint will be much smaller than values below.
+## Spytext is Tiny
 
                                    | Minified  | Compressed
 -----------------------------------|-----------|-----------
-Spytext (UMD build, all deps)      | 45.4kb    | 14.5kb    
+Spytext (UMD build, all deps)      | 29 kb     | 8.6 kb    
 
 
-## Compatability
+## Compatibility
 
         | Quirky    | Without Undo | Full      |
 --------|-----------|--------------|-----------|
