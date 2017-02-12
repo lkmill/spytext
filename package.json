@@ -3,7 +3,7 @@
   "version": "0.9.0",
   "description": "Why? Because there is nothing like it.",
   "main": "cjs/spytext.js",
-  "js:next": "es/spytext.js",
+  "jsnext:main": "es/spytext.js",
   "scripts": {
     "clean": "rimraf es cjs dist",
     "lint": "eslint src",
@@ -26,11 +26,10 @@
   },
   "homepage": "https://github.com/thecodebureau/spytext",
   "dependencies": {
-    "dollr": "^0.1.1",
+    "dollr": "^0.1.2",
     "lodash": "^4.17.4",
     "lowline": "^0.1.3",
-    "object-assign": "^4.1.1",
-    "selektr": "^0.1.4",
+    "selektr": "^0.1.5",
     "snapback": "^0.7.0"
   },
   "devDependencies": {

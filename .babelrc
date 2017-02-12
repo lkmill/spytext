@@ -7,10 +7,7 @@
       ]
     },
     "es": {
-      "presets": [ "es2015-rollup" ],
-      "plugins": [
-        "./build/use-es"
-      ]
+      "presets": [ "es2015-rollup" ]
     }
   }
 }
