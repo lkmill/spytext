@@ -6,7 +6,6 @@
 
 import { closest, trigger } from 'dollr';
 import * as selektr from 'selektr';
-import * as commands from './commands';
 
 const sectionTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'];
 
@@ -104,6 +103,7 @@ export function keydown(e) {
         e.preventDefault();
         this.snapback.redo();
         this.toolbar.setActiveStyles();
+        trigger(this.el, 'input');
         break;
       case 90:// z
         e.preventDefault();
@@ -117,6 +117,7 @@ export function keydown(e) {
           this.snapback.undo();
         }
         this.toolbar.setActiveStyles();
+        trigger(this.el, 'input');
         break;
       case 65:// a
         e.preventDefault();
@@ -140,7 +141,7 @@ export function keydown(e) {
           || inbetween(96, 111)
         )
     ) {
-      // the range is not collapsed, IE the user has selected some text AND
+      // the range is not collapsed, ie the user has selected some text AND
       // a manipulation button has been pressed. We delete the range contents, but
       // only preventDefault if backspace or delete.
       // not sure if we really need to register snapback... should already
@@ -193,7 +194,7 @@ export function keydown(e) {
           // tested browser seems to do correct behaviour for Shift-Enter, namely
           // insert a <BR>
           e.preventDefault();
-          commands.newSection(this.el);
+          this.command('newSection');
         }
         break;
     }

@@ -153,7 +153,7 @@ Object.assign(Spytext.prototype, {
       // normalize any text nodes in the field's element
       this.el.normalize();
 
-      trigger(this.el, 'change');
+      trigger(this.el, 'input');
       // unfortunately, we need to wrap the registation of a new Undo
       // in a timeout
       setTimeout(() => {
