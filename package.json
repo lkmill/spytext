@@ -1,6 +1,6 @@
 {
   "name": "spytext",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Why? Because there is nothing like it.",
   "main": "cjs/spytext.js",
   "jsnext:main": "es/spytext.js",
