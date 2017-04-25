@@ -30,6 +30,13 @@ import * as events from './events';
 function Spytext(options) {
   this.el = $(options.el);
 
+  // make element behave like input element (value)
+  Object.defineProperty(this.el, 'value', {
+    get() {
+      return this.innerHTML;
+    },
+  });
+
   this.el.classList.add('spytext-field');
   this.el.setAttribute('contentEditable', 'true');
 
