@@ -61,17 +61,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
 ## Spytext is Tiny
 
-                                   | Minified  | Compressed
------------------------------------|-----------|-----------
-Spytext (UMD build, all deps)      | 29 kb     | 8.6 kb    
+|                               | Minified  | Compressed|
+|-------------------------------|-----------|-----------|
+| Spytext (UMD build, all deps) | 29 kb     | 8.6 kb    |
 
 
 ## Compatibility
 
-        | Quirky    | Without Undo | Full      |
---------|-----------|--------------|-----------|
-Chrome  |         9 | 16           | 18        |
-IE      |       N/A | 9            | N/A       |
-Firefox |         1 | 3.6          | 14        |
-Safari  | Unknown   | Unknown      | 6         |
-Opera   | Unknown   | Unknown      | 15        |
+|         | Quirky    | Without Undo | Full      |
+|---------|-----------|--------------|-----------|
+| Chrome  |         9 | 16           | 18        |
+| IE      |       N/A | 9            | N/A       |
+| Firefox |         1 | 3.6          | 14        |
+| Safari  | Unknown   | Unknown      | 6         |
+| Opera   | Unknown   | Unknown      | 15        |
