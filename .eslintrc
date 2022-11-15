@@ -16,7 +16,7 @@
     "no-empty": [2, { "allowEmptyCatch": true }],
     "no-mixed-operators": 0,
     "no-param-reassign": 0,
-    "no-plusplus": [2, { "allowForLoopAfterthoughts": true } ],
+    "no-plusplus": [2, { "allowForLoopAfterthoughts": true }],
     "no-shadow": 0,
     "no-underscore-dangle": 0,
     "no-use-before-define": [2, { "functions": false }]

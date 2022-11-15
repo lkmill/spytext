@@ -12,6 +12,7 @@
     "build:es": "BABEL_ENV=es babel src --out-dir es",
     "build:umd": "mkdir -p dist && BABEL_ENV=es rollup -c -o dist/spytext.js",
     "build:umd:min": "mkdir -p dist && BABEL_ENV=es rollup -c | uglifyjs -c -m > dist/spytext.min.js",
+    "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "npm run clean && npm run lint && npm run build"
   },

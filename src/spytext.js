@@ -4,23 +4,16 @@
  * @module spytext/field
  */
 
-import Snapback from 'snapback';
+import Snapback from 'snapback'
 
-import * as selektr from 'selektr';
+import * as selektr from 'selektr'
 
-import {
-  $,
-  $$,
-  on,
-  off,
-  trigger,
-  appendTo,
-} from 'dollr';
-import { forEach } from 'lowline';
+import { $, $$, on, off, trigger, appendTo } from 'dollr'
+import { forEach } from 'lowline'
 
-import SpytextToolbar from './toolbar';
-import * as commands from './commands';
-import * as events from './events';
+import SpytextToolbar from './toolbar'
+import * as commands from './commands'
+import * as events from './events'
 
 /**
  * @readonly
@@ -28,30 +21,30 @@ import * as events from './events';
 // const blockTags = [ 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI' ];
 
 function Spytext(options) {
-  this.el = $(options.el);
+  this.el = $(options.el)
 
   // make element behave like input element (value)
   Object.defineProperty(this.el, 'value', {
     get() {
-      return this.innerHTML;
+      return this.innerHTML
     },
-  });
+  })
 
-  this.el.classList.add('spytext-field');
-  this.el.setAttribute('contentEditable', 'true');
+  this.el.classList.add('spytext-field')
+  this.el.setAttribute('contentEditable', 'true')
 
-  commands.deleteEmptyTextNodes(this.el);
-  commands.deleteEmptyElements(this.el);
+  commands.deleteEmptyTextNodes(this.el)
+  commands.deleteEmptyElements(this.el)
   if (this.el.childNodes.length === 0) {
-    appendTo($('<p>'), this.el);
+    appendTo($('<p>'), this.el)
   }
-  commands.setBR($$(this.el.children));
+  commands.setBR($$(this.el.children))
 
-  this.originalValue = this.el.innerHTML;
+  this.originalValue = this.el.innerHTML
 
-  this.toolbar = new SpytextToolbar();
+  this.toolbar = new SpytextToolbar()
 
-  appendTo(this.toolbar.el, document.body);
+  appendTo(this.toolbar.el, document.body)
 
   this.snapback = new Snapback(this.el, {
     /**
@@ -60,27 +53,30 @@ function Spytext(options) {
      * @return {Positions}
      */
     store(data) {
-      return (this.data = (data || selektr.get()));
+      return (this.data = data || selektr.get())
     },
 
     restore(data) {
-      this.store(data);
+      this.store(data)
 
-      selektr.set(data);
+      selektr.set(data)
     },
-  });
+  })
 
   forEach(this.events, (fnc, eventStr) => {
-    on(this.el, eventStr, (fnc instanceof Function ? fnc : this[fnc]).bind(this));
-  });
+    on(this.el, eventStr, (fnc instanceof Function ? fnc : this[fnc]).bind(this))
+  })
 }
 
 Object.assign(Spytext.prototype, {
-  events: Object.assign({
-    focus: 'activate',
+  events: Object.assign(
+    {
+      focus: 'activate',
 
-    blur: 'deactivate',
-  }, events),
+      blur: 'deactivate',
+    },
+    events,
+  ),
 
   /**
    * Activates the current field.
@@ -88,33 +84,33 @@ Object.assign(Spytext.prototype, {
   activate() {
     // enable snapback, ie. tell the snapback instance's
     // mutationObserver to observer
-    this.snapback.enable();
+    this.snapback.enable()
 
     // toggle the toolbar, passing the current field to it
-    this.toolbar.toggle(this);
+    this.toolbar.toggle(this)
 
-    selektr.setElement(this.el);
+    selektr.setElement(this.el)
 
     // i think the timeout is because of the range not being initialized
     // so snapback.storePositions/selektr produces an error
     setTimeout(() => {
-      this.snapback.store();
+      this.snapback.store()
 
       // this is to capture events when mousedown on
       // fields element but mouseup outside
       on(document, 'mousedown', () => {
-        clearTimeout(this.timeout);
-        this.snapback.register();
-      });
+        clearTimeout(this.timeout)
+        this.snapback.register()
+      })
 
       on(document, 'mouseup', () => {
         setTimeout(() => {
-          selektr.normalize();
-          this.toolbar.setActiveStyles();
-          this.snapback.store();
-        });
-      });
-    });
+          selektr.normalize()
+          this.toolbar.setActiveStyles()
+          this.snapback.store()
+        })
+      })
+    })
   },
 
   /**
@@ -122,17 +118,17 @@ Object.assign(Spytext.prototype, {
    */
   deactivate() {
     // register mutations (if any) as an undo before deactivating
-    this.snapback.register();
+    this.snapback.register()
 
     // disable snapback, ie. disconnect the mutationObserver
-    this.snapback.disable();
+    this.snapback.disable()
 
     // deactivate toolbar
-    this.toolbar.toggle();
+    this.toolbar.toggle()
 
     // stop listening to mouseup and mousedown on document
-    off(document, 'mouseup');
-    off(document, 'mousedown');
+    off(document, 'mouseup')
+    off(document, 'mousedown')
   },
 
   /**
@@ -144,25 +140,25 @@ Object.assign(Spytext.prototype, {
     // register mutations (if any) as undo before calling command
     // so that the command becomes it's own undo without merging
     // it with any previous mutations in the mutation array in snapback
-    this.snapback.register();
+    this.snapback.register()
 
     if (commands[command]) {
       // call the command
-      commands[command](this.el, ...args);
+      commands[command](this.el, ...args)
 
       // normalize any text nodes in the field's element
-      this.el.normalize();
+      this.el.normalize()
 
-      trigger(this.el, 'input');
+      trigger(this.el, 'input')
       // unfortunately, we need to wrap the registation of a new Undo
       // in a timeout
       setTimeout(() => {
         // register the called command as an undo
-        this.snapback.register();
-        this.toolbar.setActiveStyles();
-      });
+        this.snapback.register()
+        this.toolbar.setActiveStyles()
+      })
     }
   },
-});
+})
 
-export default Spytext;
+export default Spytext
