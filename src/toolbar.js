@@ -5,7 +5,7 @@
  */
 
 import * as selektr from 'selektr'
-import { $, $$, ancestors, children, closest, is, on } from 'dollr'
+import { $, $$, ancestors, children, closest, is, on } from 'domp'
 import { uniq, forEach } from 'lowline'
 import * as commands from './commands'
 

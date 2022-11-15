@@ -8,7 +8,7 @@ import Snapback from 'snapback'
 
 import * as selektr from 'selektr'
 
-import { $, $$, on, off, trigger, appendTo } from 'dollr'
+import { $, $$, on, off, trigger, appendTo } from 'domp'
 import { forEach } from 'lowline'
 
 import SpytextToolbar from './toolbar'

@@ -4,7 +4,7 @@
  * @module spytext/events
  */
 
-import { closest, trigger } from 'dollr'
+import { closest, trigger } from 'domp'
 import * as selektr from 'selektr'
 
 const sectionTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI']

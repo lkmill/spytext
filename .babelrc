@@ -1,13 +1,13 @@
 {
   "env": {
     "cjs": {
-      "presets": [ "es2015" ],
+      "presets": [["@babel/env", { "modules": "cjs", "shippedProposals": true }]],
       "plugins": [
         "add-module-exports"
       ]
     },
     "es": {
-      "presets": [ "es2015-rollup" ]
+      "presets": [["@babel/env", { "modules": false, "shippedProposals": true }]],
     }
   }
 }

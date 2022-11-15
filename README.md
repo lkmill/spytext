@@ -27,25 +27,26 @@ $ npm install spytext
 ```
 
 ```js
-import Spytext from 'spytext';
+import Spytext from 'spytext'
 
-/* OR */
+const spytext = new Spytext({ el: document.getElementById('#spytext-field') })
 
-var Spytext = require('spytext');
+spytext.deactivate()
 
-document.addEventListener('DOMContentLoaded', function () {
-  var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
-}, false);
+spytext.activate()
 ```
 
 ### CDN (UMD build)
 
 ```html
-<script src="https://unpkg.com/spytext@0.9.1/dist/spytext.min.js"></script>
+<div id='spytext-field'></div>
+
+<script src='https://unpkg.com/spytext@0.9.1/dist/spytext.min.js'></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var spytext02 = new Spytext({ el: document.getElementById('#spytext-field') });
-}, false);
+document.addEventListener('DOMContentLoaded', () => {
+  const spytext = new Spytext({ el: document.getElementById('#spytext-field') })
+}, false)
 </script>
 ```
 

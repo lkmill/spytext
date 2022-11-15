@@ -22,8 +22,9 @@ import {
   text,
   unwrap,
   wrap,
-  descendants,
-} from 'dollr'
+} from 'domp'
+
+import descendants from 'descendants'
 
 import { head, last, invokeMap } from 'lowline'
 
