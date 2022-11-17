@@ -74,6 +74,8 @@ Object.assign(Spytext.prototype, {
       focus: 'activate',
 
       blur: 'deactivate',
+
+      input: 'input',
     },
     events,
   ),
@@ -111,6 +113,15 @@ Object.assign(Spytext.prototype, {
         })
       })
     })
+  },
+
+  input(e) {
+    if (e.inputType === 'historyUndo') {
+      document.execCommand('redo')
+      // firefox does not focus element after executing the undo
+      this.el.focus()
+      this.snapback.undo()
+    }
   },
 
   /**
