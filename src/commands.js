@@ -961,8 +961,12 @@ export function outdent(element) {
       appendTo(nextAll(li), nestedList)
     }
 
+    const parent = li.parentNode
+
     // actual outdenting. Place the list item after its closest LI ancestor
     insertAfter(li, li.parentNode.parentNode)
+
+    if (!parent.firstElementChild) parent.remove()
   })
 
   selektr.set(positions)
