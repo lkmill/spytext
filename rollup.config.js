@@ -1,11 +1,8 @@
-import babel from '@rollup/plugin-babel'
 import nodeResolve from '@rollup/plugin-node-resolve'
+import terser from '@rollup/plugin-terser'
 
 export default {
   plugins: [
-    babel({
-      exclude: 'node_modules/**',
-    }),
     nodeResolve({
       jsnext: true, // Default: false
       main: true, // Default: true
@@ -13,10 +10,16 @@ export default {
     }),
   ],
   input: 'src/spytext.js',
-  output: {
-    file: `dist/spytext.js`,
-    format: 'umd',
-    name: 'selektr',
+  output: [{
+    file: 'dist/spytext.js',
+    format: 'esm',
+    name: 'spytext',
     sourcemap: true,
-  },
+  }, {
+    file: 'dist/spytext.min.js',
+    format: 'esm',
+    name: 'spytext',
+    sourcemap: true,
+    plugins: [ terser() ]
+  }],
 }
