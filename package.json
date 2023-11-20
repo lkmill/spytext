@@ -18,14 +18,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thecodebureau/spytext"
+    "url": "https://github.com/lohfu/spytext"
   },
   "author": "Linus Miller <lohfu@lohfu.io> (https://lohfu.io/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thecodebureau/spytext/issues"
+    "url": "https://github.com/lohfu/spytext/issues"
   },
-  "homepage": "https://github.com/thecodebureau/spytext",
+  "homepage": "https://github.com/lohfu/spytext",
   "dependencies": {
     "domp": "^0.7.2",
     "lodash": "^4.17.4",
