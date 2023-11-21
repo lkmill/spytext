@@ -39,7 +39,8 @@ function Spytext(options) {
 
   appendTo(this.toolbar.el, document.body)
 
-  this.snapback = new Snapback(this.el, {
+  this.snapback = new Snapback({
+    element: this.el,
     /**
      * Saves and returns the positions of the current selection
      *

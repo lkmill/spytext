@@ -1858,10 +1858,10 @@ smob@^1.0.0:
   resolved "https://registry.yarnpkg.com/smob/-/smob-1.4.1.tgz#66270e7df6a7527664816c5b577a23f17ba6f5b5"
   integrity sha512-9LK+E7Hv5R9u4g4C3p+jjLstaLe11MDsL21UpYaCNmapvMkYhqCV4A/f/3gyH8QjMyh6l68q9xC85vihY9ahMQ==
 
-snapback@^0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/snapback/-/snapback-0.8.0.tgz#b1898f11bf5231cb27842dd669f8e78381106b3a"
-  integrity sha512-c951nRSqIvYUC3UXTX38E+o1EOiiPxIBiexNHhgmfC/CZjk8L22CN8k9tynHU3MG/BZJR75Dy1Ngt6ZFKOELsQ==
+snapback@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/snapback/-/snapback-0.9.0.tgz#4ca11fbcdad17c74bbb6422315ba78f532b14473"
+  integrity sha512-IguLbKcoqkry1xalhE4Ibzz0/ENIj7PtM8S4UISwCyaKMb/vz+UVvlFEd2hhN4xP2PKRopYaKl6TI/tPG++gpA==
 
 source-map-support@~0.5.20:
   version "0.5.21"
