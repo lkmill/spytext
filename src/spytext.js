@@ -8,7 +8,7 @@ import Snapback from 'snapback'
 
 import * as selektr from 'selektr'
 
-import { $, $$, on, off, trigger, appendTo } from 'domp'
+import { $, $$, on, off, trigger } from 'domp'
 import { forEach } from 'lowline'
 
 import SpytextToolbar from './toolbar'
@@ -29,7 +29,7 @@ function Spytext(options) {
   commands.deleteEmptyTextNodes(this.el)
   commands.deleteEmptyElements(this.el)
   if (this.el.childNodes.length === 0) {
-    appendTo($('<p>'), this.el)
+    this.el.append($('<p>'))
   }
   commands.setBR($$(this.el.children))
 
@@ -37,7 +37,7 @@ function Spytext(options) {
 
   this.toolbar = new SpytextToolbar()
 
-  appendTo(this.toolbar.el, document.body)
+  document.body.append(this.toolbar.el)
 
   this.snapback = new Snapback({
     element: this.el,

@@ -9,15 +9,11 @@ import * as selektr from 'selektr'
 import {
   $,
   $$,
-  appendTo,
   closest,
   children,
   is,
-  insertAfter,
-  insertBefore,
   next,
   nextAll,
-  prependTo,
   prevAll,
   text,
   unwrap,
@@ -118,7 +114,7 @@ export function block(element, tag) {
 
       secondList = children(endSection, 'UL,OL')[0]
 
-      insertAfter(secondList, endList)
+      endList.after(secondList)
     }
 
     if (endSection.nextSibling) {
@@ -129,10 +125,10 @@ export function block(element, tag) {
       if (!secondList) {
         secondList = $(`<${endList.tagName}>`)
 
-        insertAfter(secondList, endList)
+        endList.after(secondList)
       }
 
-      appendTo(nextAll(endSection), secondList)
+      secondList.append(...nextAll(endSection))
     }
 
     if (secondList) {
@@ -159,12 +155,12 @@ export function block(element, tag) {
     /* place `newBlock` before `ref`, or append it to `element`
      */
     if (ref) {
-      insertBefore(newBlock, ref)
+      ref.before(newBlock)
     } else {
-      appendTo(newBlock, element)
+      element.append(newBlock)
     }
 
-    appendTo(child.childNodes, newBlock)
+    newBlock.append(...child.childNodes)
     newBlocks.push(newBlock)
 
     /* remove parent if `child` has no siblings, otherwise simply remove the
@@ -280,7 +276,7 @@ export function deleteRangeContents(element, rng) {
 
         if (nestedList) {
           // append potential `nestedList` to `startSection`
-          appendTo(nestedList, startSection)
+          startSection.append(nestedList)
         }
       } else if (nestedList) {
         /* `startSection` is not a listItem which means all `endSection`'s
@@ -289,7 +285,7 @@ export function deleteRangeContents(element, rng) {
          */
         list = nestedList
 
-        insertAfter(nestedList, startSection)
+        startSection.after(nestedList)
 
         // append all `nestedList`'s children to `list`
         // appendTo(children(nestedList), list);
@@ -304,7 +300,7 @@ export function deleteRangeContents(element, rng) {
         /* append all next siblings to `endSection`, but only if `list` is not
          * `endSection`'s parent (because then target and source will be same)
          */
-        appendTo(nextAll(endSection), list)
+        list.append(...nextAll(endSection))
       }
     }
 
@@ -316,9 +312,9 @@ export function deleteRangeContents(element, rng) {
      * after this nested list.
      */
     if (startContainer.nodeType === 1) {
-      prependTo(endSection.childNodes, startContainer)
+      startContainer.prepend(...endSection.childNodes)
     } else {
-      insertAfter(endSection.childNodes, startContainer)
+      startContainer.after(...endSection.childNodes)
     }
 
     // remove the empty `endSection`
@@ -372,15 +368,15 @@ export function indent(element, isOutdent) {
 
         nestedList = $(`<${tagName}>`)
 
-        appendTo(nestedList, prev)
+        prev.append(nestedList)
       }
       /* append the list item itself to the previous list items nested list.
        * if the list item itself has a nested list, append all list items
        * on this nested list to the previous elements nested list
        */
 
-      appendTo(el, nestedList)
-      appendTo(children(children(el, 'UL,OL')[0]), nestedList)
+      nestedList.append(el)
+      nestedList.append(...children(children(el, 'UL,OL')[0]))
     }
   })
 
@@ -472,14 +468,14 @@ export function join(element, node1, node2) {
       offset: selektr.count(node1, nestedList),
     }
 
-    insertBefore(node2.childNodes, nestedList)
+    nestedList.before(...node2.childNodes)
   } else if (!node1.matches('LI') && (nestedList = children(node2, 'UL,OL')[0])) {
     // `node1` is a not a list item, and `node2` has nested list. decrease the
     // nested list's level by moving all its children to after `node2`, then
     // remove the nested list.
 
     // insert `nestedList`'s list items after `node2`
-    insertAfter(children(nestedList), node2)
+    node2.after(...children(nestedList))
 
     // remove the empty $nestedList
     nestedList.remove()
@@ -492,7 +488,7 @@ export function join(element, node1, node2) {
 
   // append any childNodes of `node2` to `node1` (this will already be done if
   // `node1` had a nested list
-  appendTo(node2.childNodes, node1)
+  node1.append(...node2.childNodes)
 
   node1.normalize()
   setBR(node1)
@@ -551,9 +547,9 @@ export function format(element, tag) {
       }
 
       clone = wrapper.cloneNode()
-      prependTo(clone, section)
+      section.prepend(clone)
 
-      appendTo(childNodes, clone)
+      clone.append(...childNodes)
     })
 
     if (startSection !== endSection) {
@@ -570,8 +566,8 @@ export function format(element, tag) {
       clone = wrapper.cloneNode()
       contents = selektr.range().extractContents()
       _unwrap(contents)
-      prependTo(clone, endSection)
-      appendTo(contents.childNodes, clone)
+      endSection.prepend(clone)
+      clone.append(...contents.childNodes)
 
       endSection.normalize()
       deleteEmptyElements(endSection)
@@ -596,7 +592,7 @@ export function format(element, tag) {
     _unwrap(contents)
     clone = wrapper.cloneNode()
     rng.insertNode(clone)
-    appendTo(contents.childNodes, clone)
+    clone.append(...contents.childNodes)
 
     startSection.normalize()
     deleteEmptyElements(startSection)
@@ -712,7 +708,7 @@ export function list(element, tag) {
        */
       list = $(`<${tag}>`)
 
-      insertAfter(list, startList)
+      startList.after(list)
     }
 
     if (endList && !endList.matches(tag)) {
@@ -735,7 +731,7 @@ export function list(element, tag) {
 
         secondList = children(endSection, 'UL,OL')[0]
 
-        insertAfter(secondList, list)
+        list.after(secondList)
       }
 
       if (endSection.nextSibling) {
@@ -746,10 +742,10 @@ export function list(element, tag) {
         if (!secondList) {
           secondList = $(`<${endList.tagName}>`)
 
-          insertAfter(secondList, list)
+          list.after(secondList)
         }
 
-        appendTo(nextAll(endSection), secondList)
+        secondList.append(...nextAll(endSection))
       }
     }
   } else {
@@ -759,7 +755,7 @@ export function list(element, tag) {
      */
     list = $(`<${tag}>`)
 
-    insertBefore(list, startSection)
+    startSection.before(list)
   }
 
   sections.forEach((child) => {
@@ -790,7 +786,7 @@ export function list(element, tag) {
           /* append `listItem` to `ref` (which will be the target list
            * if we are on head level
            */
-          appendTo(listItem, ref)
+          ref.append(listItem)
 
           // check if we had found (and removed) any nested lists
           if (oldNestedList.length > 0) {
@@ -798,7 +794,7 @@ export function list(element, tag) {
             const nestedList = $(`<${tag}>`)
 
             // TODO check if append is right
-            appendTo(nestedList, listItem)
+            listItem.append(nestedList)
 
             /* recurse through all of the old nested lists list items
              * and add them to the new nested list
@@ -815,8 +811,8 @@ export function list(element, tag) {
        */
       listItem = $('<li>')
 
-      appendTo(listItem, list)
-      appendTo(child.childNodes, listItem)
+      list.append(listItem)
+      listItem.append(...child.childNodes)
 
       if (!child.previousSibling && !child.nextSibling) {
         // remove `child`'s parent if `child` is only sibling
@@ -878,7 +874,7 @@ export function newSection(element) {
 
   el.style.cssText = section.style.cssText
 
-  insertAfter(el, section)
+  section.after(el)
 
   if (children(section, 'UL,OL').length || !selektr.isAtEndOfSection()) {
     /* Select everything from the start of blockElement to the caret. This
@@ -903,7 +899,7 @@ export function newSection(element) {
     const contents = selektr.range().extractContents()
 
     deleteEmptyElements(section)
-    appendTo(contents.childNodes, el)
+    el.append(...contents.childNodes)
   }
 
   // normalize any textnodes
@@ -954,17 +950,17 @@ export function outdent(element) {
 
         nestedList = $(`<${tagName}>`)
 
-        appendTo(nestedList, li)
+        li.append(nestedList)
       }
 
       // append all `li`'s next siblings to `nestedlist`
-      appendTo(nextAll(li), nestedList)
+      nestedList.append(...nextAll(li))
     }
 
     const parent = li.parentNode
 
     // actual outdenting. Place the list item after its closest LI ancestor
-    insertAfter(li, li.parentNode.parentNode)
+    li.parentNode.parentNode.after(li)
 
     if (!parent.firstElementChild) parent.remove()
   })
@@ -1036,19 +1032,19 @@ export function paste(element, dataTransfer) {
         /* since this is the head text Block,
          * simply append the textNode to the section
          */
-        appendTo(textNode, section)
+        section.append(textNode)
       } else {
         // create a new section
         el = $(`<${section.tagName}>`)
 
-        appendTo(textNode, el)
+        el.append(textNode)
 
         if (ref) {
           // insert before the ref
-          insertBefore(el, ref)
+          ref.before(el)
         } else {
           // append to parent if we have no ref
-          appendTo(el, parent)
+          parent.append(el)
         }
       }
     }
@@ -1056,7 +1052,7 @@ export function paste(element, dataTransfer) {
      * last inserted new section, or section if only
      * one text block was pasted
      */
-    appendTo(contents.childNodes, el || section)
+    (el || section).append(...contents.childNodes)
 
     // set the range to end of last inserted textnode
     selektr.set(
@@ -1116,7 +1112,7 @@ export function removeFormat(element, tag) {
         )
         contents = selektr.range().extractContents()
         _unwrap(contents)
-        prependTo(contents.childNodes, endSection)
+        endSection.prepend(contents.childNodes)
 
         endSection.normalize()
         deleteEmptyElements(endSection)
@@ -1141,9 +1137,9 @@ export function removeFormat(element, tag) {
       _unwrap(contents)
       if (startSection !== endSection) {
         if (is(last(startSection.childNodes), 'UL,OL')) {
-          insertBefore(contents.childNodes, last(startSection.childNodes))
+          last(startSection.childNodes).before(...contents.childNodes, )
         } else {
-          appendTo(contents.childNodes, startSection)
+          startSection.append(...contents.childNodes)
         }
       } else {
         selektr.set(absolutePositions.start, false)
@@ -1170,12 +1166,12 @@ export function removeFormat(element, tag) {
 
           const el = $(`<${tag}>`)
 
-          insertAfter(el, tagElement)
+          tagElement.after(el)
 
-          appendTo(newContents.childNodes, el)
+          el.append(...newContents.childNodes)
           ref = tagElement
         }
-        insertAfter(contents.childNodes, ref)
+        ref.after(...contents.childNodes)
       }
 
       startSection.normalize()
@@ -1207,7 +1203,7 @@ export function setBR(element) {
       prevAll(element.lastChild, 'br').length === 0 &&
       $$('br', prevAll(element.lastChild)).length === 0)
   ) {
-    prependTo($('<br>'), element)
+    element.prepend($('<br>'))
   } else {
     $$('BR:last-child', element).forEach((br) => {
       if (br.nextSibling) return
@@ -1236,7 +1232,7 @@ export function tidy(element) {
 
     if (next && next.nodeType === 1) {
       if (next.tagName === el.tagName) {
-        appendTo(next.childNodes, el)
+        el.append(...next.childNodes)
         next.remove()
       } else {
         let ref = next
@@ -1245,7 +1241,7 @@ export function tidy(element) {
           ref = ref.firstChild
           if (ref.tagName === el.tagName) {
             unwrap(el)
-            appendTo(next.childNodes, el)
+            el.append(...next.childNodes)
             next.remove()
             break
           }
