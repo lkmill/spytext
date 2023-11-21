@@ -520,7 +520,7 @@ export function format(element, tag) {
   function _unwrap(el) {
     $$(tag, el).forEach((el) => {
       if (el.firstChild) {
-        unwrap(el.firstChild)
+        unwrap(el)
       } else {
         el.remove()
       }
@@ -1079,7 +1079,7 @@ export function removeFormat(element, tag) {
   function _unwrap(el) {
     $$(tag, el).forEach((el) => {
       if (el.firstChild) {
-        unwrap(el.firstChild)
+        unwrap(el)
       } else {
         el.remove()
       }
@@ -1226,11 +1226,9 @@ export function setBR(element) {
 export function tidy(element) {
   // deleteEmptyElements should be called head so we do not have to worrry about empty elements
   $$('STRONG,U,EM,STRIKE', element).forEach((el) => {
-    if (!el.parentNode) return
-
     $$(el.tagName, el).forEach((el) => {
       if (el.firstChild) {
-        unwrap(el.firstChild)
+        unwrap(el)
       }
     })
 
@@ -1242,10 +1240,11 @@ export function tidy(element) {
         next.remove()
       } else {
         let ref = next
+        // TODO check if this does what it is supposed to do (looks off)
         while (ref.firstChild && ref.firstChild === ref.lastChild) {
           ref = ref.firstChild
           if (ref.tagName === el.tagName) {
-            unwrap(el.firstChild)
+            unwrap(el)
             appendTo(next.childNodes, el)
             next.remove()
             break
