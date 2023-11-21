@@ -3,7 +3,10 @@
   "version": "0.9.3",
   "description": "Why? Because there is nothing like it.",
   "type": "module",
-  "exports": "src/spytext.js",
+  "exports": {
+    ".": "src/spytext.js",
+    "./styles/": "styles/*"
+  },
   "unpkg": "dist/spytext.min.js",
   "scripts": {
     "build": "rollup -c",
