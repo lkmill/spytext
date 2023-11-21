@@ -3,6 +3,7 @@
   "version": "0.10.0",
   "description": "Why? Because there is nothing like it.",
   "type": "module",
+  "main": "src/spytext.js",
   "exports": {
     ".": "src/spytext.js",
     "./styles/": "styles/*"
