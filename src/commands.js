@@ -174,6 +174,7 @@ export function block(element, tag) {
   })
 
   invokeMap($$(':empty:not(BR)', element), 'remove')
+  $$('BR:last-child', element).forEach(br => br.previousSibling && br.remove())
 
   // set the selection
   selektr.set(positions)
