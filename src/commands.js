@@ -24,7 +24,7 @@ import descendants from 'descendants'
 
 import { head, last, invokeMap } from 'lowline'
 
-const sectionTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI']
+export const sectionTags = ['P', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI']
 
 function listItemFilter(node) {
   /* this is to filter out LI with nested lists where only text in the nested
@@ -79,7 +79,7 @@ align.disabled = function (option, styles) {
 export function block(element, tag) {
   // if(block.active(tag)) return;
 
-  const sections = selektr.contained({ sections: true }, true).filter(listItemFilter)
+  const sections = selektr.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter)
   const newBlocks = []
   const startSection = head(sections)
   const endSection = last(sections)
@@ -245,7 +245,7 @@ export function deleteRangeContents(element, rng) {
   const startContainer = rng.startContainer
   // TODO should we really use sections: true instead of passing selectors?
   // containedSections = selektr.contained({ sections: true }, true),
-  const containedSections = selektr.contained({ sections: true }, true).filter(listItemFilter)
+  const containedSections = selektr.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter)
   const startSection = head(containedSections)
   const endSection = last(containedSections)
   const position = selektr.get('start')
@@ -532,7 +532,7 @@ export function format(element, tag) {
   if (!rng.collapsed) {
     const positions = selektr.get()
     const absolutePositions = selektr.get(true)
-    const sections = selektr.contained({ sections: true }, true).filter(listItemFilter)
+    const sections = selektr.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter)
     const startSection = head(sections)
     const endSection = last(sections)
     let contents
@@ -665,7 +665,7 @@ export function list(element, tag) {
 
   // if(list.active(tag)) return;
 
-  const sections = selektr.contained({ sections: true }, true).filter(listItemFilter)
+  const sections = selektr.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter)
   const listItems = []
   const positions = selektr.get()
   const startSection = head(sections)
@@ -1091,7 +1091,7 @@ export function removeFormat(element, tag) {
     if (!rng.collapsed) {
       const positions = selektr.get(element)
       const absolutePositions = selektr.get(true)
-      const sections = selektr.contained({ sections: true }, true).filter(listItemFilter)
+      const sections = selektr.contained({ selector: sectionTags.join(',') }, true).filter(listItemFilter)
       const startSection = head(sections)
       const endSection = last(sections)
 
