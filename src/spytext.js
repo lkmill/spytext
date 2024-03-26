@@ -11,9 +11,9 @@ import * as selektr from 'selektr'
 import { $, $$, on, off, trigger } from 'domp'
 import { forEach } from 'lowline'
 
-import SpytextToolbar from './toolbar'
-import * as commands from './commands'
-import * as events from './events'
+import SpytextToolbar from './toolbar.js'
+import * as commands from './commands.js'
+import * as events from './events.js'
 
 /**
  * @readonly
